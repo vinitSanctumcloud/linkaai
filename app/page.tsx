@@ -4,7 +4,7 @@
 import { Header } from '@/components/header'
 import { Footer } from '@/components/footer'
 import { Button } from '@/components/ui/button'
-// import Link from 'next/link'
+import Link from 'next/link'
 import Image from 'next/image'
 import { 
   ArrowRight, 
@@ -162,16 +162,16 @@ export default function HomePage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600 text-white">
-                  {/* <Link href="/signup">
+                  <Link href="/signup">
                     <Bot className="w-5 h-5 mr-2" />
                     Build Your Agent Free
-                  </Link> */}
+                  </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline">
-                  {/* <Link href="/agent">
+                  <Link href="/agent">
                     <MessageSquare className="w-5 h-5 mr-2" />
                     Try Interactive Demo
-                  </Link> */}
+                  </Link>
                 </Button>
               </div>
             </motion.div>
@@ -444,27 +444,27 @@ export default function HomePage() {
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             <Button asChild size="lg" className="bg-orange-500 hover:bg-orange-600 text-white px-12 py-4 text-lg">
-              {/* <Link href="/signup">
+              <Link href="/signup">
                 <Zap className="w-6 h-6 mr-2" />
                 Get Started Free
-              </Link> */}
+              </Link>
             </Button>
             <Button asChild variant="outline" size="lg" className="px-12 py-4 text-lg border-2">
-              {/* <Link href="/login">
+              <Link href="/login">
                 <Bot className="w-6 h-6 mr-2" />
                 Sign In
-              </Link> */}
+              </Link>
             </Button>
           </motion.div>
 
-          {/* <motion.p 
+          <motion.p 
             className="text-sm text-gray-500 mt-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.6 }}
           >
             Ready to try the demo? <Link href="/signup" className="text-orange-600 hover:underline font-medium">Create your free account</Link> to access the full builder.
-          </motion.p> */}
+          </motion.p>
         </div>
       </section>
 
@@ -585,9 +585,9 @@ export default function HomePage() {
               </ul>
               
               <Button asChild className="w-full" variant="outline">
-                {/* <Link href="/signup">
+                <Link href="/signup">
                   Get Started
-                </Link> */}
+                </Link>
               </Button>
             </motion.div>
 
@@ -638,9 +638,9 @@ export default function HomePage() {
               </ul>
               
               <Button asChild className="w-full bg-orange-500 hover:bg-orange-600">
-                {/* <Link href="/signup">
+                <Link href="/signup">
                   Start Pro Trial
-                </Link> */}
+                </Link>
               </Button>
             </motion.div>
 
@@ -685,9 +685,9 @@ export default function HomePage() {
               </ul>
               
               <Button asChild className="w-full bg-white text-gray-900 hover:bg-gray-100">
-                {/* <Link href="mailto:sales@linka.ai?subject=Enterprise Plan Inquiry&body=Hi, I'm interested in learning more about Linka.ai's Enterprise plan and would like to discuss pricing and features for my organization.">
+                <Link href="mailto:sales@linka.ai?subject=Enterprise Plan Inquiry&body=Hi, I'm interested in learning more about Linka.ai's Enterprise plan and would like to discuss pricing and features for my organization.">
                   Contact Us
-                </Link> */}
+                </Link>
               </Button>
             </motion.div>
           </div>
@@ -697,7 +697,7 @@ export default function HomePage() {
               All plans include unlimited affiliate links and 24/7 automated responses
             </p>
             <p className="text-sm text-gray-500">
-              {/* Need something custom? <Link href="/contact" className="text-orange-600 hover:underline">Contact us</Link> for enterprise solutions. */}
+              Need something custom? <Link href="/contact" className="text-orange-600 hover:underline">Contact us</Link> for enterprise solutions.
             </p>
           </div>
         </div>
@@ -747,10 +747,10 @@ export default function HomePage() {
             transition={{ duration: 0.8, delay: 0.4 }}
           >
             <Button asChild size="lg" variant="secondary" className="bg-white text-orange-600 hover:bg-gray-50 px-8 py-3">
-              {/* <Link href="/signup">
+              <Link href="/signup">
                 Build Your AI Agent Free
                 <ArrowRight className="w-5 h-5 ml-2" />
-              </Link> */}
+              </Link>
             </Button>
           </motion.div>
         </div>
