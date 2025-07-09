@@ -1,4 +1,4 @@
-.stepper {
+/* .stepper {
   position: relative;
 }
 
@@ -10,7 +10,7 @@
   left: 1rem;
   width: 2px;
   background-color: #e5e7eb; /* Tailwind gray-200 */
-  z-index: 0;
+  /* z-index: 0;
 }
 
 .stepper-item {
@@ -52,4 +52,4 @@
     height: 1.5rem;
     font-size: 0.875rem;
   }
-}
+} */ 
