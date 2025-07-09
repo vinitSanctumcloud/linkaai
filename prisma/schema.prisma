@@ -1,0 +1,138 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  password       String?
+  username       String?   @unique
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  affiliateLinks AffiliateLink[]
+  settings       UserSettings?
+  analytics      Analytics[]
+  conversations  Conversation[]
+}
+
+model Account {
+  id                String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user              User    @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model VerificationToken {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model AffiliateLink {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String
+  url           String
+  title         String?
+  description   String?
+  image         String?
+  brand         String?
+  category      String?
+  isActive      Boolean   @default(true)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user          User      @relation(fields: [userId], references: [id])
+  analytics     Analytics[]
+  recommendations Recommendation[]
+}
+
+model UserSettings {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String   @unique
+  agentName      String   @default("AI Assistant")
+  brandColor     String   @default("#FF6B35")
+  voiceEnabled   Boolean  @default(true)
+  customUrl      String?  @unique
+  welcomeMessage String?
+  instructions   String?
+  avatarUrl      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user           User     @relation(fields: [userId], references: [id])
+}
+
+model Analytics {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String
+  affiliateLinkId String?
+  type            String
+  value           Float?
+  metadata        Json?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+
+  user            User           @relation(fields: [userId], references: [id])
+  affiliateLink   AffiliateLink? @relation(fields: [affiliateLinkId], references: [id])
+}
+
+model Conversation {
+  id              String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String
+  sessionId       String
+  messages        Json
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user            User            @relation(fields: [userId], references: [id])
+  recommendations Recommendation[]
+}
+
+model Recommendation {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  conversationId  String
+  affiliateLinkId String
+  reason          String?
+  confidence      Float?
+  clicked         Boolean        @default(false)
+  createdAt       DateTime       @default(now())
+
+  conversation    Conversation   @relation(fields: [conversationId], references: [id])
+  affiliateLink   AffiliateLink  @relation(fields: [affiliateLinkId], references: [id])
+}
