@@ -3,9 +3,9 @@ const path = require('path');
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   distDir: '.next',
-  output: 'standalone', // or just remove this line entirely
+  output: 'standalone', // Keep if needed for your deployment
   experimental: {
-    outputFileTracingRoot: path.join(__dirname, '../'),
+    outputFileTracingRoot: process.cwd(), // Points to linkadev (repo root)
   },
   eslint: {
     ignoreDuringBuilds: true,
@@ -15,6 +15,5 @@ const nextConfig = {
   },
   images: { unoptimized: true },
 };
-
 
 module.exports = nextConfig;
