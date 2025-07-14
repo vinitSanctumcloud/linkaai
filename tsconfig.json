@@ -34,7 +34,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     ".build/types/**/*.ts"
-  ],
+, "services/ stripeproducts.js"  ],
   "exclude": [
     "node_modules"
   ]

@@ -248,7 +248,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                             )}
                           </div>
                           <ul className="space-y-3 mb-6 flex-grow">
-                            {[...plan.standardPerks, ...plan.extraPerks].map((perk, idx) => (
+                            {[...plan.extraPerks].map((perk, idx) => (
                               <li key={idx} className="flex items-start">
                                 <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
                                 <span className="text-gray-700 dark:text-gray-300">{perk}</span>
@@ -408,7 +408,7 @@ export default function DashboardPage() {
   const [affiliateLinksCount, setAffiliateLinksCount] = useState(0)
   const [loading, setLoading] = useState(false)
   const [showPricing, setShowPricing] = useState(false)
-  
+
 
   // useEffect(() => {
   //   fetchDashboardData()
@@ -529,14 +529,13 @@ export default function DashboardPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 md:gap-6">
               <StatCard
-                title="Total Revenue"
-                value={`$${analytics?.totalRevenue?.toFixed(2) || '0.00'}`}
-                icon={<DollarSign className="h-5 w-5" />}
-                // 
+                title="Chat"
+                value={analytics?.totalViews?.toLocaleString() || '0'}
+                icon={<Users className="h-5 w-5" />}
                 trend="up"
-                change="12.5%"
+                change="5.7%"
                 period="Last 7 days"
-                currency
+
               />
               <StatCard
                 title="Total Clicks"
@@ -547,13 +546,17 @@ export default function DashboardPage() {
                 period="Last 7 days"
               />
               <StatCard
-                title="Chat Views"
-                value={analytics?.totalViews?.toLocaleString() || '0'}
-                icon={<Users className="h-5 w-5" />}
+                title="Total Revenue"
+                value={`$${analytics?.totalRevenue?.toFixed(2) || '0.00'}`}
+                icon={<DollarSign className="h-5 w-5" />}
+                // 
                 trend="up"
-                change="5.7%"
+                change="12.5%"
                 period="Last 7 days"
+                currency={true}
+                comingSoon={true}
               />
+
               <StatCard
                 title="Conversion Rate"
                 value={`${analytics?.conversionRate || '0'}%`}
@@ -561,6 +564,7 @@ export default function DashboardPage() {
                 trend="up"
                 change="2.3%"
                 period="Last 7 days"
+                comingSoon={true}
               />
             </div>
 
@@ -644,7 +648,7 @@ export default function DashboardPage() {
                         <Button asChild variant="outline" className="w-full  cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
                           <div>
                             <div className="flex items-center">
-                              <div className="mr-3 p-2  rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
+                              <div className="mr-3 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
                                 <Plus className="h-5 w-5 text-orange-600" />
                               </div>
                               <div className="text-left">
@@ -701,7 +705,7 @@ export default function DashboardPage() {
 
             {affiliateLinksCount === 0 && (
               <Card className="border border-orange-200 dark:border-orange-800 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/10 shadow-xl overflow-hidden relative">
-                
+
                 <CardHeader className="relative z-10">
                   <CardTitle className="text-orange-900 dark:text-orange-200 text-2xl select-text">
                     Let's Get You Started!
@@ -813,7 +817,7 @@ export default function DashboardPage() {
   )
 }
 
-function StatCard({ title, value, icon, trend, change, period, currency = false }: {
+function StatCard({ title, value, icon, trend, change, period, currency = false, comingSoon = false }: {
   title: string
   value: string
   icon: React.ReactNode
@@ -821,17 +825,41 @@ function StatCard({ title, value, icon, trend, change, period, currency = false 
   change: string
   period: string
   currency?: boolean
+  comingSoon?: boolean
 }) {
-
   const trendColors = {
     up: 'text-emerald-600 dark:text-emerald-400',
     down: 'text-red-600 dark:text-red-400'
   }
-
   return (
-    <Card className="border border-gray-200 dark:border-gray-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md overflow-hidden group">
-      
-      <CardContent className="p-4 md:p-6 relative z-10 select-text">
+    <Card className="border border-gray-200 dark:border-gray-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md overflow-hidden group relative">
+      {/* Coming Soon Banner */}
+      {comingSoon && (
+        <>
+          {/* Background Overlay */}
+          <div className="absolute inset-0 z-20 bg-gradient-to-br from-transparent via-white/10 to-transparent opacity-30 group-hover:opacity-100 transition-opacity duration-500" />
+
+          {/* Coming Soon Badge */}
+          <div className="absolute -top-2 left-0 right-0 z-30 flex justify-center">
+            <div className="mt-2 px-4 py-1 bg-slate-700 text-white text-xs font-bold rounded-b-lg shadow-lg animate-pulse">
+              <span className="flex items-center space-x-1">
+                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                COMING SOON
+              </span>
+            </div>
+          </div>
+          <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
+            <div className="absolute -inset-1 bg-slate-500 rounded-lg blur opacity-70 group-hover:opacity-100 transition-all duration-500 animate-pulse" />
+          </div>
+
+          {/* Card Content Blur Effect */}
+          <div className="absolute inset-0 z-40 bg-gradient-to-br from-white/50 to-transparent dark:from-black/50 dark:to-transparent" />
+        </>
+      )}
+
+      <CardContent className={`p-4 md:p-6 relative z-10 select-text ${comingSoon ? 'blur-sm hover:blur-none transition-all duration-300' : ''}`}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{title}</p>
@@ -850,6 +878,17 @@ function StatCard({ title, value, icon, trend, change, period, currency = false 
           </div>
         </div>
       </CardContent>
+
+      {/* Add this to your global CSS */}
+      <style jsx global>{`
+          @keyframes pulse {
+            0%, 100% { opacity: 0.7; }
+            50% { opacity: 1; }
+          }
+          .animate-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+          }
+        `}</style>
     </Card>
   )
 }
@@ -864,7 +903,7 @@ function OnboardingStep({ step, title, description, buttonText, href, icon }: {
 }) {
   return (
     <div className="bg-white/80 dark:bg-gray-800/80 p-4 rounded-xl border border-orange-200 dark:border-orange-800/50 shadow-md hover:shadow-lg transition-all duration-300 hover:- backdrop-blur-sm group overflow-hidden">
-      
+
       <div className="relative z-10 select-text">
         <div className="flex items-center mb-3">
           <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 text-orange-600 dark:text-orange-300 font-bold mr-3 shadow-inner pointer-events-none">
@@ -908,7 +947,7 @@ function TipCard({ title, description, icon, color }: {
 
   return (
     <div className="bg-white/80 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-200 dark:border-gray-700 backdrop-blur-sm hover:shadow-md transition-all duration-300 hover:- overflow-hidden group">
-      
+
       <div className="relative z-10 select-text">
         <div className={`h-10 w-10 ${colorClasses[color as keyof typeof colorClasses]} rounded-lg flex items-center justify-center mb-3 shadow-inner group-hover:scale-110 transition-transform duration-300 pointer-events-none`}>
           <span className="text-xl">{icon}</span>

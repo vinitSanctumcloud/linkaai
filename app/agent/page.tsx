@@ -29,6 +29,7 @@ interface AgentConfig {
   partnerUrls: string[]
   conditionalPrompts: ConditionalPrompt[]
   useConditionalPrompts: boolean
+  video: string | null // ✅ Store video as a string (Base64 or URL)
 }
 
 export default function AgentBuilderPage() {
@@ -42,7 +43,8 @@ export default function AgentBuilderPage() {
     prompts: ['', '', '', ''],
     partnerUrls: [''],
     conditionalPrompts: [],
-    useConditionalPrompts: false
+    useConditionalPrompts: false,
+    video: null
   })
 
   // Conditional prompt modal states
@@ -56,10 +58,10 @@ export default function AgentBuilderPage() {
   })
 
   const steps = [
-    { id: 1, title: 'AI Training', description: 'Name your agent and provide training instructions' },
-    { id: 2, title: 'Avatar & Greeting', description: 'Upload photo and create opening message' },
-    { id: 3, title: 'Prompts', description: 'Design conversation starters and branching logic' },
-    { id: 4, title: 'Partner URLs', description: 'Add your affiliate links' },
+    { id: 1, title: 'Avatar & Greeting', description: 'Upload photo and create opening message' },
+    { id: 2, title: 'AI Training', description: 'Name your agent and provide training instructions' },
+    { id: 3, title: 'Partner URLs', description: 'Add your affiliate links' },
+    { id: 4, title: 'Prompts', description: 'Design conversation starters and branching logic' },
     { id: 5, title: 'Preview & Test', description: 'Test your AI agent' }
   ]
 
@@ -143,6 +145,23 @@ export default function AgentBuilderPage() {
     }))
   }
 
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    console.log('Video upload:', file);
+
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAgentConfig(prev => ({
+          ...prev,
+          video: e.target?.result as string, // ✅ store as `video`, not `avatar`
+        }));
+      };
+      reader.readAsDataURL(file); // ✅ Base64 for preview
+    }
+  };
+
+
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
     if (file) {
@@ -190,7 +209,7 @@ export default function AgentBuilderPage() {
 
   const renderStepContent = () => {
     switch (currentStep) {
-      case 1:
+      case 2:
         return (
           <Card className="w-full mx-auto border-none shadow-xl rounded-2xl bg-white/95 backdrop-blur-sm">
             <CardHeader className="pb-4">
@@ -249,7 +268,7 @@ export default function AgentBuilderPage() {
             </CardContent>
           </Card>
         )
-      case 2:
+      case 1:
         return (
           <Card className="border-none shadow-lg rounded-2xl overflow-hidden bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
             <CardHeader className="px-6 pt-6 pb-4">
@@ -258,15 +277,15 @@ export default function AgentBuilderPage() {
                   Avatar & Greeting
                 </CardTitle>
                 <p className="text-sm text-linka-night/70 font-light">
-                  Personalize your AI’s identity and welcome message
+                  Personalize your AI's identity, avatar, and welcome message
                 </p>
               </div>
             </CardHeader>
-
             <CardContent className="px-6 pb-8 space-y-8">
-              {/* Avatar Upload */}
+              {/* Avatar Upload Section */}
               <div className="flex flex-col items-center">
                 <div className="relative group">
+                  {/* Avatar Display */}
                   <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-2xl overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
                     {agentConfig.avatar ? (
                       <img
@@ -274,40 +293,69 @@ export default function AgentBuilderPage() {
                         alt="Agent Avatar"
                         className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                       />
+                    ) : agentConfig.video ? (
+                      <video
+                        src={agentConfig.video}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover rounded-2xl"
+                      />
+
                     ) : (
                       <Bot className="w-14 h-14 sm:w-20 sm:h-20 text-white/90 animate-pulse" />
                     )}
                   </div>
 
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarUpload}
-                    className="hidden"
-                    id="avatar-upload"
-                  />
-
-                  <label
-                    htmlFor="avatar-upload"
-                    className="absolute -bottom-2 -right-2 bg-white border-2 border-linka-dark-orange text-linka-dark-orange rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-dark-orange hover:text-white shadow-md"
-                  >
-                    <Upload className="w-5 h-5" strokeWidth={2.5} />
-                    <span className="sr-only">Upload avatar</span>
-                  </label>
+                  {/* Upload Buttons */}
+                  <div className="flex gap-3 absolute -bottom-2 right-0 sm:right-0">
+                    {/* Image Upload */}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      className="hidden"
+                      id="avatar-upload"
+                    />
+                    <label
+                      htmlFor="avatar-upload"
+                      className="bg-white border-2 border-linka-dark-orange text-linka-dark-orange rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-dark-orange hover:text-white shadow-md flex items-center gap-1.5"
+                    >
+                      <Upload className="w-5 h-5" strokeWidth={2.5} />
+                      <span className="text-xs font-medium hidden sm:inline">Image</span>
+                      <span className="sr-only">Upload avatar image</span>
+                    </label>
+                    {/* Video Upload */}
+                    <input
+                      type="file"
+                      accept="video/*"
+                      onChange={handleVideoUpload}
+                      className="hidden"
+                      id="video-upload"
+                    />
+                    <label
+                      htmlFor="video-upload"
+                      className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1.5"
+                    >
+                      <Upload className="w-5 h-5" strokeWidth={2.5} />
+                      <span className="text-xs font-medium hidden sm:inline">Video</span>
+                      <span className="sr-only">Upload avatar video</span>
+                    </label>
+                  </div>
                 </div>
                 <p className="text-xs text-linka-night/60 mt-5 font-medium">
-                  Recommended: Square image, 500×500px, max 2MB
+                  Recommended: Square image (500×500px, max 2MB) or video (max 10MB)
                 </p>
               </div>
-
-              {/* Greeting Input */}
+              {/* Greeting Input Section */}
               <div className="space-y-3">
                 <Label htmlFor="greeting" className="text-linka-russian-violet font-medium flex items-center gap-1">
                   Opening Greeting <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
                 </Label>
                 <Textarea
                   id="greeting"
-                  placeholder="Example: “Hello! I’m your AI assistant, how can I help?”"
+                  placeholder="Example: 'Hello! I'm your AI assistant, how can I help?'"
                   value={agentConfig.greeting}
                   onChange={(e) => handleInputChange('greeting', e.target.value)}
                   rows={3}
@@ -318,13 +366,14 @@ export default function AgentBuilderPage() {
                   <p className="text-xs text-linka-night/50 italic">
                     Pro tip: Keep it friendly and inviting
                   </p>
-                  <span className={`text-xs ${agentConfig.greeting?.length === 120 ? 'text-red-400' : 'text-linka-night/50'}`}>
+                  <span
+                    className={`text-xs ${agentConfig.greeting?.length === 120 ? 'text-red-400' : 'text-linka-night/50'}`}
+                  >
                     {agentConfig.greeting?.length || 0}/120
                   </span>
                 </div>
               </div>
-
-              {/* Live Preview */}
+              {/* Live Preview Section */}
               <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-5 border border-linka-alice-blue/80 overflow-hidden relative">
                 <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
                 <p className="text-xs text-linka-night/60 mb-3 font-medium uppercase tracking-wider">
@@ -332,7 +381,8 @@ export default function AgentBuilderPage() {
                 </p>
                 <div className="text-center space-y-3 relative z-10">
                   <h4 className="text-xl md:text-2xl font-medium text-linka-russian-violet animate-in fade-in">
-                    Hi, I'm <span className="text-linka-dark-orange font-semibold bg-gradient-to-r from-linka-dark-orange/80 to-linka-dark-orange bg-clip-text text-transparent">
+                    Hi, I'm{' '}
+                    <span className="text-linka-dark-orange font-semibold bg-gradient-to-r from-linka-dark-orange/80 to-linka-dark-orange bg-clip-text text-transparent">
                       {agentConfig.name || 'Your AI'}
                     </span>
                   </h4>
@@ -343,8 +393,8 @@ export default function AgentBuilderPage() {
               </div>
             </CardContent>
           </Card>
-        )
-      case 3:
+        );
+      case 4:
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
             <CardHeader className="px-6 pt-6 pb-4">
@@ -581,7 +631,7 @@ export default function AgentBuilderPage() {
             </CardContent>
           </Card>
         )
-      case 4:
+      case 3:
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
             <CardHeader className="px-6 pt-6 pb-4">

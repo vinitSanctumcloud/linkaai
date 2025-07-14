@@ -1,6 +1,6 @@
 import { API } from '@/config/api';
 
-export const    getStripeProducts = async () => {
+export const getStripeProducts = async () => {
     try {
         const response = await fetch(API.STRIPE_PRODUCTS, {
             method: 'GET',
