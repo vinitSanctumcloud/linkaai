@@ -1,9 +1,10 @@
-'use client'
+'use client';
 import React, { useState, useEffect } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+
+// Initialize Stripe with the Publishable Key
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A');
 
 interface Plan {
     id: string;
@@ -34,7 +35,6 @@ interface Coupon {
     valid: boolean;
 }
 
-// Comprehensive list of ISO 4217 currencies
 const currencies = [
     'AED', 'AFN', 'ALL', 'AMD', 'ANG', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN',
     'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BIF', 'BMD', 'BND', 'BOB', 'BRL',
@@ -54,36 +54,31 @@ const currencies = [
     'XPF', 'YER', 'ZAR', 'ZMW'
 ].sort();
 
-// Initialize Stripe with the Publishable Key
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A');
-
 const PaymentForm: React.FC = () => {
     const stripe = useStripe();
     const elements = useElements();
-    const [paymentMethod, setPaymentMethod] = useState('credit-card');
-    const [selectedCurrency, setSelectedCurrency] = useState('USD');
+    const [paymentMethod, setPaymentMethod] = useState<'credit-card' | 'paypal' | 'bank-transfer'>('credit-card');
+    const [selectedCurrency, setSelectedCurrency] = useState<string>('USD');
     const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({ USD: 1 });
     const [cardDetails, setCardDetails] = useState({
         fullName: '',
-        cardNumber: '',
-        expiryDate: null as Date | null,
-        cvv: '',
     });
-    const [paypalEmail, setPaypalEmail] = useState('');
+    const [paypalEmail, setPaypalEmail] = useState<string>('');
     const [bankDetails, setBankDetails] = useState({
         accountNumber: '',
         routingNumber: '',
         bankName: '',
         accountHolder: '',
     });
-    const [couponCode, setCouponCode] = useState('');
+    const [couponCode, setCouponCode] = useState<string>('');
     const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
     const [apiData, setApiData] = useState<ApiResponse | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
     const [formErrors, setFormErrors] = useState<Record<string, string>>({});
     const [couponError, setCouponError] = useState<string | null>(null);
+    const productId = '1637'; // Define product ID
 
     // Mock coupon database (replace with API call in production)
     const coupons: Coupon[] = [
@@ -93,7 +88,7 @@ const PaymentForm: React.FC = () => {
     ];
 
     // Exponential backoff for API calls
-    const fetchWithBackoff = async (url: string, options: RequestInit, retries = 3, delay = 1000): Promise<Response> => {
+    const fetchWithBackoff = async (url: string, options: RequestInit, retries: number = 3, delay: number = 1000): Promise<Response> => {
         try {
             const response = await fetch(url, options);
             if (response.status === 429 && retries > 0) {
@@ -124,55 +119,38 @@ const PaymentForm: React.FC = () => {
         }
 
         const fetchExchangeRates = async () => {
-            const apiKey = '62184da350a23cc1dedff0389915db3e';
             try {
-                // Try the first API
+                const apiKey = process.env.NEXT_PUBLIC_EXCHANGERATES_API_KEY || '62184da350a23cc1dedff0389915db3e';
                 const response = await fetchWithBackoff(
-                    `https://api.exchangerate-api.com/v4/latest/USD`,
+                    `https://api.exchangeratesapi.io/v1/latest?access_key=${apiKey}`,
                     { method: 'GET' }
                 );
-
-                if (!response.ok) throw new Error('First API failed');
-
-                const data = await response.json();
-                if (!data.rates) throw new Error('Invalid response format');
-
-                // Ensure USD is always 1
-                const rates = { USD: 1, ...data.rates };
-                setExchangeRates(rates);
-                localStorage.setItem('exchangeRates', JSON.stringify(rates));
-                localStorage.setItem('exchangeRatesTimestamp', Date.now().toString());
-            } catch (err) {
-                console.error('First API failed, trying fallback:', err);
-                try {
-                    // Fallback API
+                if (!response.ok) {
                     const fallbackResponse = await fetchWithBackoff(
-                        `https://api.exchangeratesapi.io/v1/latest?access_key=${apiKey}`,
+                        `https://latest.currency-api.pages.dev/v1/currencies/usd.json`,
                         { method: 'GET' }
                     );
-
-                    const fallbackData = await fallbackResponse.json();
-                    if (!fallbackData.rates) throw new Error('Invalid fallback response');
-
-                    const rates = { USD: 1, ...fallbackData.rates };
-                    setExchangeRates(rates);
-                    localStorage.setItem('exchangeRates', JSON.stringify(rates));
+                    const data: ExchangeRateResponse = await fallbackResponse.json();
+                    setExchangeRates({ USD: 1, ...data.rates });
+                    localStorage.setItem('exchangeRates', JSON.stringify({ USD: 1, ...data.rates }));
                     localStorage.setItem('exchangeRatesTimestamp', Date.now().toString());
-                } catch (fallbackErr) {
-                    console.error('Fallback API failed:', fallbackErr);
-                    setError('Failed to fetch exchange rates. Using default USD.');
-                    setExchangeRates({ USD: 1 });
+                } else {
+                    const data: ExchangeRateResponse = await response.json();
+                    if (data.success === false) throw new Error('Failed to fetch exchange rates');
+                    setExchangeRates({ USD: 1, ...data.rates });
+                    localStorage.setItem('exchangeRates', JSON.stringify({ USD: 1, ...data.rates }));
+                    localStorage.setItem('exchangeRatesTimestamp', Date.now().toString());
                 }
+            } catch (err) {
+                setError('Failed to fetch exchange rates. Using default USD.');
+                console.error(err);
             }
         };
         fetchExchangeRates();
     }, []);
 
-    // Fetch product data
+    // Fetch product plans with dynamic product ID
     useEffect(() => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const productId = urlParams.get('productId');
-        console.log(productId)
         const fetchProductData = async () => {
             try {
                 setLoading(true);
@@ -185,7 +163,7 @@ const PaymentForm: React.FC = () => {
                 );
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data: ApiResponse = await response.json();
-                console.log(data)
+                console.log(data);
                 setApiData(data);
                 setSelectedPlan(data.data.plans.find(plan => plan.currency === 'USD') || data.data.plans[0]);
             } catch (err) {
@@ -196,18 +174,13 @@ const PaymentForm: React.FC = () => {
             }
         };
         fetchProductData();
-    }, []);
+    }, [productId]); // Add productId to dependency array
 
     const validateForm = () => {
         const errors: Record<string, string> = {};
 
         if (paymentMethod === 'credit-card') {
             if (!cardDetails.fullName.trim()) errors.fullName = 'Full name is required';
-            if (!/^\d{16}$/.test(cardDetails.cardNumber.replace(/\D/g, '')))
-                errors.cardNumber = 'Invalid card number (16 digits required)';
-            if (!cardDetails.expiryDate) errors.expiryDate = 'Expiration date is required';
-            else if (cardDetails.expiryDate < new Date()) errors.expiryDate = 'Card has expired';
-            if (!/^\d{3,4}$/.test(cardDetails.cvv)) errors.cvv = 'Invalid CVV (3-4 digits required)';
         } else if (paymentMethod === 'paypal') {
             if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalEmail))
                 errors.paypalEmail = 'Invalid email address';
@@ -249,34 +222,32 @@ const PaymentForm: React.FC = () => {
 
     const calculateDiscountedAmount = (amount: number): number => {
         if (!appliedCoupon) return amount;
-
         let discountedAmount = amount;
         if (appliedCoupon.discountType === 'percentage') {
             discountedAmount = amount * (1 - appliedCoupon.discountValue / 100);
         } else if (appliedCoupon.discountType === 'fixed') {
             discountedAmount = amount - appliedCoupon.discountValue;
         }
-
         return Math.max(0, Math.round(discountedAmount));
     };
 
     const convertAmount = (amount: number): number => {
-        if (!selectedCurrency || !exchangeRates) return amount;
-
-        // Convert from cents to dollars first
-        const amountInDollars = amount / 100;
-
-        // Get the rate for the selected currency
         const rate = exchangeRates[selectedCurrency] || 1;
+        const discountedAmount = calculateDiscountedAmount(amount);
+        return Math.round((discountedAmount / 100) * rate * 100); // Convert from cents to currency, apply rate, back to cents
+    };
 
-        // Apply discount if any
-        const discountedAmount = calculateDiscountedAmount(amountInDollars * 100);
-
-        // Convert to target currency and back to cents
-        const convertedAmount = (discountedAmount / 100) * rate;
-
-        // Round to nearest cent
-        return Math.round(convertedAmount * 100);
+    const formatPrice = (amount: number): string => {
+        try {
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: selectedCurrency,
+                currencyDisplay: 'symbol',
+            }).format(amount / 100);
+        } catch (err) {
+            console.error('Error formatting price:', err);
+            return `${(amount / 100).toFixed(2)} ${selectedCurrency}`;
+        }
     };
 
     // Create Stripe payment method
@@ -360,35 +331,13 @@ const PaymentForm: React.FC = () => {
         }
     };
 
-    const formatPrice = (amount: number): string => {
-        const amountInCurrency = amount / 100; // Convert cents to currency units
-
-        let fractionDigits = 2;
-        try {
-            // Some currencies don't have decimal places
-            fractionDigits = ['JPY', 'KRW', 'VND'].includes(selectedCurrency) ? 0 : 2;
-
-            return new Intl.NumberFormat('en-US', {
-                style: 'currency',
-                currency: selectedCurrency,
-                currencyDisplay: 'symbol',
-                minimumFractionDigits: fractionDigits,
-                maximumFractionDigits: fractionDigits,
-            }).format(amountInCurrency);
-        } catch (err) {
-            console.error('Error formatting price:', err);
-            // Fallback formatting
-            return `${amountInCurrency.toFixed(fractionDigits)} ${selectedCurrency}`;
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!validateForm()) return;
 
         try {
             setLoading(true);
-            
+            setError(null);
             let paymentMethodResponse = null;
 
             if (paymentMethod === 'credit-card') {
@@ -402,41 +351,24 @@ const PaymentForm: React.FC = () => {
                 cardDetails: paymentMethod === 'credit-card' ? cardDetails : undefined,
                 paypalEmail: paymentMethod === 'paypal' ? paypalEmail : undefined,
                 bankDetails: paymentMethod === 'bank-transfer' ? bankDetails : undefined,
-                selectedPlan: selectedPlan ? {
-                    ...selectedPlan,
-                    amount: convertAmount(selectedPlan.amount),
-                    currency: selectedCurrency,
-                } : null,
+                selectedPlan: selectedPlan
+                    ? {
+                          ...selectedPlan,
+                          amount: convertAmount(selectedPlan.amount),
+                          currency: selectedCurrency,
+                      }
+                    : null,
                 coupon: appliedCoupon,
                 currency: selectedCurrency,
             };
 
             console.log('Processing payment:', paymentData);
-            alert('Payment processed successfully!');
+            alert('Payment processed and subscription created successfully!');
         } catch (err) {
-            setError('Payment processing failed. Please try again.');
-            console.error(err);
+            console.error('Submission error:', err);
         } finally {
             setLoading(false);
         }
-    };
-
-    const calculateTotalAmount = (planAmount: number): number => {
-        // Calculate tax (18% GST)
-        const taxAmount = Math.round(planAmount * 0.18);
-
-        // Apply coupon discount if any
-        let totalAmount = planAmount + taxAmount;
-
-        if (appliedCoupon) {
-            if (appliedCoupon.discountType === 'percentage') {
-                totalAmount = Math.round(totalAmount * (1 - appliedCoupon.discountValue / 100));
-            } else if (appliedCoupon.discountType === 'fixed') {
-                totalAmount = Math.max(0, totalAmount - appliedCoupon.discountValue);
-            }
-        }
-
-        return totalAmount;
     };
 
     return (
@@ -454,34 +386,6 @@ const PaymentForm: React.FC = () => {
                     .custom-tooltip::after {
                         border-top-color: #f97316;
                     }
-                    .react-datepicker {
-                        border: 1px solid #d1d5db;
-                        border-radius: 0.5rem;
-                        width: 100%;
-                        font-family: inherit;
-                    }
-                    .react-datepicker__header {
-                        background-color: #f97316;
-                        color: white;
-                        border-bottom: none;
-                        border-radius: 0.5rem 0.5rem 0 0;
-                    }
-                    .react-datepicker__day--selected,
-                    .react-datepicker__day--keyboard-selected {
-                        background-color: #f97316;
-                        color: white;
-                    }
-                    .react-datepicker__day:hover {
-                        background-color: #ea580c;
-                        color: white;
-                    }
-                    .react-datepicker__month-select,
-                    .react-datepicker__year-select {
-                        background-color: #fff;
-                        color: #000;
-                        border-radius: 0.25rem;
-                        padding: 0.25rem;
-                    }
                     .error-input {
                         border-color: #ef4444 !important;
                     }
@@ -494,6 +398,16 @@ const PaymentForm: React.FC = () => {
                         color: #10b981;
                         font-size: 0.75rem;
                         margin-top: 0.25rem;
+                    }
+                    .stripe-card {
+                        border: 1px solid #d1d5db;
+                        border-radius: 0.5rem;
+                        padding: 0.75rem;
+                        background-color: #ffffff;
+                    }
+                    .dark .stripe-card {
+                        background-color: #1f2937;
+                        border-color: #4b5563;
                     }
                 `}
             </style>
@@ -576,15 +490,16 @@ const PaymentForm: React.FC = () => {
                                     Payment Method
                                 </label>
                                 <div className="flex flex-wrap gap-3">
-                                    {['credit-card', 'paypal', 'bank-transfer'].map((method) => (
+                                    {(['credit-card', 'paypal', 'bank-transfer'] as const).map((method) => (
                                         <button
                                             key={method}
                                             type="button"
                                             onClick={() => setPaymentMethod(method)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${paymentMethod === method
-                                                ? 'bg-[#f97316] text-white'
-                                                : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
-                                                }`}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                paymentMethod === method
+                                                    ? 'bg-[#f97316] text-white'
+                                                    : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
+                                            }`}
                                         >
                                             {method === 'credit-card' ? 'Credit Card' : method === 'paypal' ? 'PayPal' : 'Bank Transfer'}
                                         </button>
@@ -608,8 +523,9 @@ const PaymentForm: React.FC = () => {
                                             name="fullName"
                                             value={cardDetails.fullName}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.fullName ? 'error-input' : ''
-                                                }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                                                formErrors.fullName ? 'error-input' : ''
+                                            }`}
                                             placeholder="Bonnie Green"
                                             required
                                         />
@@ -617,98 +533,36 @@ const PaymentForm: React.FC = () => {
                                             <p className="error-text">{formErrors.fullName}</p>
                                         )}
                                     </div>
-
                                     <div>
                                         <label
-                                            htmlFor="card-number-input"
+                                            htmlFor="card-element"
                                             className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                                         >
-                                            Card Number*
+                                            Card Details*
                                         </label>
-                                        <input
-                                            type="text"
-                                            id="card-number-input"
-                                            name="cardNumber"
-                                            value={cardDetails.cardNumber}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.cardNumber ? 'error-input' : ''
-                                                }`}
-                                            placeholder="xxxx-xxxx-xxxx-xxxx"
-                                            required
-                                        />
-                                        {formErrors.cardNumber && (
-                                            <p className="error-text">{formErrors.cardNumber}</p>
+                                        <div className="stripe-card">
+                                            <CardElement
+                                                id="card-element"
+                                                options={{
+                                                    style: {
+                                                        base: {
+                                                            fontSize: '14px',
+                                                            color: '#374151',
+                                                            '::placeholder': {
+                                                                color: '#9ca3af',
+                                                            },
+                                                        },
+                                                        invalid: {
+                                                            color: '#ef4444',
+                                                        },
+                                                    },
+                                                }}
+                                                onChange={() => setFormErrors((prev) => ({ ...prev, cardDetails: '' }))}
+                                            />
+                                        </div>
+                                        {formErrors.cardDetails && (
+                                            <p className="error-text">{formErrors.cardDetails}</p>
                                         )}
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor="card-expiration-input"
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            Card Expiration*
-                                        </label>
-                                        <DatePicker
-                                            selected={cardDetails.expiryDate}
-                                            onChange={(date: Date) => setCardDetails((prev) => ({ ...prev, expiryDate: date }))}
-                                            dateFormat="MM/yyyy"
-                                            showMonthYearPicker
-                                            minDate={new Date()}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.expiryDate ? 'error-input' : ''
-                                                }`}
-                                            placeholderText="MM/YYYY"
-                                            required
-                                        />
-                                        {formErrors.expiryDate && (
-                                            <p className="error-text">{formErrors.expiryDate}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor="cvv-input"
-                                            className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            CVV*
-                                            <button
-                                                data-tooltip-target="cvv-desc"
-                                                className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white"
-                                            >
-                                                <svg
-                                                    className="h-4 w-4"
-                                                    aria-hidden="true"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 10 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                            <div
-                                                id="cvv-desc"
-                                                role="tooltip"
-                                                className="absolute z-10 invisible inline-block opacity-0 transition-opacity duration-300 custom-tooltip"
-                                            >
-                                                The last 3 digits on back of card
-                                                <div className="tooltip-arrow" data-popper-arrow></div>
-                                            </div>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            id="cvv-input"
-                                            name="cvv"
-                                            value={cardDetails.cvv}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.cvv ? 'error-input' : ''
-                                                }`}
-                                            placeholder="•••"
-                                            required
-                                        />
-                                        {formErrors.cvv && <p className="error-text">{formErrors.cvv}</p>}
                                     </div>
                                 </div>
                             )}
@@ -730,8 +584,9 @@ const PaymentForm: React.FC = () => {
                                             setPaypalEmail(e.target.value);
                                             setFormErrors((prev) => ({ ...prev, paypalEmail: '' }));
                                         }}
-                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.paypalEmail ? 'error-input' : ''
-                                            }`}
+                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                                            formErrors.paypalEmail ? 'error-input' : ''
+                                        }`}
                                         placeholder="your.email@example.com"
                                         required
                                     />
@@ -757,8 +612,9 @@ const PaymentForm: React.FC = () => {
                                             name="accountHolder"
                                             value={bankDetails.accountHolder}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.accountHolder ? 'error-input' : ''
-                                                }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                                                formErrors.accountHolder ? 'error-input' : ''
+                                            }`}
                                             placeholder="Account holder name"
                                             required
                                         />
@@ -779,8 +635,9 @@ const PaymentForm: React.FC = () => {
                                             name="bankName"
                                             value={bankDetails.bankName}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.bankName ? 'error-input' : ''
-                                                }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                                                formErrors.bankName ? 'error-input' : ''
+                                            }`}
                                             placeholder="Enter bank name"
                                             required
                                         />
@@ -801,8 +658,9 @@ const PaymentForm: React.FC = () => {
                                             name="accountNumber"
                                             value={bankDetails.accountNumber}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.accountNumber ? 'error-input' : ''
-                                                }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                                                formErrors.accountNumber ? 'error-input' : ''
+                                            }`}
                                             placeholder="Enter account number"
                                             required
                                         />
@@ -823,8 +681,9 @@ const PaymentForm: React.FC = () => {
                                             name="routingNumber"
                                             value={bankDetails.routingNumber}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.routingNumber ? 'error-input' : ''
-                                                }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
+                                                formErrors.routingNumber ? 'error-input' : ''
+                                            }`}
                                             placeholder="Enter routing number"
                                             required
                                         />
@@ -837,7 +696,7 @@ const PaymentForm: React.FC = () => {
 
                             <button
                                 type="submit"
-                                disabled={loading}
+                                disabled={loading || !stripe || !elements}
                                 className="w-full bg-[#f97316] text-white font-medium rounded-lg px-5 py-3 text-sm hover:bg-[#ea580c] focus:outline-none focus:ring-4 focus:ring-[#f97316]/50 dark:bg-[#f97316] dark:hover:bg-[#ea580c] dark:focus:ring-[#f97316]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? 'Processing...' : 'Pay Now'}
@@ -855,10 +714,11 @@ const PaymentForm: React.FC = () => {
                                             key={plan.id}
                                             type="button"
                                             onClick={() => setSelectedPlan(plan)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedPlan?.id === plan.id
-                                                ? 'bg-[#f97316] text-white'
-                                                : 'bg-gray-100 text-gray-900 dark:bg-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-500'
-                                                }`}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                                selectedPlan?.id === plan.id
+                                                    ? 'bg-[#f97316] text-white'
+                                                    : 'bg-gray-100 text-gray-900 dark:bg-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-500'
+                                            }`}
                                         >
                                             {plan.interval === 'year' ? 'Yearly' : 'Monthly'} (
                                             {formatPrice(convertAmount(plan.amount))})
@@ -879,13 +739,12 @@ const PaymentForm: React.FC = () => {
 
                                         <div className="flex items-center justify-between gap-4">
                                             <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                                Tax (18% GST)
+                                                Tax
                                             </dt>
                                             <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                                                {formatPrice(convertAmount(Math.round((selectedPlan?.amount || 0) * 0.18)))}
+                                                {formatPrice(convertAmount(79900))}
                                             </dd>
                                         </div>
-
 
                                         {appliedCoupon && (
                                             <div className="flex items-center justify-between gap-4">
@@ -905,7 +764,7 @@ const PaymentForm: React.FC = () => {
                                                 Total
                                             </dt>
                                             <dd className="text-sm font-bold text-gray-900 dark:text-white">
-                                                {selectedPlan ? formatPrice(convertAmount(calculateTotalAmount(selectedPlan.amount))) : formatPrice(0)}
+                                                {selectedPlan ? formatPrice(convertAmount(selectedPlan.amount + 79900)) : formatPrice(convertAmount(79900))}
                                             </dd>
                                         </div>
                                     </dl>
@@ -974,10 +833,10 @@ const PaymentForm: React.FC = () => {
                     <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
                         Payment processed by{' '}
                         <a
-                            href="#"
+                            href="https://stripe.com"
                             className="font-medium text-[#f97316] hover:no-underline dark:text-[#f97316]"
                         >
-                            Paddle
+                            Stripe
                         </a>{' '}
                         for{' '}
                         <a
@@ -994,4 +853,11 @@ const PaymentForm: React.FC = () => {
     );
 };
 
-export default PaymentForm;
+// Wrap the PaymentForm with Elements provider
+const WrappedPaymentForm: React.FC = () => (
+    <Elements stripe={stripePromise}>
+        <PaymentForm />
+    </Elements>
+);
+
+export default WrappedPaymentForm;
