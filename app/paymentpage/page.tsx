@@ -117,31 +117,45 @@ const PaymentForm: React.FC = () => {
         }
 
         const fetchExchangeRates = async () => {
+            const apiKey = '62184da350a23cc1dedff0389915db3e';
             try {
-                const apiKey = process.env.NEXT_PUBLIC_EXCHANGERATES_API_KEY || '62184da350a23cc1dedff0389915db3e';
+                // Try the first API
                 const response = await fetchWithBackoff(
-                    `https://api.exchangeratesapi.io/v1/latest?access_key=${apiKey}`,
+                    `https://api.exchangerate-api.com/v4/latest/USD`,
                     { method: 'GET' }
                 );
-                if (!response.ok) {
+
+                if (!response.ok) throw new Error('First API failed');
+
+                const data = await response.json();
+                if (!data.rates) throw new Error('Invalid response format');
+
+                // Ensure USD is always 1
+                const rates = { USD: 1, ...data.rates };
+                setExchangeRates(rates);
+                localStorage.setItem('exchangeRates', JSON.stringify(rates));
+                localStorage.setItem('exchangeRatesTimestamp', Date.now().toString());
+            } catch (err) {
+                console.error('First API failed, trying fallback:', err);
+                try {
+                    // Fallback API
                     const fallbackResponse = await fetchWithBackoff(
-                        `https://latest.currency-api.pages.dev/v1/currencies/usd.json`,
+                        `https://api.exchangeratesapi.io/v1/latest?access_key=${apiKey}`,
                         { method: 'GET' }
                     );
-                    const data: ExchangeRateResponse = await fallbackResponse.json();
-                    setExchangeRates({ USD: 1, ...data.rates });
-                    localStorage.setItem('exchangeRates', JSON.stringify({ USD: 1, ...data.rates }));
+
+                    const fallbackData = await fallbackResponse.json();
+                    if (!fallbackData.rates) throw new Error('Invalid fallback response');
+
+                    const rates = { USD: 1, ...fallbackData.rates };
+                    setExchangeRates(rates);
+                    localStorage.setItem('exchangeRates', JSON.stringify(rates));
                     localStorage.setItem('exchangeRatesTimestamp', Date.now().toString());
-                } else {
-                    const data: ExchangeRateResponse = await response.json();
-                    if (data.success === false) throw new Error('Failed to fetch exchange rates');
-                    setExchangeRates({ USD: 1, ...data.rates });
-                    localStorage.setItem('exchangeRates', JSON.stringify({ USD: 1, ...data.rates }));
-                    localStorage.setItem('exchangeRatesTimestamp', Date.now().toString());
+                } catch (fallbackErr) {
+                    console.error('Fallback API failed:', fallbackErr);
+                    setError('Failed to fetch exchange rates. Using default USD.');
+                    setExchangeRates({ USD: 1 });
                 }
-            } catch (err) {
-                setError('Failed to fetch exchange rates. Using default USD.');
-                console.error(err);
             }
         };
         fetchExchangeRates();
@@ -149,11 +163,14 @@ const PaymentForm: React.FC = () => {
 
     // Fetch product data
     useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const productId = urlParams.get('productId');
+        console.log(productId)
         const fetchProductData = async () => {
             try {
                 setLoading(true);
                 const response = await fetchWithBackoff(
-                    `https://api.tagwell.co/api/v4/ai-agent/billing/products/1636/plans`,
+                    `https://api.tagwell.co/api/v4/ai-agent/billing/products/${productId}/plans`,
                     {
                         method: 'GET',
                         headers: { 'Content-Type': 'application/json' },
@@ -161,6 +178,7 @@ const PaymentForm: React.FC = () => {
                 );
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data: ApiResponse = await response.json();
+                console.log(data)
                 setApiData(data);
                 setSelectedPlan(data.data.plans.find(plan => plan.currency === 'USD') || data.data.plans[0]);
             } catch (err) {
@@ -224,31 +242,55 @@ const PaymentForm: React.FC = () => {
 
     const calculateDiscountedAmount = (amount: number): number => {
         if (!appliedCoupon) return amount;
+
         let discountedAmount = amount;
         if (appliedCoupon.discountType === 'percentage') {
             discountedAmount = amount * (1 - appliedCoupon.discountValue / 100);
         } else if (appliedCoupon.discountType === 'fixed') {
             discountedAmount = amount - appliedCoupon.discountValue;
         }
+
         return Math.max(0, Math.round(discountedAmount));
     };
 
     const convertAmount = (amount: number): number => {
+        if (!selectedCurrency || !exchangeRates) return amount;
+
+        // Convert from cents to dollars first
+        const amountInDollars = amount / 100;
+
+        // Get the rate for the selected currency
         const rate = exchangeRates[selectedCurrency] || 1;
-        const discountedAmount = calculateDiscountedAmount(amount);
-        return Math.round((discountedAmount / 100) * rate * 100); // Convert from cents to currency, apply rate, back to cents
+
+        // Apply discount if any
+        const discountedAmount = calculateDiscountedAmount(amountInDollars * 100);
+
+        // Convert to target currency and back to cents
+        const convertedAmount = (discountedAmount / 100) * rate;
+
+        // Round to nearest cent
+        return Math.round(convertedAmount * 100);
     };
 
     const formatPrice = (amount: number): string => {
+        const amountInCurrency = amount / 100; // Convert cents to currency units
+
+        let fractionDigits = 2;
         try {
+            // Some currencies don't have decimal places
+            fractionDigits = ['JPY', 'KRW', 'VND'].includes(selectedCurrency) ? 0 : 2;
+
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
                 currency: selectedCurrency,
                 currencyDisplay: 'symbol',
-            }).format(amount / 100);
+                minimumFractionDigits: fractionDigits,
+                maximumFractionDigits: fractionDigits,
+            }).format(amountInCurrency);
         } catch (err) {
             console.error('Error formatting price:', err);
-            return (amount / 100).toFixed(2) + ' ' + selectedCurrency;
+            // Fallback formatting
+            return `${amountInCurrency.toFixed(fractionDigits)} ${selectedCurrency}`;
         }
     };
 
@@ -280,6 +322,24 @@ const PaymentForm: React.FC = () => {
         } finally {
             setLoading(false);
         }
+    };
+
+    const calculateTotalAmount = (planAmount: number): number => {
+        // Calculate tax (18% GST)
+        const taxAmount = Math.round(planAmount * 0.18);
+
+        // Apply coupon discount if any
+        let totalAmount = planAmount + taxAmount;
+
+        if (appliedCoupon) {
+            if (appliedCoupon.discountType === 'percentage') {
+                totalAmount = Math.round(totalAmount * (1 - appliedCoupon.discountValue / 100));
+            } else if (appliedCoupon.discountType === 'fixed') {
+                totalAmount = Math.max(0, totalAmount - appliedCoupon.discountValue);
+            }
+        }
+
+        return totalAmount;
     };
 
     return (
@@ -424,11 +484,10 @@ const PaymentForm: React.FC = () => {
                                             key={method}
                                             type="button"
                                             onClick={() => setPaymentMethod(method)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                                paymentMethod === method
-                                                    ? 'bg-[#f97316] text-white'
-                                                    : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
-                                            }`}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${paymentMethod === method
+                                                ? 'bg-[#f97316] text-white'
+                                                : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
+                                                }`}
                                         >
                                             {method === 'credit-card' ? 'Credit Card' : method === 'paypal' ? 'PayPal' : 'Bank Transfer'}
                                         </button>
@@ -452,9 +511,8 @@ const PaymentForm: React.FC = () => {
                                             name="fullName"
                                             value={cardDetails.fullName}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                                formErrors.fullName ? 'error-input' : ''
-                                            }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.fullName ? 'error-input' : ''
+                                                }`}
                                             placeholder="Bonnie Green"
                                             required
                                         />
@@ -476,9 +534,8 @@ const PaymentForm: React.FC = () => {
                                             name="cardNumber"
                                             value={cardDetails.cardNumber}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                                formErrors.cardNumber ? 'error-input' : ''
-                                            }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.cardNumber ? 'error-input' : ''
+                                                }`}
                                             placeholder="xxxx-xxxx-xxxx-xxxx"
                                             required
                                         />
@@ -500,9 +557,8 @@ const PaymentForm: React.FC = () => {
                                             dateFormat="MM/yyyy"
                                             showMonthYearPicker
                                             minDate={new Date()}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                                formErrors.expiryDate ? 'error-input' : ''
-                                            }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.expiryDate ? 'error-input' : ''
+                                                }`}
                                             placeholderText="MM/YYYY"
                                             required
                                         />
@@ -550,9 +606,8 @@ const PaymentForm: React.FC = () => {
                                             name="cvv"
                                             value={cardDetails.cvv}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                                formErrors.cvv ? 'error-input' : ''
-                                            }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.cvv ? 'error-input' : ''
+                                                }`}
                                             placeholder="•••"
                                             required
                                         />
@@ -578,9 +633,8 @@ const PaymentForm: React.FC = () => {
                                             setPaypalEmail(e.target.value);
                                             setFormErrors((prev) => ({ ...prev, paypalEmail: '' }));
                                         }}
-                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                            formErrors.paypalEmail ? 'error-input' : ''
-                                        }`}
+                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.paypalEmail ? 'error-input' : ''
+                                            }`}
                                         placeholder="your.email@example.com"
                                         required
                                     />
@@ -606,9 +660,8 @@ const PaymentForm: React.FC = () => {
                                             name="accountHolder"
                                             value={bankDetails.accountHolder}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                                formErrors.accountHolder ? 'error-input' : ''
-                                            }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.accountHolder ? 'error-input' : ''
+                                                }`}
                                             placeholder="Account holder name"
                                             required
                                         />
@@ -629,9 +682,8 @@ const PaymentForm: React.FC = () => {
                                             name="bankName"
                                             value={bankDetails.bankName}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                                formErrors.bankName ? 'error-input' : ''
-                                            }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.bankName ? 'error-input' : ''
+                                                }`}
                                             placeholder="Enter bank name"
                                             required
                                         />
@@ -652,9 +704,8 @@ const PaymentForm: React.FC = () => {
                                             name="accountNumber"
                                             value={bankDetails.accountNumber}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                                formErrors.accountNumber ? 'error-input' : ''
-                                            }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.accountNumber ? 'error-input' : ''
+                                                }`}
                                             placeholder="Enter account number"
                                             required
                                         />
@@ -675,9 +726,8 @@ const PaymentForm: React.FC = () => {
                                             name="routingNumber"
                                             value={bankDetails.routingNumber}
                                             onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${
-                                                formErrors.routingNumber ? 'error-input' : ''
-                                            }`}
+                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.routingNumber ? 'error-input' : ''
+                                                }`}
                                             placeholder="Enter routing number"
                                             required
                                         />
@@ -708,11 +758,10 @@ const PaymentForm: React.FC = () => {
                                             key={plan.id}
                                             type="button"
                                             onClick={() => setSelectedPlan(plan)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                                                selectedPlan?.id === plan.id
-                                                    ? 'bg-[#f97316] text-white'
-                                                    : 'bg-gray-100 text-gray-900 dark:bg-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-500'
-                                            }`}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedPlan?.id === plan.id
+                                                ? 'bg-[#f97316] text-white'
+                                                : 'bg-gray-100 text-gray-900 dark:bg-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-500'
+                                                }`}
                                         >
                                             {plan.interval === 'year' ? 'Yearly' : 'Monthly'} (
                                             {formatPrice(convertAmount(plan.amount))})
@@ -733,12 +782,13 @@ const PaymentForm: React.FC = () => {
 
                                         <div className="flex items-center justify-between gap-4">
                                             <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                                Tax
+                                                Tax (18% GST)
                                             </dt>
                                             <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                                                {formatPrice(convertAmount(79900))}
+                                                {formatPrice(convertAmount(Math.round((selectedPlan?.amount || 0) * 0.18)))}
                                             </dd>
                                         </div>
+
 
                                         {appliedCoupon && (
                                             <div className="flex items-center justify-between gap-4">
@@ -758,7 +808,7 @@ const PaymentForm: React.FC = () => {
                                                 Total
                                             </dt>
                                             <dd className="text-sm font-bold text-gray-900 dark:text-white">
-                                                {selectedPlan ? formatPrice(convertAmount(selectedPlan.amount + 79900)) : formatPrice(convertAmount(79900))}
+                                                {selectedPlan ? formatPrice(convertAmount(calculateTotalAmount(selectedPlan.amount))) : formatPrice(0)}
                                             </dd>
                                         </div>
                                     </dl>

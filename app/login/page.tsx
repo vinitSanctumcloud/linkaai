@@ -10,6 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { toast } from 'sonner'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { login } from '@/services/authService'
+import PublicRoute from './../../components/auth/PublicRoute' // Adjust the import path as necessary
 
 interface FormData {
   email: string
@@ -63,11 +64,28 @@ export default function LoginPage() {
           return
         }
 
+        // Update the login success part of your handleSubmit function
         if (result?.data) {
-          toast.success('Welcome back!')
-          router.push('/dashboard')
-          router.refresh()
+          const accessToken = result.data.access_token;
+
+          if (!accessToken) {
+            toast.error('Authentication failed. Please log in again.');
+            router.push('/login');
+            return;
+          }
+
+          // Store the access token and user data
+          localStorage.setItem('accessToken', accessToken);
+
+          if (result.data.user) {
+            localStorage.setItem('user', JSON.stringify(result.data.user));
+          }
+
+          toast.success('Welcome back!');
+          router.push('/dashboard');
+          router.refresh();
         }
+
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
         setError(errorMessage)
@@ -86,6 +104,7 @@ export default function LoginPage() {
   }
 
   return (
+     <PublicRoute>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="mb-6">
@@ -175,5 +194,6 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
+    </PublicRoute>
   )
 }

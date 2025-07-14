@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation';
 import {
   TrendingUp,
   Users,
@@ -58,6 +59,8 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
+  const router = useRouter();
+
   useEffect(() => {
     const fetchPricingData = async () => {
       try {
@@ -78,6 +81,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
           freeTrial: product.is_free_trial_enable || false,
           freeTrialDays: product.free_trial_days || 0,
           isPopular: product.product_name === 'AI Pro',
+          product_id: product.product_id,
         }))
 
         setPlans(processedPlans)
@@ -91,10 +95,12 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
     fetchPricingData()
   }, [])
 
-  const handlePlanSelect = (plan: Plan) => {
-    setSelectedPlan(plan)
-    setIsModalOpen(true)
-  }
+  const handlePlanSelect = (plan: any) => {
+    console.log(plan, 'plan');
+    const productId = plan.product_id;
+    console.log(productId, 'productId');
+    router.push(`/paymentpage?productId=${productId}`);
+  };
 
   const closeModal = () => {
     setIsModalOpen(false)
@@ -442,24 +448,24 @@ export default function DashboardPage() {
   const chatUrl = settings?.customUrl ? `/chat/${settings.customUrl}` : ''
 
   useEffect(() => {
-    // Check if the user has visited this session
-    const hasVisited = sessionStorage.getItem('hasVisited');
+    const LAST_VISIT_KEY = 'lastPricingShown';
+    const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
 
-    if (!hasVisited) {
-      // First visit in this session, show pricing
+    const lastShown = localStorage.getItem(LAST_VISIT_KEY);
+    const now = Date.now();
+
+    if (!lastShown || now - parseInt(lastShown) > ONE_HOUR) {
       setShowPricing(true);
-      // Mark as visited in sessionStorage
-      sessionStorage.setItem('hasVisited', 'true');
+      localStorage.setItem(LAST_VISIT_KEY, now.toString());
 
-      // Set timeout to hide pricing after 10 seconds
       const timeout = setTimeout(() => {
-        setShowPricing(false);
-      }, 10000); // 10000 ms = 10 seconds
+        setShowPricing(true);
+      }, 10000); // Hide after 10 seconds
 
-      // Cleanup timeout on component unmount
       return () => clearTimeout(timeout);
     }
   }, []);
+
 
   return (
     <DashboardLayout>

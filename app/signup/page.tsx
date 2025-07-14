@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import ReCAPTCHA from 'react-google-recaptcha'
+import PublicRoute from './../../components/auth/PublicRoute' // Adjust the import path as necessary
 
 import { signup } from '@/services/authService'
 
@@ -111,6 +112,7 @@ export default function SignupPage() {
   }, [formData, router, validateInput]);
 
   return (
+    <PublicRoute>
     <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="w-full max-w-2xl space-y-6">
         <div className="flex items-center">
@@ -398,5 +400,6 @@ export default function SignupPage() {
         </Card>
       </div>
     </div>
+    </PublicRoute>
   )
 }
