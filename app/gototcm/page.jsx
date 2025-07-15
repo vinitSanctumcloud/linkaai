@@ -61,7 +61,7 @@ const ComingSoon = () => {
           <p className="text-gray-300 text-lg mb-8">
             Just 20 days until the launch of Moodify! Be the first to experience our revolutionary product.
           </p>
-          <div className="flex justify-center gap-4 mb-8">
+          {/* <div className="flex justify-center gap-4 mb-8">
             <div className="flex flex-col min-w-[60px]">
               <h3 className="text-3xl font-bold text-white">{countdown.days}</h3>
               <p className="text-xs text-gray-300 uppercase">DAYS</p>
@@ -81,8 +81,8 @@ const ComingSoon = () => {
               <h3 className="text-3xl font-bold text-white">{countdown.seconds}</h3>
               <p className="text-xs text-gray-300 uppercase">SECS</p>
             </div>
-          </div>
-          <h6 className="text-[#f9943b] text-base font-semibold mb-6">Launch Date: August 3, 2025</h6>
+          </div> */}
+          {/* <h6 className="text-[#f9943b] text-base font-semibold mb-6">Launch Date: August 3, 2025</h6> */}
           <div className="flex justify-center gap-2 flex-wrap">
             <input
               type="email"

@@ -536,7 +536,7 @@ export default function DashboardPage() {
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 md:gap-6">
               <StatCard
-                title="Chat"
+                title="Total Chat"
                 value={analytics?.totalViews?.toLocaleString() || '0'}
                 icon={<Users className="h-5 w-5" />}
                 trend="up"
@@ -614,7 +614,7 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 group-hover:bg-gray-50/50 dark:group-hover:bg-gray-800/50 px-2 -mx-2 rounded-lg transition-colors duration-300">
                         <div className="flex items-center space-x-3">
                           <div className="h-2 w-2 rounded-full bg-blue-500 pointer-events-none"></div>
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Affiliate Products</span>
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Affiliate Links</span>
                         </div>
                         <div className="flex items-center">
                           <span className="text-sm font-medium text-gray-900 dark:text-white mr-2">

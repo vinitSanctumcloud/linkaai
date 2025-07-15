@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Switch } from '@/components/ui/switch'
-import { Upload, Bot, Plus, X, Save, Send, Mic, Eye, ArrowLeft, ArrowRight, Edit, Trash2, GitBranch, MessageSquare, InfoIcon, LinkIcon, Link2 } from 'lucide-react'
+import { Upload, Bot, Plus, X, Save, Send, Mic, Eye, ArrowLeft, ArrowRight, Edit, Trash2, GitBranch, MessageSquare, InfoIcon, LinkIcon, Link2, ImageIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ConditionalPrompt {
@@ -27,14 +27,23 @@ interface PartnerLink {
   affiliateLink: string
   productReview?: string
   socialMediaLink?: string
+  affiliateimage?: affiliateimage
 }
 
+interface affiliateimage {
+  name?: string
+}
 interface LinkaProMonetization {
   id: string
   category: string
   affiliateBrandName: string
   mainUrl: string
+  mainimage?: mainimage
 }
+interface mainimage {
+  name?: string
+}
+
 
 interface AgentConfig {
   name: string
@@ -53,6 +62,7 @@ interface AgentConfig {
 export default function AgentBuilderPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showPreview, setShowPreview] = useState(false)
+  const [activeTab, setActiveTab] = useState<'partner' | 'aipro'>('partner') // New state for tab
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: '',
     trainingInstructions: '',
@@ -151,16 +161,31 @@ export default function AgentBuilderPage() {
   const addPartnerLink = () => {
     setAgentConfig(prev => ({
       ...prev,
-      partnerLinks: [...prev.partnerLinks, { id: Date.now().toString(), category: '', affiliateBrandName: '', affiliateLink: '', productReview: '', socialMediaLink: '' }]
+      partnerLinks: [
+        ...prev.partnerLinks,
+        {
+          id: Date.now().toString(),
+          category: '',
+          affiliateBrandName: '',
+          affiliateLink: '',
+          productReview: '',
+          socialMediaLink: '',
+          affiliateimage: undefined // or { name: '' }
+        }
+      ]
     }))
   }
 
-  const updatePartnerLink = (id: string, field: keyof PartnerLink, value: string) => {
-    setAgentConfig(prev => ({
-      ...prev,
-      partnerLinks: prev.partnerLinks.map(link => link.id === id ? { ...link, [field]: value } : link)
-    }))
-  }
+
+  const updatePartnerLink = (id: string, field: string, value: string | File | null) => {
+    console.log(field, value, 'data')
+    setAgentConfig((prevConfig) => ({
+      ...prevConfig,
+      partnerLinks: prevConfig.partnerLinks.map((link) =>
+        link.id === id ? { ...link, [field]: value } : link
+      ),
+    }));
+  };
 
   const removePartnerLink = (id: string) => {
     setAgentConfig(prev => ({
@@ -173,11 +198,12 @@ export default function AgentBuilderPage() {
   const addLinkaProMonetization = () => {
     setAgentConfig(prev => ({
       ...prev,
-      linkaProMonetizations: [...prev.linkaProMonetizations, { id: Date.now().toString(), category: '', affiliateBrandName: '', mainUrl: '' }]
+      linkaProMonetizations: [...prev.linkaProMonetizations, { id: Date.now().toString(), category: '', affiliateBrandName: '', mainUrl: '', mainimage: undefined }]
     }))
   }
 
-  const updateLinkaProMonetization = (id: string, field: keyof LinkaProMonetization, value: string) => {
+  const updateLinkaProMonetization = (id: string, field: keyof LinkaProMonetization, value: string | File | null ) => {
+    console.log(field, value , 'dara')
     setAgentConfig(prev => ({
       ...prev,
       linkaProMonetizations: prev.linkaProMonetizations.map(link => link.id === id ? { ...link, [field]: value } : link)
@@ -470,10 +496,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   value={agentConfig.trainingInstructions}
                   onChange={(e) => handleInputChange('trainingInstructions', e.target.value)}
                   rows={8}
-                  className="w-full text-base p-3 border border-gray-300 rounded-lg 
-    focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 
-    transition-all duration-200 placeholder:text-gray-400/60
-    hover:border-gray-400 resize-none"
+                  className="w-full text-base p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-gray-400/60 hover:border-gray-400 resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Clear and detailed instructions will improve your agent's performance
@@ -495,229 +518,353 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   Add affiliate links and Linka Pro monetization options
                 </p>
               </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant={activeTab === 'partner' ? 'default' : 'outline'}
+                  onClick={() => setActiveTab('partner')}
+                  className={`${activeTab === 'partner'
+                    ? 'bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white'
+                    : 'border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10'
+                    } transition-all duration-300 hover:scale-105`}
+                >
+                  Partner URLs
+                </Button>
+                <Button
+                  variant={activeTab === 'aipro' ? 'default' : 'outline'}
+                  onClick={() => setActiveTab('aipro')}
+                  className={`${activeTab === 'aipro'
+                    ? 'bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white'
+                    : 'border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10'
+                    } transition-all duration-300 hover:scale-105`}
+                >
+                  Linka AI Pro Monetization
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="px-6 pb-6 space-y-8">
-              {/* Partner Links Section */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                    <Link2 className="w-5 h-5 text-linka-carolina-blue" />
-                    Partner Links
-                  </h3>
-                  <p className="text-xs text-linka-night/60">
-                    Add affiliate links with detailed information for your AI to recommend
-                  </p>
-                </div>
-                {agentConfig.partnerLinks.length > 0 ? (
-                  <div className="space-y-4">
-                    {agentConfig.partnerLinks.map((link) => (
-                      <Card
-                        key={link.id}
-                        className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300"
-                      >
-                        <CardContent className="p-4 space-y-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`category-${link.id}`} className="text-linka-russian-violet font-medium">
-                                Category <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id={`category-${link.id}`}
-                                placeholder="e.g., Travel, Fashion"
-                                value={link.category}
-                                onChange={(e) => updatePartnerLink(link.id, 'category', e.target.value)}
-                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`brand-${link.id}`} className="text-linka-russian-violet font-medium">
-                                Affiliate Brand Name <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id={`brand-${link.id}`}
-                                placeholder="e.g., Booking.com, Nike"
-                                value={link.affiliateBrandName}
-                                onChange={(e) => updatePartnerLink(link.id, 'affiliateBrandName', e.target.value)}
-                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`affiliate-link-${link.id}`} className="text-linka-russian-violet font-medium">
-                                Affiliate Link <span className="text-red-500">*</span>
-                              </Label>
-                              <div className="relative">
-                                <Input
-                                  id={`affiliate-link-${link.id}`}
-                                  placeholder="https://affiliate-link.com"
-                                  value={link.affiliateLink}
-                                  onChange={(e) => updatePartnerLink(link.id, 'affiliateLink', e.target.value)}
-                                  className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-night/50" />
-                              </div>
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`product-review-${link.id}`} className="text-linka-russian-violet font-medium">
-                                Product Review (Optional)
-                              </Label>
-                              <Textarea
-                                id={`product-review-${link.id}`}
-                                placeholder="e.g., Great for budget travelers!"
-                                value={link.productReview}
-                                onChange={(e) => updatePartnerLink(link.id, 'productReview', e.target.value)}
-                                rows={2}
-                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`social-media-${link.id}`} className="text-linka-russian-violet font-medium">
-                                Social Media Link (Optional)
-                              </Label>
-                              <div className="relative">
-                                <Input
-                                  id={`social-media-${link.id}`}
-                                  placeholder="https://social-media-link.com"
-                                  value={link.socialMediaLink}
-                                  onChange={(e) => updatePartnerLink(link.id, 'socialMediaLink', e.target.value)}
-                                  className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-night/50" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex justify-end">
+              {activeTab === 'partner' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                      <Link2 className="w-5 h-5 text-linka-carolina-blue" />
+                      Partner Links
+                    </h3>
+                    <p className="text-xs text-linka-night/60">
+                      Add affiliate links with detailed information for your AI to recommend
+                    </p>
+                  </div>
+                  {agentConfig.partnerLinks.length > 0 ? (
+                    <div className="space-y-4">
+                      {agentConfig.partnerLinks.map((link) => (
+                        <Card
+                          key={link.id}
+                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
+                        >
+                          <CardContent className="p-4 space-y-4 relative">
                             <Button
-                              variant="outline"
+                              variant="ghost"
                               size="sm"
                               onClick={() => removePartnerLink(link.id)}
-                              className="border-red-200 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-105"
+                              className="absolute top-2 right-2 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-110"
                             >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Remove
+                              <X className="w-5 h-5" />
+                              <span className="sr-only">Remove Partner Link</span>
                             </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
-                    <Link2 className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
-                      No Partner Links Added
-                    </h3>
-                    <p className="text-linka-night/60 mb-4">
-                      Add your first affiliate link to get started
-                    </p>
-                  </div>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={addPartnerLink}
-                  className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {agentConfig.partnerLinks.length > 0 ? 'Add Another Partner Link' : 'Add First Partner Link'}
-                </Button>
-              </div>
-
-              {/* Linka Pro Monetization Section */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                    <LinkIcon className="w-5 h-5 text-linka-dark-orange" />
-                    Linka Pro Monetization
-                  </h3>
-                  <p className="text-xs text-linka-night/60">
-                    Add monetization links for Linka Pro services
-                  </p>
-                </div>
-                {agentConfig.linkaProMonetizations.length > 0 ? (
-                  <div className="space-y-4">
-                    {agentConfig.linkaProMonetizations.map((link) => (
-                      <Card
-                        key={link.id}
-                        className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300"
-                      >
-                        <CardContent className="p-4 space-y-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                              <Label htmlFor={`pro-category-${link.id}`} className="text-linka-russian-violet font-medium">
-                                Category <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id={`pro-category-${link.id}`}
-                                placeholder="e.g., Subscription, Service"
-                                value={link.category}
-                                onChange={(e) => updateLinkaProMonetization(link.id, 'category', e.target.value)}
-                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`pro-brand-${link.id}`} className="text-linka-russian-violet font-medium">
-                                Affiliate Brand Name <span className="text-red-500">*</span>
-                              </Label>
-                              <Input
-                                id={`pro-brand-${link.id}`}
-                                placeholder="e.g., Linka Pro"
-                                value={link.affiliateBrandName}
-                                onChange={(e) => updateLinkaProMonetization(link.id, 'affiliateBrandName', e.target.value)}
-                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor={`pro-main-url-${link.id}`} className="text-linka-russian-violet font-medium">
-                                Main URL <span className="text-red-500">*</span>
-                              </Label>
-                              <div className="relative">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`category-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Category <span className="text-red-500">*</span>
+                                </Label>
                                 <Input
-                                  id={`pro-main-url-${link.id}`}
-                                  placeholder="https://main-url.com"
-                                  value={link.mainUrl}
-                                  onChange={(e) => updateLinkaProMonetization(link.id, 'mainUrl', e.target.value)}
-                                  className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  id={`category-${link.id}`}
+                                  placeholder="e.g., Travel, Fashion"
+                                  value={link.category}
+                                  onChange={(e) => updatePartnerLink(link.id, 'category', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                 />
-                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-night/50" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`brand-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Affiliate Brand Name <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`brand-${link.id}`}
+                                  placeholder="e.g., Booking.com, Nike"
+                                  value={link.affiliateBrandName}
+                                  onChange={(e) => updatePartnerLink(link.id, 'affiliateBrandName', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`image-${link.id}`}
+                                  className="text-linka-russian-violet font-medium block text-sm"
+                                >
+                                  Affiliate Image (Optional)
+                                </Label>
+
+                                <div className="relative flex items-center">
+                                  <ImageIcon className="absolute left-3 w-5 h-5 text-linka-dark-orange pointer-events-none" />
+
+                                  <div className="relative w-full">
+                                    <Input
+                                      id={`image-${link.id}`}
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => {
+                                        const file = e.target.files ? e.target.files[0] : null;
+                                        updatePartnerLink(link.id, 'affiliateimage', file);
+                                      }}
+                                      className="
+                                                  pl-10 pr-4 py-2 w-full 
+                                                  border border-linka-alice-blue rounded-md text-sm 
+                                                  bg-white text-linka-russian-violet opacity-0
+                                                  absolute z-10 cursor-pointer
+                                                  h-full
+                                                "
+                                    />
+                                    <div className="
+                                                  pl-10 pr-4 py-2 w-full 
+                                                  border border-linka-alice-blue rounded-md text-sm 
+                                                  bg-white text-linka-russian-violet
+                                                  flex items-center
+                                                ">
+                                      <span className="text-linka-night/40">
+                                        {link.affiliateimage ? link.affiliateimage?.name : 'Choose file...'}
+                                      </span>
+                                      <span className="
+                                                  ml-auto mr-4 py-2 px-4 
+                                                  rounded-md border-0 
+                                                  text-sm font-medium 
+                                                  bg-linka-carolina-blue text-white 
+                                                  hover:bg-linka-carolina-blue/90
+                                                  active:bg-linka-carolina-blue/80
+                                                  cursor-pointer
+                                                ">
+                                        Browse
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                
+                              </div>
+
+                              <div className="space-y-2">
+                                <Label htmlFor={`affiliate-link-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Affiliate Link <span className="text-red-500">*</span>
+                                </Label>
+                                <div className="relative">
+                                  <Input
+                                    id={`affiliate-link-${link.id}`}
+                                    placeholder="https://affiliate-link.com"
+                                    value={link.affiliateLink}
+                                    onChange={(e) => updatePartnerLink(link.id, 'affiliateLink', e.target.value)}
+                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                  <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`social-media-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Social Media Link (Optional)
+                                </Label>
+                                <div className="relative">
+                                  <Input
+                                    id={`social-media-${link.id}`}
+                                    placeholder="https://social-media-link.com"
+                                    value={link.socialMediaLink}
+                                    onChange={(e) => updatePartnerLink(link.id, 'socialMediaLink', e.target.value)}
+                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`product-review-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Product Review (Optional)
+                                </Label>
+                                <Textarea
+                                  id={`product-review-${link.id}`}
+                                  placeholder="e.g., Great for budget travelers!"
+                                  value={link.productReview}
+                                  onChange={(e) => updatePartnerLink(link.id, 'productReview', e.target.value)}
+                                  rows={2}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
                               </div>
                             </div>
-                          </div>
-                          <div className="flex justify-end">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => removeLinkaProMonetization(link.id)}
-                              className="border-red-200 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-105"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Remove
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
-                    <LinkIcon className="w-12 h-12 text-linka-dark-orange/70 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
-                      No Linka Pro Monetization Added
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
+                      <Link2 className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
+                        No Partner Links Added
+                      </h3>
+                      <p className="text-linka-night/60 mb-4">
+                        Add your first affiliate link to get started
+                      </p>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={addPartnerLink}
+                    className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {agentConfig.partnerLinks.length > 0 ? 'Add Another Partner Link' : 'Add First Partner Link'}
+                  </Button>
+                </div>
+              )}
+              {activeTab === 'aipro' && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                      <LinkIcon className="w-5 h-5 text-linka-dark-orange" />
+                      AI Pro Monetization
                     </h3>
-                    <p className="text-linka-night/60 mb-4">
-                      Add your first Linka Pro monetization link to get started
+                    <p className="text-xs text-linka-night/60">
+                      Add monetization links for AI Pro services
                     </p>
                   </div>
-                )}
-                <Button
-                  variant="outline"
-                  onClick={addLinkaProMonetization}
-                  className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {agentConfig.linkaProMonetizations.length > 0 ? 'Add Another Monetization Link' : 'Add First Monetization Link'}
-                </Button>
-              </div>
+                  {agentConfig.linkaProMonetizations.length > 0 ? (
+                    <div className="space-y-4">
+                      {agentConfig.linkaProMonetizations.map((link) => (
+                        <Card
+                          key={link.id}
+                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
+                        >
+                          <CardContent className="p-4 space-y-4 relative">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeLinkaProMonetization(link.id)}
+                              className="absolute top-2 right-2 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-110"
+                            >
+                              <X className="w-5 h-5" />
+                              <span className="sr-only">Remove AI Pro Link</span>
+                            </Button>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`pro-category-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Category <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`pro-category-${link.id}`}
+                                  placeholder="e.g., Subscription, Service"
+                                  value={link.category}
+                                  onChange={(e) => updateLinkaProMonetization(link.id, 'category', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`pro-brand-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Affiliate Brand Name <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`pro-brand-${link.id}`}
+                                  placeholder="e.g., AI Pro"
+                                  value={link.affiliateBrandName}
+                                  onChange={(e) => updateLinkaProMonetization(link.id, 'affiliateBrandName', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`pro-main-url-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Main URL <span className="text-red-500">*</span>
+                                </Label>
+                                <div className="relative">
+                                  <Input
+                                    id={`pro-main-url-${link.id}`}
+                                    placeholder="https://main-url.com"
+                                    value={link.mainUrl}
+                                    onChange={(e) => updateLinkaProMonetization(link.id, 'mainUrl', e.target.value)}
+                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                  <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`image-${link.id}`}
+                                  className="text-linka-russian-violet font-medium block text-sm"
+                                >
+                                  Main Image (Optional)
+                                </Label>
 
-              {/* URL Validation Tips */}
+                                <div className="relative flex items-center">
+                                  <ImageIcon className="absolute left-3 w-5 h-5 text-linka-dark-orange pointer-events-none" />
+
+                                  <div className="relative w-full">
+                                    <Input
+                                      id={`image-${link.id}`}
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => {
+                                        const file = e.target.files ? e.target.files[0] : null;
+                                        updateLinkaProMonetization(link.id, 'mainimage', file);
+                                      }}
+                                      className="
+                                                  pl-10 pr-4 py-2 w-full 
+                                                  border border-linka-alice-blue rounded-md text-sm 
+                                                  bg-white text-linka-russian-violet opacity-0
+                                                  absolute z-10 cursor-pointer
+                                                  h-full
+                                                "
+                                    />
+                                    <div className="
+                                                  pl-10 pr-4 py-2 w-full 
+                                                  border border-linka-alice-blue rounded-md text-sm 
+                                                  bg-white text-linka-russian-violet
+                                                  flex items-center
+                                                ">
+                                      <span className="text-linka-night/40">
+                                        {link.mainimage ? link.mainimage?.name : 'Choose file...'}
+                                      </span>
+                                      <span className="
+                                                      ml-auto mr-4 py-2 px-4 
+                                                      rounded-md border-0 
+                                                      text-sm font-medium 
+                                                      bg-linka-carolina-blue text-white 
+                                                      hover:bg-linka-carolina-blue/90
+                                                      active:bg-linka-carolina-blue/80
+                                                      cursor-pointer
+                                                    ">
+                                        Browse
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
+                      <LinkIcon className="w-12 h-12 text-linka-dark-orange/70 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
+                        No AI Pro Monetization Added
+                      </h3>
+                      <p className="text-linka-night/60 mb-4">
+                        Add your first AI Pro monetization link to get started
+                      </p>
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    onClick={addLinkaProMonetization}
+                    className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    {agentConfig.linkaProMonetizations.length > 0 ? 'Add Another Monetization Link' : 'Add First Monetization Link'}
+                  </Button>
+                </div>
+              )}
               <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-4">
                 <div className="flex items-start gap-2">
                   <InfoIcon className="w-4 h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
@@ -735,6 +882,10 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                       <li className="flex items-start gap-1.5">
                         <span>•</span>
                         <span>Provide detailed product reviews to enhance user trust</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span>•</span>
+                        <span>Upload high-quality images to enhance visual appeal</span>
                       </li>
                     </ul>
                   </div>
@@ -1076,7 +1227,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
 
   return (
     <DashboardLayout>
-      <div className="container mx-auto px-2 py-6 sm:py-4">
+      <div className=" mx-auto px-2 py-6 sm:py-4 w-full">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-linka-russian-violet mb-4 sm:mb-0">Build Your AI Agent</h1>
           <div className="flex gap-4">
