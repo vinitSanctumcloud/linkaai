@@ -1,9 +1,10 @@
 'use client'
 import React, { useState, useEffect } from 'react';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import dynamic from 'next/dynamic';
+import './PaymentForm.css'; // Import minimal external CSS for react-datepicker and pseudo-elements
+
+// Dynamically import DatePicker with SSR disabled
+const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
 
 interface Plan {
     id: string;
@@ -12,180 +13,78 @@ interface Plan {
     currency: string;
 }
 
+interface Product {
+    name: string;
+    description: string;
+    image: string;
+    features: string[];
+}
+
 interface ApiResponse {
     message: string;
     data: {
         plans: Plan[];
         extra_perks: string[];
+        product: Product;
     };
-}
-
-interface ExchangeRateResponse {
-    success: boolean;
-    base: string;
-    date: string;
-    rates: Record<string, number>;
 }
 
 interface Coupon {
     code: string;
-    discountType: 'percentage' | 'fixed';
+    discountType: 'percentage' | 'fixed' | 'free_trial' | 'custom';
     discountValue: number; // Percentage (e.g., 10 for 10%) or fixed amount in USD cents
-    valid: boolean;
+    description?: string; // Optional description from API
+    duration?: number; // For free_trial, duration in months
+    customDetails?: string; // For custom coupon types
+    message?: string; // Error message if invalid
 }
 
-// Comprehensive list of ISO 4217 currencies
-const currencies = [
-    'AED', 'AFN', 'ALL', 'AMD', 'ANG', 'AOA', 'ARS', 'AUD', 'AWG', 'AZN',
-    'BAM', 'BBD', 'BDT', 'BGN', 'BHD', 'BIF', 'BMD', 'BND', 'BOB', 'BRL',
-    'BSD', 'BTN', 'BWP', 'BYN', 'BZD', 'CAD', 'CDF', 'CHF', 'CLP', 'CNY',
-    'COP', 'CRC', 'CUP', 'CVE', 'CZK', 'DJF', 'DKK', 'DOP', 'DZD', 'EGP',
-    'ERN', 'ETB', 'EUR', 'FJD', 'FKP', 'GBP', 'GEL', 'GHS', 'GIP', 'GMD',
-    'GNF', 'GTQ', 'GYD', 'HKD', 'HNL', 'HRK', 'HTG', 'HUF', 'IDR', 'ILS',
-    'INR', 'IQD', 'IRR', 'ISK', 'JMD', 'JOD', 'JPY', 'KES', 'KGS', 'KHR',
-    'KMF', 'KPW', 'KRW', 'KWD', 'KYD', 'KZT', 'LAK', 'LBP', 'LKR', 'LRD',
-    'LSL', 'LYD', 'MAD', 'MDL', 'MGA', 'MKD', 'MMK', 'MNT', 'MOP', 'MRU',
-    'MUR', 'MVR', 'MWK', 'MXN', 'MYR', 'MZN', 'NAD', 'NGN', 'NIO', 'NOK',
-    'NPR', 'NZD', 'OMR', 'PAB', 'PEN', 'PGK', 'PHP', 'PKR', 'PLN', 'PYG',
-    'QAR', 'RON', 'RSD', 'RUB', 'RWF', 'SAR', 'SBD', 'SCR', 'SDG', 'SEK',
-    'SGD', 'SHP', 'SLL', 'SOS', 'SRD', 'SSP', 'STN', 'SYP', 'SZL', 'THB',
-    'TJS', 'TMT', 'TND', 'TOP', 'TRY', 'TTD', 'TWD', 'TZS', 'UAH', 'UGX',
-    'USD', 'UYU', 'UZS', 'VES', 'VND', 'VUV', 'WST', 'XAF', 'XCD', 'XOF',
-    'XPF', 'YER', 'ZAR', 'ZMW'
-].sort();
-
-// Initialize Stripe with the Publishable Key
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A');
-
 const PaymentForm: React.FC = () => {
-    const stripe = useStripe();
-    const elements = useElements();
-    const [paymentMethod, setPaymentMethod] = useState('credit-card');
-    const [selectedCurrency, setSelectedCurrency] = useState('USD');
-    const [exchangeRates, setExchangeRates] = useState<Record<string, number>>({ USD: 1 });
-    const [cardDetails, setCardDetails] = useState({
+    const [cardDetails, setCardDetails] = useState<{
+        fullName: string;
+        cardNumber: string;
+        expiryDate: Date | null;
+        cvv: string;
+    }>({
         fullName: '',
         cardNumber: '',
-        expiryDate: null as Date | null,
+        expiryDate: null,
         cvv: '',
     });
-    const [paypalEmail, setPaypalEmail] = useState('');
-    const [bankDetails, setBankDetails] = useState({
-        accountNumber: '',
-        routingNumber: '',
-        bankName: '',
-        accountHolder: '',
-    });
-    const [couponCode, setCouponCode] = useState('');
+    const [couponCode, setCouponCode] = useState<string>('');
     const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
     const [apiData, setApiData] = useState<ApiResponse | null>(null);
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+    const [formErrors, setFormErrors] = useState<Partial<Record<keyof typeof cardDetails, string>>>({});
     const [couponError, setCouponError] = useState<string | null>(null);
-
-    // Mock coupon database (replace with API call in production)
-    const coupons: Coupon[] = [
-        { code: 'SAVE10', discountType: 'percentage', discountValue: 10, valid: true },
-        { code: 'FLAT50', discountType: 'fixed', discountValue: 5000, valid: true }, // $50 in cents
-        { code: 'INVALID', discountType: 'percentage', discountValue: 0, valid: false },
-    ];
-
-    // Exponential backoff for API calls
-    const fetchWithBackoff = async (url: string, options: RequestInit, retries = 3, delay = 1000): Promise<Response> => {
-        try {
-            const response = await fetch(url, options);
-            if (response.status === 429 && retries > 0) {
-                const retryAfter = response.headers.get('Retry-After');
-                const waitTime = retryAfter ? parseInt(retryAfter, 10) * 1000 : delay;
-                await new Promise(resolve => setTimeout(resolve, waitTime));
-                return fetchWithBackoff(url, options, retries - 1, delay * 2);
-            }
-            return response;
-        } catch (err) {
-            if (retries > 0) {
-                await new Promise(resolve => setTimeout(resolve, delay));
-                return fetchWithBackoff(url, options, retries - 1, delay * 2);
-            }
-            throw err;
-        }
-    };
-
-    // Fetch exchange rates with caching
-    useEffect(() => {
-        const cachedRates = localStorage.getItem('exchangeRates');
-        const cacheTimestamp = localStorage.getItem('exchangeRatesTimestamp');
-        const cacheValidDuration = 24 * 60 * 60 * 1000; // 24 hours
-
-        if (cachedRates && cacheTimestamp && Date.now() - parseInt(cacheTimestamp) < cacheValidDuration) {
-            setExchangeRates(JSON.parse(cachedRates));
-            return;
-        }
-
-        const fetchExchangeRates = async () => {
-            const apiKey = '62184da350a23cc1dedff0389915db3e';
-            try {
-                // Try the first API
-                const response = await fetchWithBackoff(
-                    `https://api.exchangerate-api.com/v4/latest/USD`,
-                    { method: 'GET' }
-                );
-
-                if (!response.ok) throw new Error('First API failed');
-
-                const data = await response.json();
-                if (!data.rates) throw new Error('Invalid response format');
-
-                // Ensure USD is always 1
-                const rates = { USD: 1, ...data.rates };
-                setExchangeRates(rates);
-                localStorage.setItem('exchangeRates', JSON.stringify(rates));
-                localStorage.setItem('exchangeRatesTimestamp', Date.now().toString());
-            } catch (err) {
-                console.error('First API failed, trying fallback:', err);
-                try {
-                    // Fallback API
-                    const fallbackResponse = await fetchWithBackoff(
-                        `https://api.exchangeratesapi.io/v1/latest?access_key=${apiKey}`,
-                        { method: 'GET' }
-                    );
-
-                    const fallbackData = await fallbackResponse.json();
-                    if (!fallbackData.rates) throw new Error('Invalid fallback response');
-
-                    const rates = { USD: 1, ...fallbackData.rates };
-                    setExchangeRates(rates);
-                    localStorage.setItem('exchangeRates', JSON.stringify(rates));
-                    localStorage.setItem('exchangeRatesTimestamp', Date.now().toString());
-                } catch (fallbackErr) {
-                    console.error('Fallback API failed:', fallbackErr);
-                    setError('Failed to fetch exchange rates. Using default USD.');
-                    setExchangeRates({ USD: 1 });
-                }
-            }
-        };
-        fetchExchangeRates();
-    }, []);
+    const [couponLoading, setCouponLoading] = useState<boolean>(false);
 
     // Fetch product data
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get('productId');
-        console.log(productId)
+
         const fetchProductData = async () => {
             try {
                 setLoading(true);
-                const response = await fetchWithBackoff(
+                const accessToken = localStorage.getItem('accessToken');
+                if (!accessToken) {
+                    throw new Error('No access token found');
+                }
+                const response = await fetch(
                     `https://api.tagwell.co/api/v4/ai-agent/billing/products/${productId}/plans`,
                     {
                         method: 'GET',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken}`,
+                        },
                     }
                 );
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data: ApiResponse = await response.json();
-                console.log(data)
                 setApiData(data);
                 setSelectedPlan(data.data.plans.find(plan => plan.currency === 'USD') || data.data.plans[0]);
             } catch (err) {
@@ -198,85 +97,190 @@ const PaymentForm: React.FC = () => {
         fetchProductData();
     }, []);
 
-    const validateForm = () => {
-        const errors: Record<string, string> = {};
+    const validateForm = (): boolean => {
+        const errors: Partial<Record<keyof typeof cardDetails, string>> = {};
 
-        if (paymentMethod === 'credit-card') {
-            if (!cardDetails.fullName.trim()) errors.fullName = 'Full name is required';
-            if (!/^\d{16}$/.test(cardDetails.cardNumber.replace(/\D/g, '')))
-                errors.cardNumber = 'Invalid card number (16 digits required)';
-            if (!cardDetails.expiryDate) errors.expiryDate = 'Expiration date is required';
-            else if (cardDetails.expiryDate < new Date()) errors.expiryDate = 'Card has expired';
-            if (!/^\d{3,4}$/.test(cardDetails.cvv)) errors.cvv = 'Invalid CVV (3-4 digits required)';
-        } else if (paymentMethod === 'paypal') {
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(paypalEmail))
-                errors.paypalEmail = 'Invalid email address';
-        } else if (paymentMethod === 'bank-transfer') {
-            if (!bankDetails.accountNumber) errors.accountNumber = 'Account number is required';
-            if (!/^\d{9}$/.test(bankDetails.routingNumber))
-                errors.routingNumber = 'Invalid routing number (9 digits required)';
-            if (!bankDetails.bankName) errors.bankName = 'Bank name is required';
-            if (!bankDetails.accountHolder) errors.accountHolder = 'Account holder name is required';
-        }
+        if (!cardDetails.fullName.trim()) errors.fullName = 'Full name is required';
+        if (!/^\d{16}$/.test(cardDetails.cardNumber.replace(/\D/g, '')))
+            errors.cardNumber = 'Invalid card number (16 digits required)';
+        if (!cardDetails.expiryDate) errors.expiryDate = 'Expiration date is required';
+        else if (cardDetails.expiryDate < new Date()) errors.expiryDate = 'Card has expired';
+        if (!/^\d{2,4}$/.test(cardDetails.cvv)) errors.cvv = 'CVV must be 3 or 4 digits';
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
-        if (paymentMethod === 'credit-card') {
-            setCardDetails((prev) => ({ ...prev, [name]: value }));
-        } else if (paymentMethod === 'bank-transfer') {
-            setBankDetails((prev) => ({ ...prev, [name]: value }));
+        if (name === 'cvv') {
+            // Allow only 3-4 digits for CVV
+            if (value.length > 4 || !/^\d*$/.test(value)) return;
         }
+        setCardDetails((prev) => ({ ...prev, [name]: value }));
         setFormErrors((prev) => ({ ...prev, [name]: '' }));
     };
 
-    const handleApplyCoupon = () => {
-        const coupon = coupons.find(c => c.code.toUpperCase() === couponCode.toUpperCase());
-        if (!coupon) {
-            setCouponError('Invalid coupon code');
+    const handleApplyCoupon = async (): Promise<void> => {
+        if (!couponCode) {
+            setCouponError('Please enter a coupon code');
+            return;
+        }
+
+        setCouponLoading(true);
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                throw new Error('No access token found');
+            }
+            const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/coupons/apply', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify({ promotional_code: couponCode, plan_id: selectedPlan?.id }),
+            });
+
+            console.log(response, 'response');
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error( 'Invalid coupon code');
+            }
+
+            const coupon: Coupon = await response.json();
+            console.log(coupon, 'coupon');
+            if (coupon.message === "Success") {
+                setCouponError(null);
+                setAppliedCoupon(coupon);
+            } else {
+                setAppliedCoupon(null);
+                setCouponError('Coupon is not validdd');
+            }
+        } catch (err: any) {
+            setCouponError(err.message || 'Failed to apply coupon. Please try again.');
             setAppliedCoupon(null);
-        } else if (!coupon.valid) {
-            setCouponError('Coupon is not valid');
-            setAppliedCoupon(null);
-        } else {
-            setAppliedCoupon(coupon);
-            setCouponError(null);
+            console.error(err);
+        } finally {
+            setCouponLoading(false);
         }
     };
 
-    const calculateDiscountedAmount = (amount: number): number => {
-        if (!appliedCoupon) return amount;
+    const calculateDiscountedAmount = (amount: number): { discountedAmount: number; discountDescription: string } => {
+        if (!appliedCoupon || !selectedPlan) {
+            return { discountedAmount: amount, discountDescription: 'No discount applied' };
+        }
 
         let discountedAmount = amount;
-        if (appliedCoupon.discountType === 'percentage') {
-            discountedAmount = amount * (1 - appliedCoupon.discountValue / 100);
-        } else if (appliedCoupon.discountType === 'fixed') {
-            discountedAmount = amount - appliedCoupon.discountValue;
+        let discountDescription = '';
+
+        switch (appliedCoupon.discountType) {
+            case 'percentage':
+                discountedAmount = amount * (1 - appliedCoupon.discountValue / 100);
+                discountDescription = `${appliedCoupon.discountValue}% off`;
+                break;
+            case 'fixed':
+                discountedAmount = amount - appliedCoupon.discountValue;
+                discountDescription = formatPrice(appliedCoupon.discountValue);
+                break;
+            case 'free_trial':
+                discountedAmount = amount; // No immediate discount, but trial period applies
+                discountDescription = `Free trial for ${appliedCoupon.duration} month${appliedCoupon.duration! > 1 ? 's' : ''}`;
+                break;
+            case 'custom':
+                discountedAmount = amount; // Custom logic handled separately
+                discountDescription = appliedCoupon.customDetails || 'Custom discount applied';
+                break;
+            default:
+                discountDescription = 'No discount applied';
         }
 
-        return Math.max(0, Math.round(discountedAmount));
+        return {
+            discountedAmount: Math.max(0, Math.round(discountedAmount)),
+            discountDescription,
+        };
     };
 
-    const convertAmount = (amount: number): number => {
-        if (!selectedCurrency || !exchangeRates) return amount;
+    // Create Stripe payment method
+    const createPaymentMethod = async () => {
+        if (!stripe || !elements) {
+            setError('Stripe.js has not loaded yet. Please try again.');
+            throw new Error('Stripe.js has not loaded yet.');
+        }
 
-        // Convert from cents to dollars first
-        const amountInDollars = amount / 100;
+        if (paymentMethod === 'credit-card') {
+            const cardElement = elements.getElement(CardElement);
+            if (!cardElement) {
+                setError('Card element not found. Please refresh the page.');
+                throw new Error('Card Element not found');
+            }
 
-        // Get the rate for the selected currency
-        const rate = exchangeRates[selectedCurrency] || 1;
+            const { error, paymentMethod } = await stripe.createPaymentMethod({
+                type: 'card',
+                card: cardElement,
+                billing_details: {
+                    name: cardDetails.fullName || 'Unknown',
+                },
+            });
 
-        // Apply discount if any
-        const discountedAmount = calculateDiscountedAmount(amountInDollars * 100);
+            if (error) {
+                console.error('Stripe error:', error);
+                setFormErrors((prev) => ({ ...prev, cardDetails: error.message || 'Invalid card details' }));
+                setError(error.message || 'Invalid card details');
+                throw new Error(error.message);
+            }
 
-        // Convert to target currency and back to cents
-        const convertedAmount = (discountedAmount / 100) * rate;
+            console.log('Payment method created:', paymentMethod);
+            return paymentMethod;
+        }
+        return null; // For PayPal, bank transfer, or free trial
+    };
 
-        // Round to nearest cent
-        return Math.round(convertedAmount * 100);
+    // Handle subscription API call
+    const createSubscription = async (paymentMethodId: string | null) => {
+        if (!selectedPlan) {
+            setError('No plan selected. Please choose a plan.');
+            return;
+        }
+
+        const payload = paymentMethodId
+            ? {
+                  payment_method: paymentMethodId,
+                  plan_id: selectedPlan.id,
+                  promo: appliedCoupon?.code || null,
+                  is_free_trial_enable: false,
+              }
+            : {
+                  payment_method: null,
+                  plan_id: selectedPlan.id,
+                  promo: appliedCoupon?.code || null,
+                  is_free_trial_enable: true,
+              };
+
+        console.log("createSubscription :: payload", payload);
+        try {
+            const response = await fetchWithBackoff(
+                'https://api.tagwell.co/api/v4/ai-agent/subscribe',
+                {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(payload),
+                }
+            );
+
+            console.log(response);
+
+            if (!response.ok) throw new Error('Subscription creation failed');
+            const data = await response.json();
+            console.log('Subscription created:', data);
+            return data;
+        } catch (err) {
+            setError(`Failed to create subscription: ${(err as Error).message}`);
+            throw err;
+        }
     };
 
     // Create Stripe payment method
@@ -361,57 +365,52 @@ const PaymentForm: React.FC = () => {
     };
 
     const formatPrice = (amount: number): string => {
-        const amountInCurrency = amount / 100; // Convert cents to currency units
-
-        let fractionDigits = 2;
+        const amountInDollars = amount / 100; // Convert cents to dollars
         try {
-            // Some currencies don't have decimal places
-            fractionDigits = ['JPY', 'KRW', 'VND'].includes(selectedCurrency) ? 0 : 2;
-
             return new Intl.NumberFormat('en-US', {
                 style: 'currency',
-                currency: selectedCurrency,
+                currency: 'USD',
                 currencyDisplay: 'symbol',
-                minimumFractionDigits: fractionDigits,
-                maximumFractionDigits: fractionDigits,
-            }).format(amountInCurrency);
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+            }).format(amountInDollars);
         } catch (err) {
             console.error('Error formatting price:', err);
-            // Fallback formatting
-            return `${amountInCurrency.toFixed(fractionDigits)} ${selectedCurrency}`;
+            return `$${amountInDollars.toFixed(2)}`;
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent): Promise<void> => {
         e.preventDefault();
         if (!validateForm()) return;
 
         try {
             setLoading(true);
-            
-            let paymentMethodResponse = null;
-
-            if (paymentMethod === 'credit-card') {
-                paymentMethodResponse = await createPaymentMethod();
+            const accessToken = localStorage.getItem('access_token');
+            if (!accessToken) {
+                throw new Error('No access token found');
             }
-
-            await createSubscription(paymentMethodResponse?.id || null);
-
             const paymentData = {
-                paymentMethod,
-                cardDetails: paymentMethod === 'credit-card' ? cardDetails : undefined,
-                paypalEmail: paymentMethod === 'paypal' ? paypalEmail : undefined,
-                bankDetails: paymentMethod === 'bank-transfer' ? bankDetails : undefined,
+                paymentMethod: 'credit-card',
+                cardDetails,
                 selectedPlan: selectedPlan ? {
                     ...selectedPlan,
-                    amount: convertAmount(selectedPlan.amount),
-                    currency: selectedCurrency,
+                    amount: calculateDiscountedAmount(selectedPlan.amount).discountedAmount,
                 } : null,
                 coupon: appliedCoupon,
-                currency: selectedCurrency,
             };
 
-            console.log('Processing payment:', paymentData);
+            const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/billing/process', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify(paymentData),
+            });
+
+            if (!response.ok) throw new Error('Payment processing failed');
+            console.log('Payment processed:', await response.json());
             alert('Payment processed successfully!');
         } catch (err) {
             setError('Payment processing failed. Please try again.');
@@ -421,505 +420,49 @@ const PaymentForm: React.FC = () => {
         }
     };
 
-    const calculateTotalAmount = (planAmount: number): number => {
-        // Calculate tax (18% GST)
-        const taxAmount = Math.round(planAmount * 0.18);
-
-        // Apply coupon discount if any
-        let totalAmount = planAmount + taxAmount;
-
-        if (appliedCoupon) {
-            if (appliedCoupon.discountType === 'percentage') {
-                totalAmount = Math.round(totalAmount * (1 - appliedCoupon.discountValue / 100));
-            } else if (appliedCoupon.discountType === 'fixed') {
-                totalAmount = Math.max(0, totalAmount - appliedCoupon.discountValue);
-            }
-        }
-
-        return totalAmount;
-    };
-
     return (
-        <section className="bg-gray-100 dark:bg-gray-900 py-8 md:py-12 min-h-screen flex items-center">
-            <style>
-                {`
-                    .custom-tooltip {
-                        background-color: #f97316;
-                        color: white;
-                        border-radius: 0.5rem;
-                        padding: 0.5rem;
-                        font-size: 0.875rem;
-                        z-index: 50;
-                    }
-                    .custom-tooltip::after {
-                        border-top-color: #f97316;
-                    }
-                    .react-datepicker {
-                        border: 1px solid #d1d5db;
-                        border-radius: 0.5rem;
-                        width: 100%;
-                        font-family: inherit;
-                    }
-                    .react-datepicker__header {
-                        background-color: #f97316;
-                        color: white;
-                        border-bottom: none;
-                        border-radius: 0.5rem 0.5rem 0 0;
-                    }
-                    .react-datepicker__day--selected,
-                    .react-datepicker__day--keyboard-selected {
-                        background-color: #f97316;
-                        color: white;
-                    }
-                    .react-datepicker__day:hover {
-                        background-color: #ea580c;
-                        color: white;
-                    }
-                    .react-datepicker__month-select,
-                    .react-datepicker__year-select {
-                        background-color: #fff;
-                        color: #000;
-                        border-radius: 0.25rem;
-                        padding: 0.25rem;
-                    }
-                    .error-input {
-                        border-color: #ef4444 !important;
-                    }
-                    .error-text {
-                        color: #ef4444;
-                        font-size: 0.75rem;
-                        margin-top: 0.25rem;
-                    }
-                    .success-text {
-                        color: #10b981;
-                        font-size: 0.75rem;
-                        margin-top: 0.25rem;
-                    }
-                `}
-            </style>
-            <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6 md:p-8">
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-6">
-                        Secure Payment
+        <section className="bg-gray-50 dark:bg-gray-900 py-12 md:py-16 min-h-screen">
+            <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 md:p-10">
+                    <h2 className="text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-8 text-center">
+                        Complete Your Subscription
                     </h2>
 
                     {loading && (
-                        <div className="flex justify-center items-center mb-6">
-                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-[#f97316]"></div>
+                        <div className="flex justify-center items-center mb-8">
+                            <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-custom-orange"></div>
                         </div>
                     )}
                     {error && (
-                        <p className="text-red-500 text-center mb-4 bg-red-50 dark:bg-red-900/50 p-3 rounded-lg">{error}</p>
+                        <p className="text-custom-error text-center mb-6 bg-red-50 dark:bg-red-900/50 p-4 rounded-lg">{error}</p>
                     )}
 
-                    <div className="lg:grid lg:grid-cols-3 lg:gap-8">
-                        <form
-                            onSubmit={handleSubmit}
-                            className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg p-6 shadow-sm"
-                        >
-                            {/* Currency Selection */}
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Currency
-                                </label>
-                                <select
-                                    value={selectedCurrency}
-                                    onChange={(e) => setSelectedCurrency(e.target.value)}
-                                    className="block w-full sm:w-64 rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white transition"
-                                >
-                                    {currencies.map((currency) => (
-                                        <option key={currency} value={currency}>
-                                            {currency}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Coupon Code */}
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Coupon Code
-                                </label>
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={couponCode}
-                                        onChange={(e) => {
-                                            setCouponCode(e.target.value);
-                                            setCouponError(null);
-                                        }}
-                                        className="block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-                                        placeholder="Enter coupon code"
+                    {/* Product Details */}
+                    {apiData?.data.product && (
+                        <div className="mb-10 border-b border-gray-200 dark:border-gray-700 pb-8">
+                            <div className="flex flex-col md:flex-row gap-8">
+                                <div className="w-full md:w-1/3">
+                                    <img
+                                        src={apiData.data.product.image}
+                                        alt={apiData.data.product.name}
+                                        className="w-full rounded-xl object-cover shadow-md"
                                     />
-                                    <button
-                                        type="button"
-                                        onClick={handleApplyCoupon}
-                                        className="px-4 py-2 bg-[#f97316] text-white rounded-lg hover:bg-[#ea580c] transition disabled:opacity-50"
-                                        disabled={loading || !couponCode}
-                                    >
-                                        Apply
-                                    </button>
                                 </div>
-                                {couponError && <p className="error-text">{couponError}</p>}
-                                {appliedCoupon && (
-                                    <p className="success-text">
-                                        Coupon applied: {appliedCoupon.discountType === 'percentage'
-                                            ? `${appliedCoupon.discountValue}% off`
-                                            : formatPrice(convertAmount(appliedCoupon.discountValue))}
+                                <div className="w-full md:w-2/3">
+                                    <h3 className="text-2xl font-semibold text-gray-900 dark:text-white mb-4">
+                                        {apiData.data.product.name}
+                                    </h3>
+                                    <p className="text-gray-600 dark:text-gray-300 mb-6 leading-relaxed">
+                                        {apiData.data.product.description}
                                     </p>
-                                )}
-                            </div>
-
-                            {/* Payment Method Selection */}
-                            <div className="mb-6">
-                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Payment Method
-                                </label>
-                                <div className="flex flex-wrap gap-3">
-                                    {['credit-card', 'paypal', 'bank-transfer'].map((method) => (
-                                        <button
-                                            key={method}
-                                            type="button"
-                                            onClick={() => setPaymentMethod(method)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${paymentMethod === method
-                                                ? 'bg-[#f97316] text-white'
-                                                : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-600'
-                                                }`}
-                                        >
-                                            {method === 'credit-card' ? 'Credit Card' : method === 'paypal' ? 'PayPal' : 'Bank Transfer'}
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            {/* Credit Card Form */}
-                            {paymentMethod === 'credit-card' && (
-                                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label
-                                            htmlFor="full_name"
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            Full Name (as on card)*
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="full_name"
-                                            name="fullName"
-                                            value={cardDetails.fullName}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.fullName ? 'error-input' : ''
-                                                }`}
-                                            placeholder="Bonnie Green"
-                                            required
-                                        />
-                                        {formErrors.fullName && (
-                                            <p className="error-text">{formErrors.fullName}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor="card-number-input"
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            Card Number*
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="card-number-input"
-                                            name="cardNumber"
-                                            value={cardDetails.cardNumber}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.cardNumber ? 'error-input' : ''
-                                                }`}
-                                            placeholder="xxxx-xxxx-xxxx-xxxx"
-                                            required
-                                        />
-                                        {formErrors.cardNumber && (
-                                            <p className="error-text">{formErrors.cardNumber}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor="card-expiration-input"
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            Card Expiration*
-                                        </label>
-                                        <DatePicker
-                                            selected={cardDetails.expiryDate}
-                                            onChange={(date: Date) => setCardDetails((prev) => ({ ...prev, expiryDate: date }))}
-                                            dateFormat="MM/yyyy"
-                                            showMonthYearPicker
-                                            minDate={new Date()}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.expiryDate ? 'error-input' : ''
-                                                }`}
-                                            placeholderText="MM/YYYY"
-                                            required
-                                        />
-                                        {formErrors.expiryDate && (
-                                            <p className="error-text">{formErrors.expiryDate}</p>
-                                        )}
-                                    </div>
-
-                                    <div>
-                                        <label
-                                            htmlFor="cvv-input"
-                                            className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            CVV*
-                                            <button
-                                                data-tooltip-target="cvv-desc"
-                                                className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white"
-                                            >
-                                                <svg
-                                                    className="h-4 w-4"
-                                                    aria-hidden="true"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                    fill="currentColor"
-                                                    viewBox="0 0 24 24"
-                                                >
-                                                    <path
-                                                        fillRule="evenodd"
-                                                        d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 10 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z"
-                                                        clipRule="evenodd"
-                                                    />
-                                                </svg>
-                                            </button>
-                                            <div
-                                                id="cvv-desc"
-                                                role="tooltip"
-                                                className="absolute z-10 invisible inline-block opacity-0 transition-opacity duration-300 custom-tooltip"
-                                            >
-                                                The last 3 digits on back of card
-                                                <div className="tooltip-arrow" data-popper-arrow></div>
-                                            </div>
-                                        </label>
-                                        <input
-                                            type="number"
-                                            id="cvv-input"
-                                            name="cvv"
-                                            value={cardDetails.cvv}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.cvv ? 'error-input' : ''
-                                                }`}
-                                            placeholder="•••"
-                                            required
-                                        />
-                                        {formErrors.cvv && <p className="error-text">{formErrors.cvv}</p>}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* PayPal Form */}
-                            {paymentMethod === 'paypal' && (
-                                <div className="mb-6">
-                                    <label
-                                        htmlFor="paypal-email"
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                    >
-                                        PayPal Email*
-                                    </label>
-                                    <input
-                                        type="email"
-                                        id="paypal-email"
-                                        value={paypalEmail}
-                                        onChange={(e) => {
-                                            setPaypalEmail(e.target.value);
-                                            setFormErrors((prev) => ({ ...prev, paypalEmail: '' }));
-                                        }}
-                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.paypalEmail ? 'error-input' : ''
-                                            }`}
-                                        placeholder="your.email@example.com"
-                                        required
-                                    />
-                                    {formErrors.paypalEmail && (
-                                        <p className="error-text">{formErrors.paypalEmail}</p>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Bank Transfer Form */}
-                            {paymentMethod === 'bank-transfer' && (
-                                <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                    <div>
-                                        <label
-                                            htmlFor="account-holder"
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            Account Holder*
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="account-holder"
-                                            name="accountHolder"
-                                            value={bankDetails.accountHolder}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.accountHolder ? 'error-input' : ''
-                                                }`}
-                                            placeholder="Account holder name"
-                                            required
-                                        />
-                                        {formErrors.accountHolder && (
-                                            <p className="error-text">{formErrors.accountHolder}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label
-                                            htmlFor="bank-name"
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            Bank Name*
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="bank-name"
-                                            name="bankName"
-                                            value={bankDetails.bankName}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.bankName ? 'error-input' : ''
-                                                }`}
-                                            placeholder="Enter bank name"
-                                            required
-                                        />
-                                        {formErrors.bankName && (
-                                            <p className="error-text">{formErrors.bankName}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label
-                                            htmlFor="account-number"
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            Account Number*
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="account-number"
-                                            name="accountNumber"
-                                            value={bankDetails.accountNumber}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.accountNumber ? 'error-input' : ''
-                                                }`}
-                                            placeholder="Enter account number"
-                                            required
-                                        />
-                                        {formErrors.accountNumber && (
-                                            <p className="error-text">{formErrors.accountNumber}</p>
-                                        )}
-                                    </div>
-                                    <div>
-                                        <label
-                                            htmlFor="routing-number"
-                                            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                        >
-                                            Routing Number*
-                                        </label>
-                                        <input
-                                            type="text"
-                                            id="routing-number"
-                                            name="routingNumber"
-                                            value={bankDetails.routingNumber}
-                                            onChange={handleInputChange}
-                                            className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white ${formErrors.routingNumber ? 'error-input' : ''
-                                                }`}
-                                            placeholder="Enter routing number"
-                                            required
-                                        />
-                                        {formErrors.routingNumber && (
-                                            <p className="error-text">{formErrors.routingNumber}</p>
-                                        )}
-                                    </div>
-                                </div>
-                            )}
-
-                            <button
-                                type="submit"
-                                disabled={loading}
-                                className="w-full bg-[#f97316] text-white font-medium rounded-lg px-5 py-3 text-sm hover:bg-[#ea580c] focus:outline-none focus:ring-4 focus:ring-[#f97316]/50 dark:bg-[#f97316] dark:hover:bg-[#ea580c] dark:focus:ring-[#f97316]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {loading ? 'Processing...' : 'Pay Now'}
-                            </button>
-                        </form>
-
-                        <div className="lg:col-span-1 mt-6 lg:mt-0">
-                            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-6 shadow-sm">
-                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-                                    Subscription Details
-                                </h3>
-                                <div className="flex flex-wrap gap-3 mb-4">
-                                    {apiData?.data.plans.map((plan) => (
-                                        <button
-                                            key={plan.id}
-                                            type="button"
-                                            onClick={() => setSelectedPlan(plan)}
-                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${selectedPlan?.id === plan.id
-                                                ? 'bg-[#f97316] text-white'
-                                                : 'bg-gray-100 text-gray-900 dark:bg-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-500'
-                                                }`}
-                                        >
-                                            {plan.interval === 'year' ? 'Yearly' : 'Monthly'} (
-                                            {formatPrice(convertAmount(plan.amount))})
-                                        </button>
-                                    ))}
-                                </div>
-
-                                <div className="space-y-3">
-                                    <dl>
-                                        <div className="flex items-center justify-between gap-4">
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                                Plan Price
-                                            </dt>
-                                            <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                                                {selectedPlan ? formatPrice(convertAmount(selectedPlan.amount)) : formatPrice(0)}
-                                            </dd>
-                                        </div>
-
-                                        <div className="flex items-center justify-between gap-4">
-                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                                Tax (18% GST)
-                                            </dt>
-                                            <dd className="text-sm font-medium text-gray-900 dark:text-white">
-                                                {formatPrice(convertAmount(Math.round((selectedPlan?.amount || 0) * 0.18)))}
-                                            </dd>
-                                        </div>
-
-
-                                        {appliedCoupon && (
-                                            <div className="flex items-center justify-between gap-4">
-                                                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                                                    Coupon Discount
-                                                </dt>
-                                                <dd className="text-sm font-medium text-green-600 dark:text-green-400">
-                                                    -{appliedCoupon.discountType === 'percentage'
-                                                        ? `${appliedCoupon.discountValue}%`
-                                                        : formatPrice(convertAmount(appliedCoupon.discountValue))}
-                                                </dd>
-                                            </div>
-                                        )}
-
-                                        <div className="flex items-center justify-between gap-4 border-t border-gray-200 pt-2 dark:border-gray-600">
-                                            <dt className="text-sm font-bold text-gray-900 dark:text-white">
-                                                Total
-                                            </dt>
-                                            <dd className="text-sm font-bold text-gray-900 dark:text-white">
-                                                {selectedPlan ? formatPrice(convertAmount(calculateTotalAmount(selectedPlan.amount))) : formatPrice(0)}
-                                            </dd>
-                                        </div>
-                                    </dl>
-                                </div>
-
-                                <div className="mt-4">
-                                    <h4 className="text-sm font-medium text-gray-900 dark:text-white">
-                                        Included Perks
+                                    <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-3">
+                                        What’s Included
                                     </h4>
-                                    <ul className="mt-2 space-y-2 text-sm text-gray-600 dark:text-gray-400">
-                                        {apiData?.data.extra_perks.map((perk, index) => (
-                                            <li key={index} className="flex items-center gap-2">
+                                    <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm text-gray-600 dark:text-gray-400">
+                                        {apiData.data.extra_perks.map((perk, index) => (
+                                            <li key={index} className="flex items-center gap-3">
                                                 <svg
-                                                    className="h-4 w-4 text-[#f97316]"
+                                                    className="h-5 w-5 text-custom-orange flex-shrink-0"
                                                     fill="currentColor"
                                                     viewBox="0 0 20 20"
                                                 >
@@ -929,24 +472,243 @@ const PaymentForm: React.FC = () => {
                                                         clipRule="evenodd"
                                                     />
                                                 </svg>
-                                                {perk}
+                                                <span>{perk}</span>
                                             </li>
                                         ))}
                                     </ul>
                                 </div>
                             </div>
+                        </div>
+                    )}
+
+                    <div className="lg:grid lg:grid-cols-3 lg:gap-8">
+                        <form
+                            onSubmit={handleSubmit}
+                            className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm"
+                        >
+                            {/* Coupon Code */}
+                            <div className="mb-6">
+                                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                    Coupon Code
+                                </label>
+                                <div className="flex gap-3">
+                                    <input
+                                        type="text"
+                                        value={couponCode}
+                                        onChange={(e) => {
+                                            setCouponCode(e.target.value);
+                                            setCouponError(null);
+                                        }}
+                                        className="block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300"
+                                        placeholder="Enter coupon code"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleApplyCoupon}
+                                        className="px-5 py-3 bg-custom-orange text-white rounded-lg hover:bg-custom-orange-hover transition disabled:opacity-50 text-sm font-medium"
+                                        disabled={couponLoading || !couponCode}
+                                    >
+                                        {couponLoading ? 'Applying...' : 'Apply'}
+                                    </button>
+                                </div>
+                                {couponError && <p className="text-custom-error text-xs mt-1">{couponError}</p>}
+                                {appliedCoupon && (
+                                    <p className="text-custom-success text-xs mt-1">
+                                        Coupon applied: {appliedCoupon.description || calculateDiscountedAmount(selectedPlan?.amount || 0).discountDescription}
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* Credit Card Form */}
+                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                Payment Details
+                            </h3>
+                            <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label
+                                        htmlFor="full_name"
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        Full Name (as on card)*
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="full_name"
+                                        name="fullName"
+                                        value={cardDetails.fullName}
+                                        onChange={handleInputChange}
+                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.fullName ? 'border-custom-error shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : ''}`}
+                                        placeholder="Bonnie Green"
+                                        required
+                                    />
+                                    {formErrors.fullName && (
+                                        <p className="text-custom-error text-xs mt-1">{formErrors.fullName}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="card-number-input"
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        Card Number*
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="card-number-input"
+                                        name="cardNumber"
+                                        value={cardDetails.cardNumber}
+                                        onChange={handleInputChange}
+                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.cardNumber ? 'border-custom-error shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : ''}`}
+                                        placeholder="xxxx xxxx xxxx xxxx"
+                                        required
+                                    />
+                                    {formErrors.cardNumber && (
+                                        <p className="text-custom-error text-xs mt-1">{formErrors.cardNumber}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="card-expiration-input"
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        Card Expiration*
+                                    </label>
+                                    <DatePicker
+                                        selected={cardDetails.expiryDate}
+                                        onChange={(date: Date) => setCardDetails((prev) => ({ ...prev, expiryDate: date }))}
+                                        dateFormat="MM/yyyy"
+                                        showMonthYearPicker
+                                        minDate={new Date()}
+                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.expiryDate ? 'border-custom-error shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : ''}`}
+                                        placeholderText="MM/YYYY"
+                                        required
+                                    />
+                                    {formErrors.expiryDate && (
+                                        <p className="text-custom-error text-xs mt-1">{formErrors.expiryDate}</p>
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label
+                                        htmlFor="cvv-input"
+                                        className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        CVV*
+                                        <button
+                                            data-tooltip-target="cvv-desc"
+                                            className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white"
+                                        >
+                                            <svg
+                                                className="h-4 w-4"
+                                                aria-hidden="true"
+                                                xmlns="http://www.w3.org/2000/svg"
+                                                fill="currentColor"
+                                                viewBox="0 0 24 24"
+                                            >
+                                                <path
+                                                    fillRule="evenodd"
+                                                    d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 10 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z"
+                                                    clipRule="evenodd"
+                                                />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            id="cvv-desc"
+                                            role="tooltip"
+                                            className="absolute z-10 invisible inline-block opacity-0 transition-opacity duration-300 bg-custom-orange text-white rounded-lg p-2 text-sm z-50"
+                                        >
+                                            The last 3-4 digits on back of card
+                                            <div className="tooltip-arrow" data-popper-arrow></div>
+                                        </div>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="cvv-input"
+                                        name="cvv"
+                                        value={cardDetails.cvv}
+                                        onChange={handleInputChange}
+                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.cvv ? 'border-custom-error shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : ''}`}
+                                        placeholder="•••"
+                                        required
+                                        onKeyDown={(e) => {
+                                            // Prevent increment/decrement with arrow keys
+                                            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+                                                e.preventDefault();
+                                            }
+                                        }}
+                                    />
+                                    {formErrors.cvv && <p className="text-custom-error text-xs mt-1">{formErrors.cvv}</p>}
+                                </div>
+                            </div>
+
+                            <button
+                                type="submit"
+                                disabled={loading || couponLoading}
+                                className="w-full bg-custom-orange text-white font-medium rounded-lg px-5 py-3.5 text-sm hover:bg-custom-orange-hover focus:outline-none focus:ring-4 focus:ring-custom-orange/50 dark:bg-custom-orange dark:hover:bg-custom-orange-hover dark:focus:ring-custom-orange/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? 'Processing...' : 'Pay Now'}
+                            </button>
+                        </form>
+
+                        <div className="lg:col-span-1 mt-8 lg:mt-0">
+                            <div className="bg-gray-50 dark:bg-gray-700 rounded-xl p-6 shadow-sm">
+                                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                                    Subscription Details
+                                </h3>
+                                <div className="flex flex-wrap gap-3 mb-6">
+                                    {apiData?.data.plans.map((plan) => (
+                                        <button
+                                            key={plan.id}
+                                            type="button"
+                                            onClick={() => setSelectedPlan(plan)}
+                                            className={`px-4 py-2 rounded-lg text-sm font-medium transition-transform duration-300 ${selectedPlan?.id === plan.id
+                                                ? 'bg-custom-orange text-white'
+                                                : 'bg-gray-100 text-gray-900 dark:bg-gray-600 dark:text-white hover:bg-gray-200 dark:hover:bg-gray-500 hover:-translate-y-0.5'
+                                                }`}
+                                        >
+                                            {plan.interval === 'year' ? 'Yearly' : 'Monthly'} (
+                                            {formatPrice(plan.amount)})
+                                        </button>
+                                    ))}
+                                </div>
+
+                                <div className="space-y-4">
+                                    <dl>
+                                        <div className="flex items-center justify-between gap-4">
+                                            <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                                Plan Price
+                                            </dt>
+                                            <dd className="text-sm font-medium text-gray-900 dark:text-white">
+                                                {selectedPlan ? formatPrice(selectedPlan.amount) : formatPrice(0)}
+                                            </dd>
+                                        </div>
+
+                                        {appliedCoupon && (
+                                            <div className="flex items-center justify-between gap-4">
+                                                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                                                    Coupon Discount
+                                                </dt>
+                                                <dd className="text-sm font-medium text-green-600 dark:text-green-400">
+                                                    -{calculateDiscountedAmount(selectedPlan?.amount || 0).discountDescription}
+                                                </dd>
+                                            </div>
+                                        )}
+
+                                        <div className="flex items-center justify-between gap-4 border-t border-gray-200 pt-3 dark:border-gray-600">
+                                            <dt className="text-sm font-bold text-gray-900 dark:text-white">
+                                                Total
+                                            </dt>
+                                            <dd className="text-sm font-bold text-gray-900 dark:text-white">
+                                                {selectedPlan ? formatPrice(calculateDiscountedAmount(selectedPlan.amount).discountedAmount) : formatPrice(0)}
+                                            </dd>
+                                        </div>
+                                    </dl>
+                                </div>
+                            </div>
 
                             <div className="mt-6 flex flex-wrap justify-center gap-4">
-                                <img
-                                    className="h-8 w-auto dark:hidden"
-                                    src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/paypal.svg"
-                                    alt="PayPal"
-                                />
-                                <img
-                                    className="h-8 w-auto hidden dark:flex"
-                                    src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/paypal-dark.svg"
-                                    alt="PayPal"
-                                />
                                 <img
                                     className="h-8 w-auto dark:hidden"
                                     src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg"
@@ -971,18 +733,18 @@ const PaymentForm: React.FC = () => {
                         </div>
                     </div>
 
-                    <p className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
                         Payment processed by{' '}
                         <a
                             href="#"
-                            className="font-medium text-[#f97316] hover:no-underline dark:text-[#f97316]"
+                            className="font-medium text-custom-orange hover:no-underline dark:text-custom-orange"
                         >
                             Paddle
                         </a>{' '}
                         for{' '}
                         <a
                             href="#"
-                            className="font-medium text-[#f97316] hover:no-underline dark:text-[#f97316]"
+                            className="font-medium text-custom-orange hover:no-underline dark:text-custom-orange"
                         >
                             Flowbite LLC
                         </a>{' '}

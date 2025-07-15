@@ -24,6 +24,13 @@ const config: Config = {
         sm: 'calc(var(--radius) - 4px)',
       },
       colors: {
+        'custom-orange': {
+          DEFAULT: '#f97316',
+          hover: '#ea580c',
+        },
+        'custom-error': '#ef4444',
+        'custom-success': '#10b981',
+        'custom-gray': '#d1d5db',
         ...violet,
         ...blackA,
         'custom-dark': '#100A33',
