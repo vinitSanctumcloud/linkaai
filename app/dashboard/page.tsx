@@ -792,6 +792,7 @@ export default function DashboardPage() {
             </Card>
           </>
         )}
+        <Button onClick={()=>setShowPricing(true)}>price</Button>
       </div>
 
       <style jsx global>{`
