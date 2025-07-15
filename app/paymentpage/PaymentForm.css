@@ -2,12 +2,14 @@
 .custom-tooltip::after {
     border-top-color: #f97316;
 }
+
 .react-datepicker {
     border: 1px solid #d1d5db;
     border-radius: 0.5rem;
     width: 100%;
     font-family: 'Inter', sans-serif;
 }
+
 .react-datepicker__header {
     background-color: #f97316;
     color: white;
@@ -15,15 +17,18 @@
     border-radius: 0.5rem 0.5rem 0 0;
     padding: 1rem;
 }
+
 .react-datepicker__day--selected,
 .react-datepicker__day--keyboard-selected {
     background-color: #f97316;
     color: white;
 }
+
 .react-datepicker__day:hover {
     background-color: #ea580c;
     color: white;
 }
+
 .react-datepicker__month-select,
 .react-datepicker__year-select {
     background-color: #fff;
@@ -31,4 +36,32 @@
     border-radius: 0.25rem;
     padding: 0.25rem;
     font-size: 0.875rem;
+}
+
+.error-input {
+    border-color: #ef4444 !important;
+}
+
+.error-text {
+    color: #ef4444;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.success-text {
+    color: #10b981;
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.stripe-card {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    padding: 0.75rem;
+    background-color: #ffffff;
+}
+
+.dark .stripe-card {
+    background-color: #1f2937;
+    border-color: #4b5563;
 }

@@ -1,7 +1,12 @@
-'use client'
+'use client';
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import './PaymentForm.css'; // Import minimal external CSS for react-datepicker and pseudo-elements
+
+// Initialize Stripe with the Publishable Key
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A');
 
 // Dynamically import DatePicker with SSR disabled
 const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
@@ -40,16 +45,12 @@ interface Coupon {
 }
 
 const PaymentForm: React.FC = () => {
+    const stripe = useStripe();
+    const elements = useElements();
     const [cardDetails, setCardDetails] = useState<{
         fullName: string;
-        cardNumber: string;
-        expiryDate: Date | null;
-        cvv: string;
     }>({
         fullName: '',
-        cardNumber: '',
-        expiryDate: null,
-        cvv: '',
     });
     const [couponCode, setCouponCode] = useState<string>('');
     const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
@@ -57,7 +58,7 @@ const PaymentForm: React.FC = () => {
     const [apiData, setApiData] = useState<ApiResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<Partial<Record<keyof typeof cardDetails, string>>>({});
+    const [formErrors, setFormErrors] = useState<Partial<Record<'fullName' | 'cardDetails', string>>>({});
     const [couponError, setCouponError] = useState<string | null>(null);
     const [couponLoading, setCouponLoading] = useState<boolean>(false);
 
@@ -85,6 +86,7 @@ const PaymentForm: React.FC = () => {
                 );
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data: ApiResponse = await response.json();
+                console.log("fetchProductData :: plans :: ", data);
                 setApiData(data);
                 setSelectedPlan(data.data.plans.find(plan => plan.currency === 'USD') || data.data.plans[0]);
             } catch (err) {
@@ -98,14 +100,9 @@ const PaymentForm: React.FC = () => {
     }, []);
 
     const validateForm = (): boolean => {
-        const errors: Partial<Record<keyof typeof cardDetails, string>> = {};
+        const errors: Partial<Record<'fullName' | 'cardDetails', string>> = {};
 
         if (!cardDetails.fullName.trim()) errors.fullName = 'Full name is required';
-        if (!/^\d{16}$/.test(cardDetails.cardNumber.replace(/\D/g, '')))
-            errors.cardNumber = 'Invalid card number (16 digits required)';
-        if (!cardDetails.expiryDate) errors.expiryDate = 'Expiration date is required';
-        else if (cardDetails.expiryDate < new Date()) errors.expiryDate = 'Card has expired';
-        if (!/^\d{2,4}$/.test(cardDetails.cvv)) errors.cvv = 'CVV must be 3 or 4 digits';
 
         setFormErrors(errors);
         return Object.keys(errors).length === 0;
@@ -113,10 +110,6 @@ const PaymentForm: React.FC = () => {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const { name, value } = e.target;
-        if (name === 'cvv') {
-            // Allow only 3-4 digits for CVV
-            if (value.length > 4 || !/^\d*$/.test(value)) return;
-        }
         setCardDetails((prev) => ({ ...prev, [name]: value }));
         setFormErrors((prev) => ({ ...prev, [name]: '' }));
     };
@@ -142,21 +135,18 @@ const PaymentForm: React.FC = () => {
                 body: JSON.stringify({ promotional_code: couponCode, plan_id: selectedPlan?.id }),
             });
 
-            console.log(response, 'response');
-
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error( 'Invalid coupon code');
+                throw new Error(errorData.message || 'Invalid coupon code');
             }
 
             const coupon: Coupon = await response.json();
-            console.log(coupon, 'coupon');
-            if (coupon.message === "Success") {
+            if (coupon.message === 'Success') {
                 setCouponError(null);
                 setAppliedCoupon(coupon);
             } else {
                 setAppliedCoupon(null);
-                setCouponError('Coupon is not validdd');
+                setCouponError(coupon.message || 'Coupon is not valid');
             }
         } catch (err: any) {
             setCouponError(err.message || 'Failed to apply coupon. Please try again.');
@@ -202,14 +192,6 @@ const PaymentForm: React.FC = () => {
         };
     };
 
-    // Create Stripe payment method
-
-    // Handle subscription API call
-
-    // Create Stripe payment method
-
-    // Handle subscription API call
-
     const formatPrice = (amount: number): string => {
         const amountInDollars = amount / 100; // Convert cents to dollars
         try {
@@ -226,23 +208,116 @@ const PaymentForm: React.FC = () => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent): Promise<void> => {
-        e.preventDefault();
-        if (!validateForm()) return;
+    // Create Stripe payment method
+    const createPaymentMethod = async () => {
+        if (!stripe || !elements) {
+            setError('Stripe.js has not loaded yet. Please try again.');
+            throw new Error('Stripe.js has not loaded yet.');
+        }
+
+        const cardElement = elements.getElement(CardElement);
+        if (!cardElement) {
+            setError('Card element not found. Please refresh the page.');
+            throw new Error('Card Element not found');
+        }
+
+        const { error, paymentMethod } = await stripe.createPaymentMethod({
+            type: 'card',
+            card: cardElement,
+            billing_details: {
+                name: cardDetails.fullName || 'Unknown',
+            }
+        });
+
+        if (error) {
+            console.error('Stripe error:', error);
+            setFormErrors((prev) => ({ ...prev, cardDetails: error.message || 'Invalid card details' }));
+            setError(error.message || 'Invalid card details');
+            throw new Error(error.message);
+        }
+
+        return paymentMethod;
+    };
+
+    // Handle subscription API call
+    const createSubscription = async (paymentMethodId: string | null) => {
+        if (!selectedPlan) {
+            setError('No plan selected. Please choose a plan.');
+            throw new Error('No plan selected');
+        }
+
+        console.log("selectedPlan :: ", selectedPlan);
+
+        const payload = {
+            payment_method: paymentMethodId,
+            plan_id: selectedPlan.id,
+            is_free_trial_enable: appliedCoupon?.discountType === 'free_trial',
+        };
+
+        console.log("payload :: ", payload);
 
         try {
-            setLoading(true);
-            const accessToken = localStorage.getItem('access_token');
+            const accessToken = localStorage.getItem('accessToken');
             if (!accessToken) {
                 throw new Error('No access token found');
             }
+            const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/subscribe', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 'Authorization': `Bearer ${accessToken}`,
+                    'Authorization': `Bearer ${accessToken}`,
+                },
+                body: JSON.stringify(payload),
+            });
+
+            console.log(response);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Subscription creation failed');
+            }
+
+            const data = await response.json();
+            console.log('Subscription created:', data);
+            return data;
+        } catch (err: any) {
+            setError(`Failed to create subscription: ${err.message}`);
+            throw err;
+        }
+    };
+
+    const handleSubmit = async (e: React.FormEvent): Promise<void> => {
+        e.preventDefault();
+        if (!validateForm()) return;
+        if (!stripe || !elements) {
+            setError('Stripe.js has not loaded yet. Please try again.');
+            return;
+        }
+        
+        try {
+            const accessToken = localStorage.getItem('accessToken');
+            if (!accessToken) {
+                throw new Error('No access token found');
+            }
+
+            setLoading(true);
+            setError(null);
+
+            const paymentMethod = await createPaymentMethod();
+            console.log("paymentMethod: ", paymentMethod);
+
+            await createSubscription(paymentMethod?.id || null);
+
             const paymentData = {
                 paymentMethod: 'credit-card',
-                cardDetails,
-                selectedPlan: selectedPlan ? {
-                    ...selectedPlan,
-                    amount: calculateDiscountedAmount(selectedPlan.amount).discountedAmount,
-                } : null,
+                cardDetails: { fullName: cardDetails.fullName },
+                selectedPlan: selectedPlan
+                    ? {
+                          ...selectedPlan,
+                          amount: calculateDiscountedAmount(selectedPlan.amount).discountedAmount,
+                      }
+                    : null,
                 coupon: appliedCoupon,
             };
 
@@ -257,9 +332,9 @@ const PaymentForm: React.FC = () => {
 
             if (!response.ok) throw new Error('Payment processing failed');
             console.log('Payment processed:', await response.json());
-            alert('Payment processed successfully!');
-        } catch (err) {
-            setError('Payment processing failed. Please try again.');
+            alert('Payment processed and subscription created successfully!');
+        } catch (err: any) {
+            setError(err.message || 'Payment processing failed. Please try again.');
             console.error(err);
         } finally {
             setLoading(false);
@@ -391,107 +466,43 @@ const PaymentForm: React.FC = () => {
                                         <p className="text-custom-error text-xs mt-1">{formErrors.fullName}</p>
                                     )}
                                 </div>
-
                                 <div>
                                     <label
-                                        htmlFor="card-number-input"
+                                        htmlFor="card-element"
                                         className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
                                     >
-                                        Card Number*
+                                        Card Details*
                                     </label>
-                                    <input
-                                        type="text"
-                                        id="card-number-input"
-                                        name="cardNumber"
-                                        value={cardDetails.cardNumber}
-                                        onChange={handleInputChange}
-                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.cardNumber ? 'border-custom-error shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : ''}`}
-                                        placeholder="xxxx xxxx xxxx xxxx"
-                                        required
-                                    />
-                                    {formErrors.cardNumber && (
-                                        <p className="text-custom-error text-xs mt-1">{formErrors.cardNumber}</p>
+                                    <div className="stripe-card">
+                                        <CardElement
+                                            id="card-element"
+                                            options={{
+                                                style: {
+                                                    base: {
+                                                        fontSize: '14px',
+                                                        color: '#374151',
+                                                        '::placeholder': {
+                                                            color: '#9ca3af',
+                                                        },
+                                                    },
+                                                    invalid: {
+                                                        color: '#ef4444',
+                                                    },
+                                                },
+                                                hidePostalCode: true, // Disable ZIP code input
+                                            }}
+                                            onChange={() => setFormErrors((prev) => ({ ...prev, cardDetails: '' }))}
+                                        />
+                                    </div>
+                                    {formErrors.cardDetails && (
+                                        <p className="text-custom-error text-xs mt-1">{formErrors.cardDetails}</p>
                                     )}
-                                </div>
-
-                                <div>
-                                    <label
-                                        htmlFor="card-expiration-input"
-                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                    >
-                                        Card Expiration*
-                                    </label>
-                                    <DatePicker
-                                        selected={cardDetails.expiryDate}
-                                        onChange={(date: Date) => setCardDetails((prev) => ({ ...prev, expiryDate: date }))}
-                                        dateFormat="MM/yyyy"
-                                        showMonthYearPicker
-                                        minDate={new Date()}
-                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.expiryDate ? 'border-custom-error shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : ''}`}
-                                        placeholderText="MM/YYYY"
-                                        required
-                                    />
-                                    {formErrors.expiryDate && (
-                                        <p className="text-custom-error text-xs mt-1">{formErrors.expiryDate}</p>
-                                    )}
-                                </div>
-
-                                <div>
-                                    <label
-                                        htmlFor="cvv-input"
-                                        className="flex items-center gap-1 text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-                                    >
-                                        CVV*
-                                        <button
-                                            data-tooltip-target="cvv-desc"
-                                            className="text-gray-400 hover:text-gray-900 dark:text-gray-500 dark:hover:text-white"
-                                        >
-                                            <svg
-                                                className="h-4 w-4"
-                                                aria-hidden="true"
-                                                xmlns="http://www.w3.org/2000/svg"
-                                                fill="currentColor"
-                                                viewBox="0 0 24 24"
-                                            >
-                                                <path
-                                                    fillRule="evenodd"
-                                                    d="M2 12C2 6.477 6.477 2 12 2s10 4.477 10 10-4.477 10-10 10S2 17.523 2 12Zm9.408-5.5a1 1 0 1 0 0 2h.01a1 1 0 1 0 0-2h-.01ZM10 10a1 1 0 10 0 2h1v3h-1a1 1 0 1 0 0 2h4a1 1 0 1 0 0-2h-1v-4a1 1 0 0 0-1-1h-2Z"
-                                                    clipRule="evenodd"
-                                                />
-                                            </svg>
-                                        </button>
-                                        <div
-                                            id="cvv-desc"
-                                            role="tooltip"
-                                            className="absolute z-10 invisible inline-block opacity-0 transition-opacity duration-300 bg-custom-orange text-white rounded-lg p-2 text-sm z-50"
-                                        >
-                                            The last 3-4 digits on back of card
-                                            <div className="tooltip-arrow" data-popper-arrow></div>
-                                        </div>
-                                    </label>
-                                    <input
-                                        type="text"
-                                        id="cvv-input"
-                                        name="cvv"
-                                        value={cardDetails.cvv}
-                                        onChange={handleInputChange}
-                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.cvv ? 'border-custom-error shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : ''}`}
-                                        placeholder="•••"
-                                        required
-                                        onKeyDown={(e) => {
-                                            // Prevent increment/decrement with arrow keys
-                                            if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-                                                e.preventDefault();
-                                            }
-                                        }}
-                                    />
-                                    {formErrors.cvv && <p className="text-custom-error text-xs mt-1">{formErrors.cvv}</p>}
                                 </div>
                             </div>
 
                             <button
                                 type="submit"
-                                disabled={loading || couponLoading}
+                                disabled={loading || couponLoading || !stripe || !elements}
                                 className="w-full bg-custom-orange text-white font-medium rounded-lg px-5 py-3.5 text-sm hover:bg-custom-orange-hover focus:outline-none focus:ring-4 focus:ring-custom-orange/50 dark:bg-custom-orange dark:hover:bg-custom-orange-hover dark:focus:ring-custom-orange/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {loading ? 'Processing...' : 'Pay Now'}
@@ -582,10 +593,10 @@ const PaymentForm: React.FC = () => {
                     <p className="mt-8 text-center text-sm text-gray-500 dark:text-gray-400">
                         Payment processed by{' '}
                         <a
-                            href="#"
+                            href="https://stripe.com"
                             className="font-medium text-custom-orange hover:no-underline dark:text-custom-orange"
                         >
-                            Paddle
+                            Stripe
                         </a>{' '}
                         for{' '}
                         <a
@@ -602,4 +613,11 @@ const PaymentForm: React.FC = () => {
     );
 };
 
-export default PaymentForm;
+// Wrap the PaymentForm with Elements provider
+const WrappedPaymentForm: React.FC = () => (
+    <Elements stripe={stripePromise}>
+        <PaymentForm />
+    </Elements>
+);
+
+export default WrappedPaymentForm;
