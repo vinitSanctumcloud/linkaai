@@ -1002,7 +1002,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   {/* Greeting Section */}
                   <div className="text-center mb-6 sm:mb-8">
                     <h4 className="text-lg sm:text-xl font-semibold text-gray-800">
-                      {agentConfig.greetingTitle}, `Hi, I'm ${agentConfig.name || 'Your Agent'}`
+                      {agentConfig.greetingTitle || 'Your Agent'}
                     </h4>
                     <p className="text-lg sm:text-xl font-normal text-gray-700">
                       {agentConfig.greeting || 'Ready to assist you with your needs!'}
