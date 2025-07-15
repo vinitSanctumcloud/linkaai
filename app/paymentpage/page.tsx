@@ -2,12 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { Elements, CardElement, useStripe, useElements, CardCvcElement, CardExpiryElement, CardNumberElement } from '@stripe/react-stripe-js';
 import './PaymentForm.css'; // Import minimal external CSS for react-datepicker and pseudo-elements
 
 // Initialize Stripe with the Publishable Key
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A', {
-    stripeAccount: 'acct_1QIt8ZGfbmnu5L5v'
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!, {
+    stripeAccount: process.env.STRIPE_ACCOUNT_ID!
 });
 
 // Dynamically import DatePicker with SSR disabled
@@ -60,7 +60,7 @@ const PaymentForm: React.FC = () => {
     const [apiData, setApiData] = useState<ApiResponse | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<Partial<Record<'fullName' | 'cardDetails', string>>>({});
+    const [formErrors, setFormErrors] = useState<Partial<Record<'fullName' | 'cardNumber' | 'cardExpiry' | 'cardCvc', string>>>({});
     const [couponError, setCouponError] = useState<string | null>(null);
     const [couponLoading, setCouponLoading] = useState<boolean>(false);
 
@@ -217,15 +217,18 @@ const PaymentForm: React.FC = () => {
             throw new Error('Stripe.js has not loaded yet.');
         }
 
-        const cardElement = elements.getElement(CardElement);
-        if (!cardElement) {
-            setError('Card element not found. Please refresh the page.');
-            throw new Error('Card Element not found');
+        const cardNumberElement = elements.getElement(CardNumberElement);
+        const cardExpiryElement = elements.getElement(CardExpiryElement);
+        const cardCvcElement = elements.getElement(CardCvcElement);
+
+        if (!cardNumberElement || !cardExpiryElement || !cardCvcElement) {
+            setError('Card elements not found. Please refresh the page.');
+            throw new Error('Card elements not found');
         }
 
         const { error, paymentMethod } = await stripe.createPaymentMethod({
             type: 'card',
-            card: cardElement,
+            card: cardNumberElement,
             billing_details: {
                 name: cardDetails.fullName || 'Unknown',
             }
@@ -344,6 +347,21 @@ const PaymentForm: React.FC = () => {
         }
     };
 
+    const cardElementOptions = {
+        style: {
+            base: {
+                fontSize: '14px',
+                color: '#374151',
+                '::placeholder': {
+                    color: '#9ca3af',
+                },
+            },
+            invalid: {
+                color: '#ef4444',
+            },
+        },
+    };
+
     return (
         <section className="bg-gray-50 dark:bg-gray-900 py-12 md:py-16 min-h-screen">
             <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -447,7 +465,7 @@ const PaymentForm: React.FC = () => {
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
                                 Payment Details
                             </h3>
-                            <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            {/* <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
                                 <div>
                                     <label
                                         htmlFor="full_name"
@@ -499,6 +517,83 @@ const PaymentForm: React.FC = () => {
                                     </div>
                                     {formErrors.cardDetails && (
                                         <p className="text-custom-error text-xs mt-1">{formErrors.cardDetails}</p>
+                                    )}
+                                </div>
+                            </div> */}
+                                                        <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div>
+                                    <label
+                                        htmlFor="full_name"
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        Full Name (as on card)*
+                                    </label>
+                                    <input
+                                        type="text"
+                                        id="full_name"
+                                        name="fullName"
+                                        value={cardDetails.fullName}
+                                        onChange={handleInputChange}
+                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-custom-orange focus:ring-custom-orange dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.fullName ? 'border-custom-error shadow-[0_0_0_3px_rgba(239,68,68,0.1)]' : ''}`}
+                                        placeholder="Bonnie Green"
+                                        required
+                                    />
+                                    {formErrors.fullName && (
+                                        <p className="text-custom-error text-xs mt-1">{formErrors.fullName}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor="card-number"
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        Card Number*
+                                    </label>
+                                    <div className="stripe-card">
+                                        <CardNumberElement
+                                            id="card-number"
+                                            options={cardElementOptions}
+                                            onChange={() => setFormErrors((prev) => ({ ...prev, cardNumber: '' }))}
+                                        />
+                                    </div>
+                                    {formErrors.cardNumber && (
+                                        <p className="text-custom-error text-xs mt-1">{formErrors.cardNumber}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor="card-expiry"
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        Expiration Date*
+                                    </label>
+                                    <div className="stripe-card">
+                                        <CardExpiryElement
+                                            id="card-expiry"
+                                            options={cardElementOptions}
+                                            onChange={() => setFormErrors((prev) => ({ ...prev, cardExpiry: '' }))}
+                                        />
+                                    </div>
+                                    {formErrors.cardExpiry && (
+                                        <p className="text-custom-error text-xs mt-1">{formErrors.cardExpiry}</p>
+                                    )}
+                                </div>
+                                <div>
+                                    <label
+                                        htmlFor="card-cvc"
+                                        className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
+                                    >
+                                        CVC*
+                                    </label>
+                                    <div className="stripe-card">
+                                        <CardCvcElement
+                                            id="card-cvc"
+                                            options={cardElementOptions}
+                                            onChange={() => setFormErrors((prev) => ({ ...prev, cardCvc: '' }))}
+                                        />
+                                    </div>
+                                    {formErrors.cardCvc && (
+                                        <p className="text-custom-error text-xs mt-1">{formErrors.cardCvc}</p>
                                     )}
                                 </div>
                             </div>
