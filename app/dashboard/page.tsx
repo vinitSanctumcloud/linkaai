@@ -479,7 +479,7 @@ export default function DashboardPage() {
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white select-text">
                   <span className="bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
-                    Good {getTimeOfDay()},
+                    Good {getTimeOfDay()} ,
                   </span>
                   <motion.span
                     className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
@@ -492,7 +492,8 @@ export default function DashboardPage() {
                       ease: "linear"
                     }}
                     style={{
-                      backgroundSize: '200% 200%'
+                      backgroundSize: '200% 200%',
+                      marginLeft: '0.50rem',
                     }}
                   >
                     {'User'}!
@@ -658,7 +659,7 @@ export default function DashboardPage() {
                                 <Plus className="h-5 w-5 text-orange-600" />
                               </div>
                               <div className="text-left">
-                                <div className="font-medium text-gray-900 dark:text-white select-text">Add Affiliate Links</div>
+                                <div className="font-medium text-gray-900 dark:text-white select-text">Affiliate Links</div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400 select-text">Connect your products</div>
                               </div>
                             </div>
@@ -671,12 +672,12 @@ export default function DashboardPage() {
                         <Button asChild variant="outline" className="w-full cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
                           <div>
                             <div className="flex items-center">
-                              <div className="mr-3 p-2bg-gray-100 dark:bg-gray-700 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
+                              <div className="mr-3 p-2bg-gray-100  rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
                                 <Bot className="h-5 w-5 text-blue-600" />
                               </div>
                               <div className="text-left">
-                                <div className="font-medium text-gray-900 dark:text-white select-text">Get Embed Code</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 select-text">Add to your website</div>
+                                <div className="font-medium text-gray-900 dark:text-white select-text">Share Agent & Grow</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 select-text">Share on social. Embed on Website</div>
                               </div>
                             </div>
                             <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-200" />
@@ -688,7 +689,7 @@ export default function DashboardPage() {
                         <Button asChild variant="outline" className="w-full justify-between cursor-pointer px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
                           <div>
                             <div className="flex items-center">
-                              <div className="mr-3 p-2bg-gray-100 dark:bg-gray-700 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
+                              <div className="mr-3 p-2bg-gray-100  rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
                                 <BarChart3 className="h-5 w-5 text-purple-600" />
                               </div>
                               <div className="text-left">
@@ -717,14 +718,14 @@ export default function DashboardPage() {
                     Let's Get You Started!
                   </CardTitle>
                   <CardDescription className="text-orange-800/90 dark:text-orange-300/90 select-text">
-                    Follow these simple steps to launch your AI shopping assistant
+                    Follow these simple steps to launch your AI monetization agent
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="relative z-10">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <OnboardingStep
                       step={1}
-                      title="Add Your Products"
+                      title="Add Your Recommendations"
                       description="Connect your affiliate links and let AI handle the rest"
                       buttonText="Add Links"
                       href="/agent"
@@ -733,7 +734,7 @@ export default function DashboardPage() {
                     <OnboardingStep
                       step={2}
                       title="Customize Your Agent"
-                      description="Personalize your AI's appearance and behavior"
+                      description="Personalize your AI's behavior and knowledge base"
                       buttonText="Customize"
                       href="/settings"
                       icon={<Settings className="h-5 w-5" />}
@@ -763,16 +764,10 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <TipCard
-                    title="Optimize Product Titles"
-                    description="Use clear, descriptive titles with keywords"
+                    title="Optimize Agent's Persona"
+                    description="Clearly define agent's role and specialization, and goals"
                     icon="✨"
                     color="purple"
-                  />
-                  <TipCard
-                    title="Add High-Quality Images"
-                    description="Visuals increase engagement by 40%"
-                    icon="🖼️"
-                    color="blue"
                   />
                   <TipCard
                     title="Use Multiple Links"
@@ -784,6 +779,12 @@ export default function DashboardPage() {
                     title="Promote Your Chat"
                     description="Share on social media for more traffic"
                     icon="📢"
+                    color="orange"
+                  />
+                  <TipCard
+                    title="Scale with Pro Monetization"
+                    description="Earn commissions on related AI recommendations"
+                    icon="💰"
                     color="orange"
                   />
                 </div>
@@ -839,33 +840,28 @@ function StatCard({ title, value, icon, trend, change, period, currency = false,
   }
   return (
     <Card className="border border-gray-200 dark:border-gray-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md overflow-hidden group relative">
-      {/* Coming Soon Banner */}
+
+      {/* Simple Elegant Ribbon with Hover Animation */}
       {comingSoon && (
-        <>
-          {/* Background Overlay */}
-          <div className="absolute inset-0 z-20 bg-gradient-to-br from-transparent via-white/10 to-transparent opacity-30 group-hover:opacity-100 transition-opacity duration-500" />
-
-          {/* Coming Soon Badge */}
-          <div className="absolute -top-2 left-0 right-0 z-30 flex justify-center">
-            <div className="mt-2 px-4 py-1 bg-slate-700 text-white text-xs font-bold rounded-b-lg shadow-lg animate-pulse">
-              <span className="flex items-center space-x-1">
-                <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                COMING SOON
-              </span>
+        <div className="absolute -right-2 top-3 z-20 overflow-hidden">
+          <div className="relative bg-gradient-to-r from-amber-500 to-amber-600 h-6 flex items-center justify-center shadow-sm 
+                         transform transition-all duration-300 group-hover:translate-y-0.5 group-hover:shadow-md">
+            <div className="text-white text-xs font-bold uppercase tracking-wider px-3 rounded-md">
+              Coming Soon
             </div>
+            {/* Ribbon fold effect */}
+            <div className="absolute -left-1.5 top-0 h-full w-1.5 bg-amber-700/50 skew-x-12" />
+            <div className="absolute -right-1.5 top-0 h-full w-1.5 bg-amber-700/50 -skew-x-12" />
           </div>
-          <div className="absolute inset-0 z-10 overflow-hidden pointer-events-none">
-            <div className="absolute -inset-1 bg-slate-500 rounded-lg blur opacity-70 group-hover:opacity-100 transition-all duration-500 animate-pulse" />
-          </div>
-
-          {/* Card Content Blur Effect */}
-          <div className="absolute inset-0 z-40 bg-gradient-to-br from-white/50 to-transparent dark:from-black/50 dark:to-transparent" />
-        </>
+        </div>
       )}
 
-      <CardContent className={`p-4 md:p-6 relative z-10 select-text ${comingSoon ? 'blur-sm hover:blur-none transition-all duration-300' : ''}`}>
+      {/* Subtle Overlay Effect */}
+      {comingSoon && (
+        <div className="absolute inset-0 z-10 bg-white/30 dark:bg-black/20 transition-opacity duration-300 group-hover:opacity-70" />
+      )}
+
+      <CardContent className={`p-4 md:p-6 relative ${comingSoon ? 'opacity-90 group-hover:opacity-100 transition-opacity duration-300' : ''}`}>
         <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{title}</p>
@@ -884,17 +880,6 @@ function StatCard({ title, value, icon, trend, change, period, currency = false,
           </div>
         </div>
       </CardContent>
-
-      {/* Add this to your global CSS */}
-      <style jsx global>{`
-          @keyframes pulse {
-            0%, 100% { opacity: 0.7; }
-            50% { opacity: 1; }
-          }
-          .animate-pulse {
-            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-          }
-        `}</style>
     </Card>
   )
 }

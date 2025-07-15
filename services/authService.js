@@ -183,23 +183,35 @@ export const resetPassword = async ({ otp, email, password, security_token, veri
   }
 }
 
-export const logout = async () => {
-  const response = await fetch(API.LOGOUT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-  })
 
+export const Logout = async () => {
+  try {
+    console.log('Sending logout request to:', API.LOGOUT);
+    const response = await fetch(API.LOGOUT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      credentials: 'include', // Include credentials if tokens are managed via cookies
+    });
 
+    console.log('Logout response status:', response.status);
+    const data = await response.json();
+    console.log('Logout response data:', data);
+    console.log(data.message, 'Logout Response Message')
+    console.log(response.ok, 'Logout Response OK')
 
+    if (!!response.ok) {
+      throw new Error(data.message || 'Logout failed');
+    }
 
-
-
-
-
-  
-  if (!response.ok) {
-    throw new Error('Logout failed')
+    return {
+      success: true,
+      message: data.message || 'Logged out successfully',
+    };
+  } catch (error) {
+    console.error('Logout error:', error);
+    throw error;
   }
-
-  return { success: true, message: 'Logged out successfully' }
 }

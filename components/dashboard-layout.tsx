@@ -15,11 +15,12 @@ import {
   Sun,
   Moon,
   ExternalLink,
-  Store
+  Store,
+  BadgeDollarSign
 } from 'lucide-react'
 import React, { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { logout } from '@/services/authService'
+import { Logout } from '@/services/authService'
 import { toast } from 'sonner'
 import logo from '@/public/Linklogo.png'
 import logoDark from '@/public/logo2.png'
@@ -33,6 +34,7 @@ const navigation = [
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Affiliate Marketplace', href: '/affiliatemarketplace', icon: Store },
+  { name: 'Go To TCM', href: '/gototcm', icon: BadgeDollarSign },
 ]
 
 interface DashboardLayoutProps {
@@ -58,9 +60,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const handlelogout = async () => {
     try {
-      await logout()
+      await Logout()
+      // Clear local storage
+      localStorage.clear()
       toast.success('Logged out successfully')
-      await signOut({ callbackUrl: '/' })
+      router.push('/login')
     } catch (error) {
       console.error('Logout failed:', error)
       toast.error('Failed to log out')
@@ -159,7 +163,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               onClick={() => setIsOpen(!isOpen)}
               className={cn(
                 "p-2 my-auto rounded-lg focus-visible:ring-2 focus-visible:ring-orange-500 dark:focus-visible:ring-orange-400 focus-visible:ring-offset-2 transition-all",
-                "text-gray-600 hover:text-gray-800 hover:bg-gray-200",
+                "text-gray-600 proliferations:text-gray-800 hover:bg-gray-200",
                 "dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
               )}
               aria-label={isOpen ? 'Close navigation menu' : 'Open navigation menu'}
@@ -221,13 +225,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               {navigation.map((item) => {
                 const isActive = pathname === item.href;
                 const isComingSoon = item.name === 'Affiliate Marketplace';
+                const isTCM = item.name.includes('TCM'); // Check for TCM item
 
                 return (
-                  <div className="relative" key={item.name}>
+                  <div className="relative group" key={item.name}>
                     <Link
                       href={item.href}
                       className={cn(
-                        "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200",
+                        "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 w-full",
                         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 dark:focus-visible:ring-orange-400 focus-visible:ring-offset-2",
                         isActive
                           ? "bg-orange-50 text-orange-700 border-r-4 border-orange-600 dark:bg-orange-900/20 dark:text-orange-300 dark:border-orange-400"
@@ -237,12 +242,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                       onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
                     >
                       <item.icon className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
-                      <span className="truncate">{item.name}</span>
+                      <div className="flex flex-col w-full overflow-hidden">
+                        <span className="truncate">{item.name}</span>
+                        {isTCM && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-normal mt-0.5">
+                            Set up your store & start earning
+                          </span>
+                        )}
+                      </div>
                     </Link>
 
                     {isComingSoon && (
-                      <span className="absolute -top-1 right-4 inline-flex items-center px-1.5 py-0.5 text-xs font-semibold bg-gradient-to-r from-[#f9943b] via-[#ff6b35] to-[#ff4757] text-white rounded-full shadow-lg animate-bounce hover:animate-none transition-all duration-500 hover:scale-110 hover:shadow-xl hover:from-[#e8832a] hover:via-[#e85a24] hover:to-[#e83646] before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-r before:from-[#faa94c] before:via-[#ff7c46] before:to-[#ff5868] before:animate-ping before:opacity-30">
-                        <span className="relative z-10">Soon</span>
+                      <span className="absolute -top-1 right-10 inline-flex items-center px-1.5 py-0.5 text-xs font-semibold bg-gradient-to-r from-[#f9943b] via-[#ff6b35] to-[#ff4757] text-white rounded-full shadow-lg animate-bounce hover:animate-none transition-all duration-500 hover:scale-110 hover:shadow-xl hover:from-[#e8832a] hover:via-[#e85a24] hover:to-[#e83646] before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-r before:from-[#faa94c] before:via-[#ff7c46] before:to-[#ff5868] before:animate-ping before:opacity-30">
+                        <span className="relative z-10">Coming Soon</span>
                       </span>
                     )}
                   </div>

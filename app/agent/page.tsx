@@ -20,20 +20,38 @@ interface ConditionalPrompt {
   option2: { label: string; followUps: string[] }
 }
 
+interface PartnerLink {
+  id: string
+  category: string
+  affiliateBrandName: string
+  affiliateLink: string
+  productReview?: string
+  socialMediaLink?: string
+}
+
+interface LinkaProMonetization {
+  id: string
+  category: string
+  affiliateBrandName: string
+  mainUrl: string
+}
+
 interface AgentConfig {
   name: string
   trainingInstructions: string
   greeting: string
   avatar: string | null
   prompts: string[]
-  partnerUrls: string[]
+  partnerLinks: PartnerLink[]
+  linkaProMonetizations: LinkaProMonetization[]
   conditionalPrompts: ConditionalPrompt[]
   useConditionalPrompts: boolean
-  video: string | null // ✅ Store video as a string (Base64 or URL)
+  video: string | null
+  greetingTitle: string
 }
 
 export default function AgentBuilderPage() {
-  const [currentStep, setCurrentStep] = useState(1) // Set to step 3 as per request
+  const [currentStep, setCurrentStep] = useState(1)
   const [showPreview, setShowPreview] = useState(false)
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: '',
@@ -41,10 +59,12 @@ export default function AgentBuilderPage() {
     greeting: '',
     avatar: null,
     prompts: ['', '', '', ''],
-    partnerUrls: [''],
+    partnerLinks: [],
+    linkaProMonetizations: [],
     conditionalPrompts: [],
     useConditionalPrompts: false,
-    video: null
+    video: null,
+    greetingTitle: ''
   })
 
   // Conditional prompt modal states
@@ -60,7 +80,7 @@ export default function AgentBuilderPage() {
   const steps = [
     { id: 1, title: 'Avatar & Greeting', description: 'Upload photo and create opening message' },
     { id: 2, title: 'AI Training', description: 'Name your agent and provide training instructions' },
-    { id: 3, title: 'Partner URLs', description: 'Add your affiliate links' },
+    { id: 3, title: 'Partner URLs', description: 'Add your affiliate links and monetization options' },
     { id: 4, title: 'Prompts', description: 'Design conversation starters and branching logic' },
     { id: 5, title: 'Preview & Test', description: 'Test your AI agent' }
   ]
@@ -128,39 +148,63 @@ export default function AgentBuilderPage() {
     setAgentConfig(prev => ({ ...prev, prompts: newPrompts }))
   }
 
-  const addPartnerUrl = () => {
-    setAgentConfig(prev => ({ ...prev, partnerUrls: [...prev.partnerUrls, ''] }))
-  }
-
-  const updatePartnerUrl = (index: number, value: string) => {
-    const newUrls = [...agentConfig.partnerUrls]
-    newUrls[index] = value
-    setAgentConfig(prev => ({ ...prev, partnerUrls: newUrls }))
-  }
-
-  const removePartnerUrl = (index: number) => {
+  const addPartnerLink = () => {
     setAgentConfig(prev => ({
       ...prev,
-      partnerUrls: prev.partnerUrls.filter((_, i) => i !== index)
+      partnerLinks: [...prev.partnerLinks, { id: Date.now().toString(), category: '', affiliateBrandName: '', affiliateLink: '', productReview: '', socialMediaLink: '' }]
     }))
   }
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    console.log('Video upload:', file);
+  const updatePartnerLink = (id: string, field: keyof PartnerLink, value: string) => {
+    setAgentConfig(prev => ({
+      ...prev,
+      partnerLinks: prev.partnerLinks.map(link => link.id === id ? { ...link, [field]: value } : link)
+    }))
+  }
 
+  const removePartnerLink = (id: string) => {
+    setAgentConfig(prev => ({
+      ...prev,
+      partnerLinks: prev.partnerLinks.filter(link => link.id !== id)
+    }))
+    toast.success('Partner link removed!')
+  }
+
+  const addLinkaProMonetization = () => {
+    setAgentConfig(prev => ({
+      ...prev,
+      linkaProMonetizations: [...prev.linkaProMonetizations, { id: Date.now().toString(), category: '', affiliateBrandName: '', mainUrl: '' }]
+    }))
+  }
+
+  const updateLinkaProMonetization = (id: string, field: keyof LinkaProMonetization, value: string) => {
+    setAgentConfig(prev => ({
+      ...prev,
+      linkaProMonetizations: prev.linkaProMonetizations.map(link => link.id === id ? { ...link, [field]: value } : link)
+    }))
+  }
+
+  const removeLinkaProMonetization = (id: string) => {
+    setAgentConfig(prev => ({
+      ...prev,
+      linkaProMonetizations: prev.linkaProMonetizations.filter(link => link.id !== id)
+    }))
+    toast.success('Linka Pro Monetization removed!')
+  }
+
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (file) {
-      const reader = new FileReader();
+      const reader = new FileReader()
       reader.onload = (e) => {
         setAgentConfig(prev => ({
           ...prev,
-          video: e.target?.result as string, // ✅ store as `video`, not `avatar`
-        }));
-      };
-      reader.readAsDataURL(file); // ✅ Base64 for preview
+          video: e.target?.result as string
+        }))
+      }
+      reader.readAsDataURL(file)
     }
-  };
-
+  }
 
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
@@ -183,9 +227,10 @@ export default function AgentBuilderPage() {
           trainingInstructions: agentConfig.trainingInstructions,
           agentGreeting: agentConfig.greeting,
           avatarUrl: agentConfig.avatar,
-          agentPrompts: agentConfig.useConditionalPrompts ? [] : agentConfig.prompts,
+          agentPrompts: agentConfig.useConditionalPrompts ? [] : agentConfig.prompts.filter(p => p.trim()),
           conditionalPrompts: agentConfig.useConditionalPrompts ? agentConfig.conditionalPrompts : [],
-          partnerUrls: agentConfig.partnerUrls.filter(url => url.trim() !== '')
+          partnerLinks: agentConfig.partnerLinks.filter(link => link.affiliateLink.trim() !== ''),
+          linkaProMonetizations: agentConfig.linkaProMonetizations.filter(link => link.mainUrl.trim() !== '')
         }),
       })
 
@@ -200,6 +245,24 @@ export default function AgentBuilderPage() {
   }
 
   const nextStep = () => {
+    if (currentStep === 1 && (!agentConfig.greeting.trim() || !agentConfig.greetingTitle.trim())) {
+      toast.error('Please fill in the greeting and greeting title.');
+      return;
+    }
+    if (currentStep === 2 && (!agentConfig.name.trim() || !agentConfig.trainingInstructions.trim())) {
+      toast.error('Please fill in the agent name and training instructions.');
+      return;
+    }
+    if (currentStep === 4) {
+      if (!agentConfig.useConditionalPrompts && agentConfig.prompts.every(prompt => !prompt.trim())) {
+        toast.error('Please add at least one non-empty prompt or enable conditional prompts.');
+        return;
+      }
+      if (agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length === 0) {
+        toast.error('Please add at least one conditional prompt.');
+        return;
+      }
+    }
     if (currentStep < 5) setCurrentStep(currentStep + 1)
   }
 
@@ -209,6 +272,148 @@ export default function AgentBuilderPage() {
 
   const renderStepContent = () => {
     switch (currentStep) {
+      case 1:
+        return (
+          <Card className="border-none shadow-lg rounded-2xl overflow-hidden bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+            <CardHeader className="px-6 pt-6 pb-4">
+              <div className="space-y-1">
+                <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight">
+                  Avatar & Greeting
+                </CardTitle>
+                <p className="text-sm text-linka-night/70 font-light">
+                  Personalize your AI's identity, avatar, and welcome message
+                </p>
+              </div>
+            </CardHeader>
+            <CardContent className="px-6 pb-8 space-y-8">
+              <div className="flex flex-col items-center">
+                <div className="relative group">
+                  <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+                    {agentConfig.avatar ? (
+                      <img
+                        src={agentConfig.avatar}
+                        alt="Agent Avatar"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      />
+                    ) : agentConfig.video ? (
+                      <video
+                        src={agentConfig.video}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover rounded-full"
+                      />
+                    ) : (
+                      <Bot className="w-14 h-14 sm:w-20 sm:h-20 text-white/90 animate-pulse" />
+                    )}
+                  </div>
+                  <div className="flex gap-3 absolute -bottom-2 right-6 sm:right-7">
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        className="hidden"
+                        id="avatar-upload"
+                      />
+                      <label
+                        htmlFor="avatar-upload"
+                        className="bg-white border-2 border-linka-dark-orange text-linka-dark-orange rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-dark-orange hover:text-white shadow-md flex items-center gap-1.5"
+                      >
+                        <Upload className="w-5 h-5" strokeWidth={2.5} />
+                        <span className="text-xs font-medium hidden sm:inline">Image</span>
+                        <span className="sr-only">Upload avatar image</span>
+                      </label>
+                    </div>
+                    <div>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={handleVideoUpload}
+                        className="hidden"
+                        id="video-upload"
+                      />
+                      <label
+                        htmlFor="video-upload"
+                        className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1.5"
+                      >
+                        <Upload className="w-5 h-5" strokeWidth={2.5} />
+                        <span className="text-xs font-medium hidden sm:inline">Video</span>
+                        <span className="sr-only">Upload avatar video</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs text-linka-night/60 mt-5 font-medium">
+                  Recommended: Video (max 10MB, under 30s, 1:1 aspect ratio)
+                </p>
+              </div>
+              <div className="space-y-3">
+                <Label htmlFor="greeting-title" className="text-linka-russian-violet font-medium flex items-center gap-1">
+                  Greeting Title <span className="text-xs text-linka-dark-orange">(Max 50 chars)</span>
+                </Label>
+                <Textarea
+                  id="greeting-title"
+                  placeholder="Example: Hi I'm Your AI ,"
+                  value={agentConfig.greetingTitle || ""}
+                  onChange={(e) => handleInputChange('greetingTitle', e.target.value)}
+                  rows={1}
+                  maxLength={50}
+                  className="w-full px-4 py-3 text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
+                />
+                <div className="flex justify-between items-center">
+                  <p className="text-xs text-linka-night/50 italic">
+                    Pro tip: Keep it short and engaging
+                  </p>
+                  <span
+                    className={`text-xs ${agentConfig.greetingTitle?.length === 50 ? 'text-red-400' : 'text-linka-night/50'}`}
+                  >
+                    {agentConfig.greetingTitle?.length || 0}/50
+                  </span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <Label htmlFor="greeting" className="text-linka-russian-violet font-medium flex items-center gap-1">
+                  Opening Greeting <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
+                </Label>
+                <Textarea
+                  id="greeting"
+                  placeholder="Example: I can help you find the coolest places in NYC to visit!"
+                  value={agentConfig.greeting}
+                  onChange={(e) => handleInputChange('greeting', e.target.value)}
+                  rows={3}
+                  maxLength={120}
+                  className="w-full px-4 py-3 text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
+                />
+                <div className="flex justify-between items-center">
+                  <p className="text-xs text-linka-night/50 italic">
+                    Pro tip: Keep it relevant to your expertise
+                  </p>
+                  <span
+                    className={`text-xs ${agentConfig.greeting?.length === 120 ? 'text-red-400' : 'text-linka-night/50'}`}
+                  >
+                    {agentConfig.greeting?.length || 0}/120
+                  </span>
+                </div>
+              </div>
+              <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-5 border border-linka-alice-blue/80 overflow-hidden relative">
+                <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
+                <p className="text-xs text-linka-night/60 mb-3 font-medium uppercase tracking-wider">
+                  Live Preview
+                </p>
+                <div className="text-center space-y-3 relative z-10">
+                  <h4 className="text-xl md:text-2xl font-medium text-linka-russian-violet animate-in fade-in">
+                    {agentConfig.greetingTitle || "Hi I'm Your AI ,"}
+                  </h4>
+                  <p className="text-lg md:text-xl font-semibold text-linka-night/90 animate-in fade-in delay-100">
+                    {agentConfig.greeting || 'I can help you find the coolest places in NYC to visit!'}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )
       case 2:
         return (
           <Card className="w-full mx-auto border-none shadow-xl rounded-2xl bg-white/95 backdrop-blur-sm">
@@ -252,14 +457,23 @@ export default function AgentBuilderPage() {
                 </Label>
                 <Textarea
                   id="training-instructions"
-                  placeholder="Describe your agent's role, tone, and how it should respond..."
+                  placeholder={`# PERSONA
+- Their Role (e.g., digital concierge, stylist, skincare expert)
+- Tone and personality (e.g., friendly, elegant, witty, minimal)
+
+# INSTRUCTIONS
+- What they specialize in (e.g., travel, tech, fashion)
+- Their Goal for users (e.g., recommend, inspire, solve problems)
+
+# EXAMPLE
+You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant, and knowledgeable about European-inspired fashion, Parisian luxury, and curated travel + shopping experiences in France. You help visitors discover high-quality brands, wardrobe staples, and timeless fashion finds — always in a chic, minimal, and helpful tone.`}
                   value={agentConfig.trainingInstructions}
                   onChange={(e) => handleInputChange('trainingInstructions', e.target.value)}
                   rows={8}
                   className="w-full text-base p-3 border border-gray-300 rounded-lg 
-                  focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 
-                  transition-all duration-200 placeholder:text-gray-400/60
-                  hover:border-gray-400 resize-none"
+    focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 
+    transition-all duration-200 placeholder:text-gray-400/60
+    hover:border-gray-400 resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Clear and detailed instructions will improve your agent's performance
@@ -268,132 +482,267 @@ export default function AgentBuilderPage() {
             </CardContent>
           </Card>
         )
-      case 1:
+      case 3:
         return (
-          <Card className="border-none shadow-lg rounded-2xl overflow-hidden bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
             <CardHeader className="px-6 pt-6 pb-4">
               <div className="space-y-1">
-                <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight">
-                  Avatar & Greeting
+                <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
+                  <LinkIcon className="w-5 h-5 text-linka-dark-orange" />
+                  Partner URLs & Monetization
                 </CardTitle>
                 <p className="text-sm text-linka-night/70 font-light">
-                  Personalize your AI's identity, avatar, and welcome message
+                  Add affiliate links and Linka Pro monetization options
                 </p>
               </div>
             </CardHeader>
-            <CardContent className="px-6 pb-8 space-y-8">
-              {/* Avatar Upload Section */}
-              <div className="flex flex-col items-center">
-                <div className="relative group">
-                  {/* Avatar Display */}
-                  <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-44 md:h-44 rounded-2xl overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
-                    {agentConfig.avatar ? (
-                      <img
-                        src={agentConfig.avatar}
-                        alt="Agent Avatar"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                    ) : agentConfig.video ? (
-                      <video
-                        src={agentConfig.video}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover rounded-2xl"
-                      />
-
-                    ) : (
-                      <Bot className="w-14 h-14 sm:w-20 sm:h-20 text-white/90 animate-pulse" />
-                    )}
-                  </div>
-
-                  {/* Upload Buttons */}
-                  <div className="flex gap-3 absolute -bottom-2 right-0 sm:right-0">
-                    {/* Image Upload */}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      className="hidden"
-                      id="avatar-upload"
-                    />
-                    <label
-                      htmlFor="avatar-upload"
-                      className="bg-white border-2 border-linka-dark-orange text-linka-dark-orange rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-dark-orange hover:text-white shadow-md flex items-center gap-1.5"
-                    >
-                      <Upload className="w-5 h-5" strokeWidth={2.5} />
-                      <span className="text-xs font-medium hidden sm:inline">Image</span>
-                      <span className="sr-only">Upload avatar image</span>
-                    </label>
-                    {/* Video Upload */}
-                    <input
-                      type="file"
-                      accept="video/*"
-                      onChange={handleVideoUpload}
-                      className="hidden"
-                      id="video-upload"
-                    />
-                    <label
-                      htmlFor="video-upload"
-                      className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1.5"
-                    >
-                      <Upload className="w-5 h-5" strokeWidth={2.5} />
-                      <span className="text-xs font-medium hidden sm:inline">Video</span>
-                      <span className="sr-only">Upload avatar video</span>
-                    </label>
-                  </div>
-                </div>
-                <p className="text-xs text-linka-night/60 mt-5 font-medium">
-                  Recommended: Square image (500×500px, max 2MB) or video (max 10MB)
-                </p>
-              </div>
-              {/* Greeting Input Section */}
-              <div className="space-y-3">
-                <Label htmlFor="greeting" className="text-linka-russian-violet font-medium flex items-center gap-1">
-                  Opening Greeting <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
-                </Label>
-                <Textarea
-                  id="greeting"
-                  placeholder="Example: 'Hello! I'm your AI assistant, how can I help?'"
-                  value={agentConfig.greeting}
-                  onChange={(e) => handleInputChange('greeting', e.target.value)}
-                  rows={3}
-                  maxLength={120}
-                  className="w-full px-4 py-3 text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
-                />
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-linka-night/50 italic">
-                    Pro tip: Keep it friendly and inviting
+            <CardContent className="px-6 pb-6 space-y-8">
+              {/* Partner Links Section */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                    <Link2 className="w-5 h-5 text-linka-carolina-blue" />
+                    Partner Links
+                  </h3>
+                  <p className="text-xs text-linka-night/60">
+                    Add affiliate links with detailed information for your AI to recommend
                   </p>
-                  <span
-                    className={`text-xs ${agentConfig.greeting?.length === 120 ? 'text-red-400' : 'text-linka-night/50'}`}
-                  >
-                    {agentConfig.greeting?.length || 0}/120
-                  </span>
                 </div>
+                {agentConfig.partnerLinks.length > 0 ? (
+                  <div className="space-y-4">
+                    {agentConfig.partnerLinks.map((link) => (
+                      <Card
+                        key={link.id}
+                        className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300"
+                      >
+                        <CardContent className="p-4 space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`category-${link.id}`} className="text-linka-russian-violet font-medium">
+                                Category <span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                id={`category-${link.id}`}
+                                placeholder="e.g., Travel, Fashion"
+                                value={link.category}
+                                onChange={(e) => updatePartnerLink(link.id, 'category', e.target.value)}
+                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`brand-${link.id}`} className="text-linka-russian-violet font-medium">
+                                Affiliate Brand Name <span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                id={`brand-${link.id}`}
+                                placeholder="e.g., Booking.com, Nike"
+                                value={link.affiliateBrandName}
+                                onChange={(e) => updatePartnerLink(link.id, 'affiliateBrandName', e.target.value)}
+                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`affiliate-link-${link.id}`} className="text-linka-russian-violet font-medium">
+                                Affiliate Link <span className="text-red-500">*</span>
+                              </Label>
+                              <div className="relative">
+                                <Input
+                                  id={`affiliate-link-${link.id}`}
+                                  placeholder="https://affiliate-link.com"
+                                  value={link.affiliateLink}
+                                  onChange={(e) => updatePartnerLink(link.id, 'affiliateLink', e.target.value)}
+                                  className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-night/50" />
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`product-review-${link.id}`} className="text-linka-russian-violet font-medium">
+                                Product Review (Optional)
+                              </Label>
+                              <Textarea
+                                id={`product-review-${link.id}`}
+                                placeholder="e.g., Great for budget travelers!"
+                                value={link.productReview}
+                                onChange={(e) => updatePartnerLink(link.id, 'productReview', e.target.value)}
+                                rows={2}
+                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`social-media-${link.id}`} className="text-linka-russian-violet font-medium">
+                                Social Media Link (Optional)
+                              </Label>
+                              <div className="relative">
+                                <Input
+                                  id={`social-media-${link.id}`}
+                                  placeholder="https://social-media-link.com"
+                                  value={link.socialMediaLink}
+                                  onChange={(e) => updatePartnerLink(link.id, 'socialMediaLink', e.target.value)}
+                                  className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                                <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-night/50" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removePartnerLink(link.id)}
+                              className="border-red-200 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-105"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Remove
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
+                    <Link2 className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
+                      No Partner Links Added
+                    </h3>
+                    <p className="text-linka-night/60 mb-4">
+                      Add your first affiliate link to get started
+                    </p>
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={addPartnerLink}
+                  className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {agentConfig.partnerLinks.length > 0 ? 'Add Another Partner Link' : 'Add First Partner Link'}
+                </Button>
               </div>
-              {/* Live Preview Section */}
-              <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-5 border border-linka-alice-blue/80 overflow-hidden relative">
-                <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
-                <p className="text-xs text-linka-night/60 mb-3 font-medium uppercase tracking-wider">
-                  Live Preview
-                </p>
-                <div className="text-center space-y-3 relative z-10">
-                  <h4 className="text-xl md:text-2xl font-medium text-linka-russian-violet animate-in fade-in">
-                    Hi, I'm{' '}
-                    <span className="text-linka-dark-orange font-semibold bg-gradient-to-r from-linka-dark-orange/80 to-linka-dark-orange bg-clip-text text-transparent">
-                      {agentConfig.name || 'Your AI'}
-                    </span>
-                  </h4>
-                  <p className="text-lg md:text-xl font-semibold text-linka-night/90 animate-in fade-in delay-100">
-                    {agentConfig.greeting || 'How can I assist you today?'}
+
+              {/* Linka Pro Monetization Section */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                    <LinkIcon className="w-5 h-5 text-linka-dark-orange" />
+                    Linka Pro Monetization
+                  </h3>
+                  <p className="text-xs text-linka-night/60">
+                    Add monetization links for Linka Pro services
                   </p>
+                </div>
+                {agentConfig.linkaProMonetizations.length > 0 ? (
+                  <div className="space-y-4">
+                    {agentConfig.linkaProMonetizations.map((link) => (
+                      <Card
+                        key={link.id}
+                        className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300"
+                      >
+                        <CardContent className="p-4 space-y-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`pro-category-${link.id}`} className="text-linka-russian-violet font-medium">
+                                Category <span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                id={`pro-category-${link.id}`}
+                                placeholder="e.g., Subscription, Service"
+                                value={link.category}
+                                onChange={(e) => updateLinkaProMonetization(link.id, 'category', e.target.value)}
+                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`pro-brand-${link.id}`} className="text-linka-russian-violet font-medium">
+                                Affiliate Brand Name <span className="text-red-500">*</span>
+                              </Label>
+                              <Input
+                                id={`pro-brand-${link.id}`}
+                                placeholder="e.g., Linka Pro"
+                                value={link.affiliateBrandName}
+                                onChange={(e) => updateLinkaProMonetization(link.id, 'affiliateBrandName', e.target.value)}
+                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor={`pro-main-url-${link.id}`} className="text-linka-russian-violet font-medium">
+                                Main URL <span className="text-red-500">*</span>
+                              </Label>
+                              <div className="relative">
+                                <Input
+                                  id={`pro-main-url-${link.id}`}
+                                  placeholder="https://main-url.com"
+                                  value={link.mainUrl}
+                                  onChange={(e) => updateLinkaProMonetization(link.id, 'mainUrl', e.target.value)}
+                                  className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                                <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-night/50" />
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => removeLinkaProMonetization(link.id)}
+                              className="border-red-200 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-105"
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Remove
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
+                    <LinkIcon className="w-12 h-12 text-linka-dark-orange/70 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
+                      No Linka Pro Monetization Added
+                    </h3>
+                    <p className="text-linka-night/60 mb-4">
+                      Add your first Linka Pro monetization link to get started
+                    </p>
+                  </div>
+                )}
+                <Button
+                  variant="outline"
+                  onClick={addLinkaProMonetization}
+                  className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {agentConfig.linkaProMonetizations.length > 0 ? 'Add Another Monetization Link' : 'Add First Monetization Link'}
+                </Button>
+              </div>
+
+              {/* URL Validation Tips */}
+              <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-4">
+                <div className="flex items-start gap-2">
+                  <InfoIcon className="w-4 h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
+                    <ul className="text-xs text-linka-night/60 space-y-1">
+                      <li className="flex items-start gap-1.5">
+                        <span>•</span>
+                        <span>Test all links before sharing</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span>•</span>
+                        <span>Ensure affiliate links are valid and trackable</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span>•</span>
+                        <span>Provide detailed product reviews to enhance user trust</span>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-        );
+        )
       case 4:
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
@@ -407,9 +756,7 @@ export default function AgentBuilderPage() {
                 </p>
               </div>
             </CardHeader>
-
             <CardContent className="px-6 pb-8 space-y-6">
-              {/* Conditional Prompts Toggle */}
               <div className="flex items-center justify-between p-4 bg-linka-alice-blue/50 rounded-xl border border-linka-alice-blue transition-all duration-300 hover:bg-linka-alice-blue/70">
                 <div className="space-y-1">
                   <Label htmlFor="conditional-toggle" className="text-linka-russian-violet font-medium flex items-center gap-2">
@@ -427,9 +774,7 @@ export default function AgentBuilderPage() {
                   className="data-[state=checked]:bg-linka-dark-orange"
                 />
               </div>
-
               {!agentConfig.useConditionalPrompts ? (
-                /* Simple Prompts Mode */
                 <div className="space-y-6 animate-in fade-in">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
@@ -440,7 +785,6 @@ export default function AgentBuilderPage() {
                       These buttons will appear when users first interact with your AI
                     </p>
                   </div>
-
                   <div className="grid grid-cols-1 gap-4">
                     {agentConfig.prompts.map((prompt, index) => (
                       <div key={index} className="space-y-2">
@@ -462,8 +806,6 @@ export default function AgentBuilderPage() {
                       </div>
                     ))}
                   </div>
-
-                  {/* Preview Section */}
                   <div className="bg-linka-alice-blue/30 rounded-xl p-4 border border-linka-alice-blue/50 mt-4">
                     <p className="text-xs text-linka-night/70 mb-3 font-medium uppercase tracking-wider">
                       Button Preview
@@ -481,7 +823,6 @@ export default function AgentBuilderPage() {
                   </div>
                 </div>
               ) : (
-                /* Conditional Prompts Mode */
                 <div className="space-y-6 animate-in fade-in">
                   <div className="space-y-2">
                     <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
@@ -492,7 +833,6 @@ export default function AgentBuilderPage() {
                       Create decision trees that adapt to different user needs
                     </p>
                   </div>
-
                   {agentConfig.conditionalPrompts.length === 0 ? (
                     <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
                       <GitBranch className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4 animate-pulse" />
@@ -570,7 +910,6 @@ export default function AgentBuilderPage() {
                           </CardHeader>
                           <CardContent className="pt-0">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              {/* Option 1 */}
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-linka-dark-orange" />
@@ -589,8 +928,6 @@ export default function AgentBuilderPage() {
                                   ))}
                                 </div>
                               </div>
-
-                              {/* Option 2 */}
                               <div className="space-y-3">
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-linka-carolina-blue" />
@@ -613,8 +950,6 @@ export default function AgentBuilderPage() {
                           </CardContent>
                         </Card>
                       ))}
-
-                      {/* Add New Flow Button */}
                       <Button
                         onClick={() => openConditionalModal()}
                         variant="outline"
@@ -631,100 +966,6 @@ export default function AgentBuilderPage() {
             </CardContent>
           </Card>
         )
-      case 3:
-        return (
-          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <div className="space-y-1">
-                <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
-                  <LinkIcon className="w-5 h-5 text-linka-dark-orange" />
-                  Partner URLs
-                </CardTitle>
-                <p className="text-sm text-linka-night/70 font-light">
-                  Add affiliate links for your AI to recommend
-                </p>
-              </div>
-            </CardHeader>
-
-            <CardContent className="px-6 pb-6 space-y-4">
-              {agentConfig.partnerUrls.length > 0 ? (
-                <div className="space-y-3">
-                  {agentConfig.partnerUrls.map((url, index) => (
-                    <div
-                      key={index}
-                      className="flex flex-col sm:flex-row gap-2 items-start sm:items-center group animate-in fade-in"
-                    >
-                      <div className="relative flex-1 w-full">
-                        <Input
-                          placeholder="https://your-affiliate-link.com"
-                          value={url}
-                          onChange={(e) => updatePartnerUrl(index, e.target.value)}
-                          className="w-full pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40 hover:border-linka-carolina-blue/50 transition-all duration-200"
-                        />
-                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-night/50" />
-                      </div>
-
-                      {agentConfig.partnerUrls.length > 1 && (
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => removePartnerUrl(index)}
-                          className="border-red-200 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-105 group-hover:opacity-100 sm:opacity-80"
-                          aria-label="Remove URL"
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
-                  <Link2 className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
-                    No Partner URLs Added
-                  </h3>
-                  <p className="text-linka-night/60 mb-4">
-                    Add your first affiliate link to get started
-                  </p>
-                </div>
-              )}
-
-              <Button
-                variant="outline"
-                onClick={addPartnerUrl}
-                className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                {agentConfig.partnerUrls.length > 0 ? 'Add Another URL' : 'Add First URL'}
-              </Button>
-
-              {/* URL Validation Tips */}
-              <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-4">
-                <div className="flex items-start gap-2">
-                  <InfoIcon className="w-4 h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
-                    <ul className="text-xs text-linka-night/60 space-y-1">
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>Use shortened affiliate links when possible</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>Include UTM parameters for tracking</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>Test all links before saving</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )
       case 5:
         return (
           <div className="space-y-6">
@@ -733,75 +974,64 @@ export default function AgentBuilderPage() {
                 <CardTitle className="text-2xl font-semibold text-linka-russian-violet">Live Preview</CardTitle>
                 <p className="text-sm text-linka-night/70">This is exactly what your users will see</p>
               </CardHeader>
-
               <CardContent className="px-6 pb-6">
-                {/* Preview Container */}
-                <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[90vh] flex flex-col w-[50%] mx-auto">
-                  {/* Avatar Section */}
+                <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[90vh] flex flex-col w-[full] lg:w-[50%] mx-auto">
+                  {/* Avatar/Video Section */}
                   <div className="flex justify-center mb-6 w-full">
-                    <div className="w-full h-72 rounded-2xl overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
+                    <div className="w-52 h-52 sm:w-72 sm:h-72 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
                       {agentConfig.avatar ? (
                         <img
                           src={agentConfig.avatar}
                           alt="AI Agent"
-                          className="w-full h-full object-cover "
+                          className="w-full h-full object-cover"
+                        />
+                      ) : agentConfig.video ? (
+                        <video
+                          src={agentConfig.video}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          className="w-full h-full object-cover rounded-full"
                         />
                       ) : (
                         <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                       )}
                     </div>
                   </div>
-
                   {/* Greeting Section */}
                   <div className="text-center mb-6 sm:mb-8">
                     <h4 className="text-lg sm:text-xl font-semibold text-gray-800">
-                      Hi, I'm <span className="text-linka-dark-orange">{agentConfig.name || 'Your Agent'}</span>,
+                      {agentConfig.greetingTitle}, `Hi, I'm ${agentConfig.name || 'Your Agent'}`
                     </h4>
                     <p className="text-lg sm:text-xl font-normal text-gray-700">
-                      {agentConfig.greeting || 'Ready to Assist'}
+                      {agentConfig.greeting || 'Ready to assist you with your needs!'}
                     </p>
                   </div>
-
-                  {/* Prompts Grid */}
+                  {/* Prompts Section */}
                   <div className="flex-1 overflow-y-auto px-1 sm:px-4">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6 sm:mb-8">
-                      {(agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length > 0
-                        ? agentConfig.conditionalPrompts.slice(0, 2).map(cp => cp.mainPrompt)
-                        : agentConfig.prompts
-                      ).map((prompt, index) => (
-                        <button
-                          key={index}
-                          className="border border-gray-300 rounded-md py-2 px-4 text-sm hover:bg-gray-100 cursor-pointer text-left transition-colors duration-200"
-                        >
-                          <span className="font-medium text-gray-800">
-                            {prompt || `Prompt ${index + 1}`}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-
-                    {/* QR Code Section - Desktop Only */}
-                    <div className="mt-6 p-4 bg-orange-50 rounded-md items-center gap-6 justify-center mx-auto hidden sm:flex w-fit">
+                    <div className="space-y-4">
                       <div>
-                        <p className="text-sm font-semibold text-linka-russian-violet">Continue on phone</p>
-                        <p className="text-xs text-linka-night/70">Scan QR</p>
-                      </div>
-                      <div className="w-16 h-16 bg-white rounded-lg flex items-center justify-center p-1">
-                        <div className="w-12 h-12 bg-linka-russian-violet rounded-sm flex items-center justify-center">
-                          <div className="grid grid-cols-3 gap-0.5">
-                            {[...Array(9)].map((_, i) => (
-                              <div
-                                key={i}
-                                className={`w-2 h-2 rounded-sm ${i % 3 === 0 ? 'bg-white' : i % 2 === 0 ? 'bg-linka-carolina-blue' : 'bg-white'}`}
-                              />
-                            ))}
-                          </div>
+                        <h5 className="text-sm font-semibold text-linka-russian-violet mb-2">Conversation Starters</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                          {(agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length > 0
+                            ? agentConfig.conditionalPrompts.slice(0, 2).map(cp => cp.mainPrompt)
+                            : agentConfig.prompts.filter(prompt => prompt.trim() !== '')
+                          ).map((prompt, index) => (
+                            <button
+                              key={index}
+                              className="border border-gray-300 rounded-md py-2 px-4 text-sm hover:bg-gray-100 cursor-pointer text-left transition-colors duration-200"
+                            >
+                              <span className="font-medium text-gray-800">
+                                {prompt || `Prompt ${index + 1}`}
+                              </span>
+                            </button>
+                          ))}
                         </div>
                       </div>
                     </div>
                   </div>
-
-                  {/* Input Area */}
+                  {/* Input Section */}
                   <div className="mt-4 sm:mt-6">
                     <div className="flex bg-gray-200 rounded-full px-4 py-2 items-center gap-2">
                       <input
@@ -822,6 +1052,18 @@ export default function AgentBuilderPage() {
                       </button>
                     </div>
                   </div>
+                </div>
+                {/* Pro Tip Box */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-base">⚡️</span>
+                    <h3 className="text-sm font-semibold text-blue-900">Pro Tips</h3>
+                  </div>
+                  <ul className="list-disc pl-5 space-y-1 text-xs text-blue-800">
+                    <li>Ask relevant questions to test your avatar.</li>
+                    <li>Preview images may take a moment to load on first launch.</li>
+                    <li>Refine your agent’s persona and instructions based on results.</li>
+                  </ul>
                 </div>
               </CardContent>
             </Card>
@@ -855,7 +1097,6 @@ export default function AgentBuilderPage() {
             </Button>
           </div>
         </div>
-
         <div className="flex flex-col md:flex-row gap-4 md:gap-8 justify-between">
           <div className="w-full md:w-2/4 lg:w-1/4">
             <div className="stepper space-y-3 sm:space-y-4 relative">
@@ -878,12 +1119,6 @@ export default function AgentBuilderPage() {
                     </div>
                     <div>
                       <h3 className="text-sm sm:text-base font-semibold">{step.title}</h3>
-                      {/* <p
-                        className={`text-sm sm:text-[12px] ${currentStep === step.id ? 'text-linka-russian-violet/90' : 'text-linka-night/70'
-                          }`}
-                      >
-                        {step.description}
-                      </p> */}
                     </div>
                   </div>
                   {index < steps.length - 1 && (
@@ -898,15 +1133,10 @@ export default function AgentBuilderPage() {
           <div className="w-full md:w-2/4 lg:w-3/4">
             {renderStepContent()}
             <div className="flex justify-between mt-6 items-center">
-
-
-              {/* Step Indicator - Centered */}
               <div className="text-sm text-gray-500 hidden sm:block">
                 Step {currentStep} of 5
               </div>
-
               <div className='flex gap-4'>
-                {/* Previous Button - Always visible except first step */}
                 <Button
                   variant="outline"
                   onClick={prevStep}
@@ -917,9 +1147,7 @@ export default function AgentBuilderPage() {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Previous
                 </Button>
-                {/* Next/Save Buttons - Conditional Rendering */}
                 {currentStep === 5 ? (
-                  // Final Step - Show only Save & Publish
                   <Button
                     onClick={handleSave}
                     className="bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white shadow-md px-6 py-2 transition-all duration-300 hover:scale-[1.02]"
@@ -928,7 +1156,6 @@ export default function AgentBuilderPage() {
                     Save & Publish Agent
                   </Button>
                 ) : (
-                  // Intermediate Steps - Show Next Button
                   <div className="flex gap-4">
                     <Button
                       onClick={nextStep}
@@ -943,7 +1170,6 @@ export default function AgentBuilderPage() {
             </div>
           </div>
         </div>
-
         <Dialog open={isConditionalModalOpen} onOpenChange={setIsConditionalModalOpen}>
           <DialogContent className="max-w-full sm:max-w-2xl">
             <DialogHeader>
