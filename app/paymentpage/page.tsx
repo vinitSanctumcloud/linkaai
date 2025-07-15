@@ -6,7 +6,9 @@ import { Elements, CardElement, useStripe, useElements } from '@stripe/react-str
 import './PaymentForm.css'; // Import minimal external CSS for react-datepicker and pseudo-elements
 
 // Initialize Stripe with the Publishable Key
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A');
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A', {
+    stripeAccount: 'acct_1QIt8ZGfbmnu5L5v'
+});
 
 // Dynamically import DatePicker with SSR disabled
 const DatePicker = dynamic(() => import('react-datepicker'), { ssr: false });
@@ -261,11 +263,12 @@ const PaymentForm: React.FC = () => {
             if (!accessToken) {
                 throw new Error('No access token found');
             }
+            // console.log(accessToken);
+
             const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/subscribe', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // 'Authorization': `Bearer ${accessToken}`,
                     'Authorization': `Bearer ${accessToken}`,
                 },
                 body: JSON.stringify(payload),
@@ -309,30 +312,30 @@ const PaymentForm: React.FC = () => {
 
             await createSubscription(paymentMethod?.id || null);
 
-            const paymentData = {
-                paymentMethod: 'credit-card',
-                cardDetails: { fullName: cardDetails.fullName },
-                selectedPlan: selectedPlan
-                    ? {
-                          ...selectedPlan,
-                          amount: calculateDiscountedAmount(selectedPlan.amount).discountedAmount,
-                      }
-                    : null,
-                coupon: appliedCoupon,
-            };
+            // const paymentData = {
+            //     paymentMethod: 'credit-card',
+            //     cardDetails: { fullName: cardDetails.fullName },
+            //     selectedPlan: selectedPlan
+            //         ? {
+            //               ...selectedPlan,
+            //               amount: calculateDiscountedAmount(selectedPlan.amount).discountedAmount,
+            //           }
+            //         : null,
+            //     coupon: appliedCoupon,
+            // };
 
-            const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/billing/process', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`,
-                },
-                body: JSON.stringify(paymentData),
-            });
+            // const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/billing/process', {
+            //     method: 'POST',
+            //     headers: {
+            //         'Content-Type': 'application/json',
+            //         'Authorization': `Bearer ${accessToken}`,
+            //     },
+            //     body: JSON.stringify(paymentData),
+            // });
 
-            if (!response.ok) throw new Error('Payment processing failed');
-            console.log('Payment processed:', await response.json());
-            alert('Payment processed and subscription created successfully!');
+            // if (!response.ok) throw new Error('Payment processing failed');
+            // console.log('Payment processed:', await response.json());
+            // alert('Payment processed and subscription created successfully!');
         } catch (err: any) {
             setError(err.message || 'Payment processing failed. Please try again.');
             console.error(err);
