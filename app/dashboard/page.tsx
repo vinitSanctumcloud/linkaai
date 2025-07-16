@@ -50,6 +50,7 @@ type Plan = {
   isPopular: boolean;
   trialWithoutCC: boolean;
   product_id: string;
+  accountId: string;
 };
 
 function PricingSectionPopup({ onClose }: { onClose: () => void }) {
@@ -78,6 +79,8 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
         }
 
         const responseData = await response.json();
+        console.log(responseData);
+
         const processedPlans = responseData.data.products.map((product: any) => ({
           name: product.product_name,
           monthlyPrice: product.plans.find((plan: any) => plan.interval === 'month')?.amount / 100 || 'N/A',
@@ -89,6 +92,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
           isPopular: product.product_name === 'AI Pro',
           trialWithoutCC: product.trial_without_cc || false,
           product_id: product.product_id,
+          accountId: responseData.data.connected_account_id
         }));
 
         setPlans(processedPlans);
@@ -105,7 +109,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
   const handlePlanSelect = (plan: any) => {
     const productId = plan.product_id;
     console.log(plan);
-    router.push(`/paymentpage?productId=${productId}&freeTrial=${plan.freeTrial}&trialWithoutCC=${plan.trialWithoutCC}`);
+    router.push(`/paymentpage?productId=${productId}&freeTrial=${plan.freeTrial}&trialWithoutCC=${plan.trialWithoutCC}&accountId=${plan.accountId}`);
   };
 
   const closeModal = () => {

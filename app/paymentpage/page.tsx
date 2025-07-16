@@ -3,10 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import './PaymentForm.css'; // Import the provided CSS
-
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!, {
-    stripeAccount: process.env.STRIPE_ACCOUNT_ID!
-});
+// import { useRouter } from 'next/router';
 
 interface Plan {
     id: string;
@@ -42,6 +39,8 @@ interface Coupon {
 }
 
 const PaymentForm: React.FC = () => {
+    // const router = useRouter()
+
     const stripe = useStripe();
     const elements = useElements();
     const [cardDetails, setCardDetails] = useState({ fullName: '' });
@@ -60,8 +59,6 @@ const PaymentForm: React.FC = () => {
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get('productId');
         const trialWithoutCCParam = urlParams.get('trialWithoutCC');
-        const freeTrial = urlParams.get('freeTrial');
-        console.log(freeTrial);
         setTrialWithoutCC(trialWithoutCCParam === 'true');
 
         const fetchProductData = async () => {
@@ -81,7 +78,7 @@ const PaymentForm: React.FC = () => {
                 );
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data: ApiResponse = await response.json();
-                console.log(data);
+                console.log('Fetched product data:', data);
                 setApiData(data);
                 setSelectedPlan(data.data.plans.find(plan => plan.interval === 'year') || data.data.plans[0]);
             } catch (err) {
@@ -91,9 +88,8 @@ const PaymentForm: React.FC = () => {
             }
         };
         fetchProductData();
-    }, [window.location.search]);
+    }, []);
 
-    // Log trialWithoutCC in a separate useEffect to see updated value
     useEffect(() => {
         console.log('trialWithoutCC:', trialWithoutCC);
     }, [trialWithoutCC]);
@@ -158,6 +154,11 @@ const PaymentForm: React.FC = () => {
     };
 
     const createPaymentMethod = async () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const accountId = urlParams.get('accountId');
+        console.log("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:", process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
+        console.log("STRIPE_ACCOUNT_ID from URL:", accountId);
+
         if (!stripe || !elements) {
             setError('Stripe.js has not loaded yet. Please try again.');
             throw new Error('Stripe.js has not loaded yet.');
@@ -169,10 +170,13 @@ const PaymentForm: React.FC = () => {
             setError('Card elements not found. Please refresh the page.');
             throw new Error('Card elements not found');
         }
+
         const { error, paymentMethod } = await stripe.createPaymentMethod({
             type: 'card',
             card: cardNumberElement,
-            billing_details: { name: cardDetails.fullName || 'Unknown' }
+            billing_details: { 
+                name: cardDetails.fullName || 'Unknown' 
+            }
         });
         if (error) {
             setFormErrors(prev => ({ ...prev, cardDetails: error.message || 'Invalid card details' }));
@@ -191,18 +195,17 @@ const PaymentForm: React.FC = () => {
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) throw new Error('No access token found');
 
-        console.log("paymentMethodId :: ", paymentMethodId);
-        console.log("selectedPlan :: ", selectedPlan);
+        console.log("paymentMethodId:", paymentMethodId);
+        console.log("selectedPlan:", selectedPlan);
 
         const payload = { 
             payment_method: paymentMethodId, 
             plan_id: selectedPlan.id, 
             is_free_trial_enable: appliedCoupon?.discountType === 'free_trial' || trialWithoutCC 
         };
-        console.log("payload :: ", payload);
+        console.log("payload:", payload);
 
         try {
-
             const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
@@ -233,6 +236,7 @@ const PaymentForm: React.FC = () => {
                 paymentMethod = await createPaymentMethod();
             }
             await createSubscription(paymentMethod?.id || null);
+            // router.push('/dashboard');
         } catch (err: any) {
             setError(err.message || 'Payment processing failed. Please try again.');
         } finally {
@@ -433,10 +437,53 @@ const PaymentForm: React.FC = () => {
     );
 };
 
-const WrappedPaymentForm: React.FC = () => (
-    <Elements stripe={stripePromise}>
-        <PaymentForm />
-    </Elements>
-);
+const WrappedPaymentForm: React.FC = () => {
+    const [stripePromise, setStripePromise] = useState<any>(null);
+    const [stripeError, setStripeError] = useState<string | null>(null);
+
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        console.log('Current URL:', window.location.href); // Log the full URL
+        console.log('URLSearchParams:', Object.fromEntries(urlParams)); // Log all query parameters
+        const accountId = urlParams.get('accountId');
+        console.log('Fetched accountId:', accountId);
+
+        if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
+            console.error('Stripe publishable key is not defined');
+            setStripeError('Stripe configuration error. Please contact support.');
+            return;
+        }
+
+        if (accountId) {
+            setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, {
+                stripeAccount: accountId
+            }));
+        } else {
+            console.warn('No accountId found in URL, loading Stripe without stripeAccount');
+            setStripePromise(loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY));
+            setStripeError('No account ID provided. Some features may not work as expected.');
+        }
+    }, []);
+
+    if (stripeError) {
+        return (
+            <div className="error-text text-center bg-red-50 dark:bg-red-900/50 p-4 rounded-lg">
+                {stripeError}
+            </div>
+        );
+    }
+
+    return (
+        stripePromise ? (
+            <Elements stripe={stripePromise}>
+                <PaymentForm />
+            </Elements>
+        ) : (
+            <div className="flex justify-center items-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#f97316]"></div>
+            </div>
+        )
+    );
+};
 
 export default WrappedPaymentForm;
