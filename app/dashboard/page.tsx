@@ -49,7 +49,7 @@ type Plan = {
   freeTrialDays: number;
   isPopular: boolean;
   trialWithoutCC: boolean;
-  // product_id: string;
+  product_id: string;
 };
 
 function PricingSectionPopup({ onClose }: { onClose: () => void }) {
@@ -66,41 +66,19 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
     const fetchPricingData = async () => {
       try {
         setLoading(true);
-        // Simulating API response based on image and provided data
-        const response = {
-          data: {
-            products: [
-              {
-                product_id: 1636,
-                product_name: 'AI Basic',
-                standard_perks: ['Access member-only content', 'Access member-only events', 'Access video/resource library'],
-                extra_perks: ['AI Agent detail 1', 'AI Agent detail 2', 'AI Agent detail 3'],
-                is_free_trial_enable: true,
-                free_trial_days: 10,
-                trial_without_cc: false,
-                plans: [
-                  { interval: 'month', amount: 1000 }, // $10.00
-                  { interval: 'year', amount: 9900 },  // $99.00
-                ],
-              },
-              {
-                product_id: 1637,
-                product_name: 'AI Pro',
-                standard_perks: ['Access member-only content', 'Access member-only events', 'Access video/resource library', 'Post events, services, and products'],
-                extra_perks: ['AI Agent detail 1', 'AI Agent detail 2', 'AI Agent detail 3'],
-                is_free_trial_enable: true,
-                free_trial_days: 20,
-                trial_without_cc: true,
-                plans: [
-                  { interval: 'month', amount: 9900 }, // $99.00
-                  { interval: 'year', amount: 99900 }, // $999.00
-                ],
-              },
-            ],
+        const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/billing/products', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
           },
-        };
+        });
 
-        const processedPlans = response.data.products.map((product: any) => ({
+        if (!response.ok) {
+          throw new Error('Failed to fetch pricing data');
+        }
+
+        const responseData = await response.json();
+        const processedPlans = responseData.data.products.map((product: any) => ({
           name: product.product_name,
           monthlyPrice: product.plans.find((plan: any) => plan.interval === 'month')?.amount / 100 || 'N/A',
           yearlyPrice: product.plans.find((plan: any) => plan.interval === 'year')?.amount / 100 || 'N/A',
@@ -126,7 +104,8 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
 
   const handlePlanSelect = (plan: any) => {
     const productId = plan.product_id;
-    router.push(`/paymentpage?productId=${productId}`);
+    console.log(plan);
+    router.push(`/paymentpage?productId=${productId}&freeTrial=${plan.freeTrial}&trialWithoutCC=${plan.trialWithoutCC}`);
   };
 
   const closeModal = () => {
@@ -204,34 +183,9 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                     >
                       Choose the plan that fits your needs. Scale as you grow with no hidden fees.
                     </motion.p>
-                    {/* <motion.div
-                      className="mt-6 inline-flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1"
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.2 }}
-                    >
-                      <button
-                        className={`px-6 py-2 rounded-full font-medium text-sm transition-colors ${billingInterval === 'month'
-                          ? 'bg-white dark:bg-gray-600 text-orange-600 shadow-sm'
-                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
-                          }`}
-                        onClick={() => setBillingInterval('month')}
-                      >
-                        Monthly
-                      </button>
-                      <button
-                        className={`px-6 py-2 rounded-full font-medium text-sm transition-colors ${billingInterval === 'year'
-                          ? 'bg-white dark:bg-gray-600 text-orange-600 shadow-sm'
-                          : 'text-gray-600 dark:text-gray-300 hover:text-gray-800 dark:hover:text-gray-100'
-                          }`}
-                        onClick={() => setBillingInterval('year')}
-                      >
-                        Yearly <span className="text-orange-500">(Save 33%)</span>
-                      </button>
-                    </motion.div> */}
                   </div>
 
-                  <div className="grid md:grid-cols-2 gap-6">
+                  <div className="grid md:grid-cols-3 gap-6">
                     {plans.map((plan, index) => (
                       <motion.div
                         key={plan.name}
@@ -264,10 +218,9 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                             </p>
                             {plan.freeTrial && billingInterval === 'month' && (
                               <p className="text-sm text-orange-600 font-medium">
-                                {/* {plan.freeTrialDays}-day free trial */}
+                                {plan.freeTrialDays}-day free trial
                                 {plan.trialWithoutCC && ' - No Credit Card Required for Trial'}
                               </p>
-
                             )}
                           </div>
                           <ul className="space-y-3 mb-6 flex-grow">
@@ -285,7 +238,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                               }`}
                             onClick={() => handlePlanSelect(plan)}
                           >
-                            {plan.freeTrial && billingInterval === 'month' ? `${plan.freeTrialDays} Day Trial` : 'Get Started'}
+                            {plan.freeTrial && billingInterval === 'month' ? `${plan.freeTrialDays} Day Trial` : 'Subscribe'}
                           </Button>
                         </div>
                       </motion.div>
@@ -342,7 +295,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                   className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
                   aria-label="Close"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-5 w-5" />
                 </button>
               </div>
               <div className="mt-6 mb-8">
@@ -595,16 +548,6 @@ export default function DashboardPage() {
                           <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300" />
                         </div>
                       </div>
-                      {/* {chatUrl && (
-                        <div className="pt-2">
-                          <Link href={chatUrl} target="_blank" legacyBehavior>
-                            <Button className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-orange-200 dark:hover:shadow-orange-800/50 transition-all duration-300 group">
-                              <ExternalLink className="mr-2 h-4 w-4 transition-transform group-hover:rotate-12 duration-300" />
-                              <span className="bg-white/20 px-2 py-1 rounded-md backdrop-blur-sm">Visit Your Live Chat</span>
-                            </Button>
-                          </Link>
-                        </div>
-                      )} */}
                     </div>
                   </CardContent>
                 </Card>

@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { loadStripe } from '@stripe/stripe-js';
-import { Elements, CardElement, useStripe, useElements, CardCvcElement, CardExpiryElement, CardNumberElement } from '@stripe/react-stripe-js';
+import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import './PaymentForm.css'; // Import the provided CSS
 
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!, {
@@ -41,17 +41,6 @@ interface Coupon {
     message?: string;
 }
 
-interface InitialFormData {
-    name: string;
-    email: string;
-    phone: string;
-    phoneCode: string;
-    address: string;
-    city: string;
-    country: string;
-    zipCode: string;
-}
-
 const PaymentForm: React.FC = () => {
     const stripe = useStripe();
     const elements = useElements();
@@ -62,30 +51,18 @@ const PaymentForm: React.FC = () => {
     const [apiData, setApiData] = useState<ApiResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [formErrors, setFormErrors] = useState<Partial<Record<'fullName' | 'cardNumber' | 'cardExpiry' | 'cardCvc' | 'name' | 'email' | 'phone' | 'phoneCode' | 'address' | 'city' | 'country' | 'zipCode', string>>>({});
+    const [formErrors, setFormErrors] = useState<Partial<Record<'fullName' | 'cardNumber' | 'cardExpiry' | 'cardCvc', string>>>({});
     const [couponError, setCouponError] = useState<string | null>(null);
     const [couponLoading, setCouponLoading] = useState(false);
-    const [showPaymentForm, setShowPaymentForm] = useState(false);
-    const [initialFormData, setInitialFormData] = useState<InitialFormData>({
-        name: '',
-        email: '',
-        phone: '',
-        phoneCode: '',
-        address: '',
-        city: '',
-        country: '',
-        zipCode: '',
-    });
-
-    const handleContinue = () => {
-        if (validateInitialForm()) {
-            setShowPaymentForm(true);
-        }
-    };
+    const [trialWithoutCC, setTrialWithoutCC] = useState<boolean>(false);
 
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         const productId = urlParams.get('productId');
+        const trialWithoutCCParam = urlParams.get('trialWithoutCC');
+        const freeTrial = urlParams.get('freeTrial');
+        console.log(freeTrial);
+        setTrialWithoutCC(trialWithoutCCParam === 'true');
 
         const fetchProductData = async () => {
             try {
@@ -104,8 +81,9 @@ const PaymentForm: React.FC = () => {
                 );
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data: ApiResponse = await response.json();
+                console.log(data);
                 setApiData(data);
-                setSelectedPlan(data.data.plans.find(plan => plan.currency === 'USD') || data.data.plans[0]);
+                setSelectedPlan(data.data.plans.find(plan => plan.interval === 'year') || data.data.plans[0]);
             } catch (err) {
                 setError('Failed to fetch product details. Please try again later.');
             } finally {
@@ -113,27 +91,12 @@ const PaymentForm: React.FC = () => {
             }
         };
         fetchProductData();
-    }, []);
+    }, [window.location.search]);
 
-    const validateInitialForm = (): boolean => {
-        const errors: Partial<Record<'name' | 'email' | 'phone' | 'phoneCode' | 'address' | 'city' | 'country' | 'zipCode', string>> = {};
-        if (!initialFormData.name.trim()) errors.name = 'Name is required';
-        if (!initialFormData.email.trim()) errors.email = 'Email is required';
-        if (!initialFormData.phone.trim()) errors.phone = 'Phone is required';
-        if (!initialFormData.phoneCode.trim()) errors.phoneCode = 'Phone code is required';
-        if (!initialFormData.address.trim()) errors.address = 'Address is required';
-        if (!initialFormData.city.trim()) errors.city = 'City is required';
-        if (!initialFormData.country.trim()) errors.country = 'Country is required';
-        if (!initialFormData.zipCode.trim()) errors.zipCode = 'Zip Code is required';
-        setFormErrors(prev => ({ ...prev, ...errors }));
-        return Object.keys(errors).length === 0;
-    };
-
-    const handleInitialInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = e.target;
-        setInitialFormData(prev => ({ ...prev, [name]: value }));
-        setFormErrors(prev => ({ ...prev, [name]: '' }));
-    };
+    // Log trialWithoutCC in a separate useEffect to see updated value
+    useEffect(() => {
+        console.log('trialWithoutCC:', trialWithoutCC);
+    }, [trialWithoutCC]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -224,10 +187,22 @@ const PaymentForm: React.FC = () => {
             setError('No plan selected. Please choose a plan.');
             throw new Error('No plan selected');
         }
-        const payload = { payment_method: paymentMethodId, plan_id: selectedPlan.id, is_free_trial_enable: appliedCoupon?.discountType === 'free_trial' };
+
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) throw new Error('No access token found');
+
+        console.log("paymentMethodId :: ", paymentMethodId);
+        console.log("selectedPlan :: ", selectedPlan);
+
+        const payload = { 
+            payment_method: paymentMethodId, 
+            plan_id: selectedPlan.id, 
+            is_free_trial_enable: appliedCoupon?.discountType === 'free_trial' || trialWithoutCC 
+        };
+        console.log("payload :: ", payload);
+
         try {
-            const accessToken = localStorage.getItem('accessToken');
-            if (!accessToken) throw new Error('No access token found');
+
             const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
@@ -246,7 +221,6 @@ const PaymentForm: React.FC = () => {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!validateInitialForm()) return;
         if (!stripe || !elements) {
             setError('Stripe.js has not loaded yet. Please try again.');
             return;
@@ -254,7 +228,10 @@ const PaymentForm: React.FC = () => {
         try {
             setLoading(true);
             setError(null);
-            const paymentMethod = await createPaymentMethod();
+            let paymentMethod = null;
+            if (!trialWithoutCC) {
+                paymentMethod = await createPaymentMethod();
+            }
             await createSubscription(paymentMethod?.id || null);
         } catch (err: any) {
             setError(err.message || 'Payment processing failed. Please try again.');
@@ -269,138 +246,6 @@ const PaymentForm: React.FC = () => {
             invalid: { color: '#ef4444' },
         },
     };
-
-    if (!showPaymentForm) {
-        return (
-            <section className="bg-gray-50 py-12 md:py-16 min-h-screen">
-                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-                    <div className="bg-white rounded-xl shadow-xl p-8">
-                        <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">Active Plan</h2>
-                        {loading && (
-                            <div className="flex justify-center items-center mb-6">
-                                <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-[#f97316]"></div>
-                            </div>
-                        )}
-                        {error && <p className="error-text bg-red-50 p-4 rounded-lg">{error}</p>}
-                        <form className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Name</label>
-                                <input
-                                    type="text"
-                                    name="name"
-                                    value={initialFormData.name}
-                                    onChange={handleInitialInputChange}
-                                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] transition-all duration-300 ${formErrors.name ? 'error-input' : ''}`}
-                                    placeholder="John Doe"
-                                    required
-                                />
-                                {formErrors.name && <p className="error-text">{formErrors.name}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                                <input
-                                    type="email"
-                                    name="email"
-                                    value={initialFormData.email}
-                                    onChange={handleInitialInputChange}
-                                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] transition-all duration-300 ${formErrors.email ? 'error-input' : ''}`}
-                                    placeholder="test@gmail.com"
-                                    required
-                                />
-                                {formErrors.email && <p className="error-text">{formErrors.email}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Phone Code</label>
-                                <input
-                                    type="text"
-                                    name="phoneCode"
-                                    value={initialFormData.phoneCode}
-                                    onChange={handleInitialInputChange}
-                                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] transition-all duration-300 ${formErrors.phoneCode ? 'error-input' : ''}`}
-                                    placeholder="+1"
-                                    required
-                                />
-                                {formErrors.phoneCode && <p className="error-text">{formErrors.phoneCode}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
-                                <input
-                                    type="tel"
-                                    name="phone"
-                                    value={initialFormData.phone}
-                                    onChange={handleInitialInputChange}
-                                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] transition-all duration-300 ${formErrors.phone ? 'error-input' : ''}`}
-                                    placeholder="9876543210"
-                                    required
-                                />
-                                {formErrors.phone && <p className="error-text">{formErrors.phone}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Address</label>
-                                <input
-                                    type="text"
-                                    name="address"
-                                    value={initialFormData.address}
-                                    onChange={handleInitialInputChange}
-                                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] transition-all duration-300 ${formErrors.address ? 'error-input' : ''}`}
-                                    placeholder="123 Main St"
-                                    required
-                                />
-                                {formErrors.address && <p className="error-text">{formErrors.address}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">City</label>
-                                <input
-                                    type="text"
-                                    name="city"
-                                    value={initialFormData.city}
-                                    onChange={handleInitialInputChange}
-                                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] transition-all duration-300 ${formErrors.city ? 'error-input' : ''}`}
-                                    placeholder="Rajkot"
-                                    required
-                                />
-                                {formErrors.city && <p className="error-text">{formErrors.city}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Country</label>
-                                <input
-                                    type="text"
-                                    name="country"
-                                    value={initialFormData.country}
-                                    onChange={handleInitialInputChange}
-                                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] transition-all duration-300 ${formErrors.country ? 'error-input' : ''}`}
-                                    placeholder="India"
-                                    required
-                                />
-                                {formErrors.country && <p className="error-text">{formErrors.country}</p>}
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-2">Zip Code</label>
-                                <input
-                                    type="text"
-                                    name="zipCode"
-                                    value={initialFormData.zipCode}
-                                    onChange={handleInitialInputChange}
-                                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] transition-all duration-300 ${formErrors.zipCode ? 'error-input' : ''}`}
-                                    placeholder="12345"
-                                    required
-                                />
-                                {formErrors.zipCode && <p className="error-text">{formErrors.zipCode}</p>}
-                            </div>
-                            <button
-                                type="button"
-                                onClick={handleContinue}
-                                className="w-full bg-[#f97316] text-white font-medium rounded-lg px-5 py-3.5 text-sm hover:bg-[#ea580c] focus:outline-none focus:ring-4 focus:ring-[#f97316]/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                disabled={!initialFormData.name || !initialFormData.email || !initialFormData.phone || !initialFormData.phoneCode || !initialFormData.address || !initialFormData.city || !initialFormData.country || !initialFormData.zipCode}
-                            >
-                                Continue Free trial registration
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </section>
-        );
-    }
 
     return (
         <section className="bg-gray-50 dark:bg-gray-900 py-12 md:py-16 min-h-screen">
@@ -467,51 +312,55 @@ const PaymentForm: React.FC = () => {
                                 {appliedCoupon && <p className="success-text">Coupon applied: {appliedCoupon.description || calculateDiscountedAmount(selectedPlan?.amount || 0).discountDescription}</p>}
                             </div>
 
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Details</h3>
-                            <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div>
-                                    <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name (as on card)*</label>
-                                    <input
-                                        type="text"
-                                        id="full_name"
-                                        name="fullName"
-                                        value={cardDetails.fullName}
-                                        onChange={handleInputChange}
-                                        className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.fullName ? 'error-input' : ''}`}
-                                        placeholder="Bonnie Green"
-                                        required
-                                    />
-                                    {formErrors.fullName && <p className="error-text">{formErrors.fullName}</p>}
-                                </div>
-                                <div>
-                                    <label htmlFor="card-number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Number*</label>
-                                    <div className="stripe-card">
-                                        <CardNumberElement id="card-number" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardNumber: '' }))} />
+                            {!trialWithoutCC && (
+                                <>
+                                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Details</h3>
+                                    <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                        <div>
+                                            <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name (as on card)*</label>
+                                            <input
+                                                type="text"
+                                                id="full_name"
+                                                name="fullName"
+                                                value={cardDetails.fullName}
+                                                onChange={handleInputChange}
+                                                className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.fullName ? 'error-input' : ''}`}
+                                                placeholder="Bonnie Green"
+                                                required
+                                            />
+                                            {formErrors.fullName && <p className="error-text">{formErrors.fullName}</p>}
+                                        </div>
+                                        <div>
+                                            <label htmlFor="card-number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Number*</label>
+                                            <div className="stripe-card">
+                                                <CardNumberElement id="card-number" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardNumber: '' }))} />
+                                            </div>
+                                            {formErrors.cardNumber && <p className="error-text">{formErrors.cardNumber}</p>}
+                                        </div>
+                                        <div>
+                                            <label htmlFor="card-expiry" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiration Date*</label>
+                                            <div className="stripe-card">
+                                                <CardExpiryElement id="card-expiry" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardExpiry: '' }))} />
+                                            </div>
+                                            {formErrors.cardExpiry && <p className="error-text">{formErrors.cardExpiry}</p>}
+                                        </div>
+                                        <div>
+                                            <label htmlFor="card-cvc" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CVC*</label>
+                                            <div className="stripe-card">
+                                                <CardCvcElement id="card-cvc" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardCvc: '' }))} />
+                                            </div>
+                                            {formErrors.cardCvc && <p className="error-text">{formErrors.cardCvc}</p>}
+                                        </div>
                                     </div>
-                                    {formErrors.cardNumber && <p className="error-text">{formErrors.cardNumber}</p>}
-                                </div>
-                                <div>
-                                    <label htmlFor="card-expiry" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiration Date*</label>
-                                    <div className="stripe-card">
-                                        <CardExpiryElement id="card-expiry" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardExpiry: '' }))} />
-                                    </div>
-                                    {formErrors.cardExpiry && <p className="error-text">{formErrors.cardExpiry}</p>}
-                                </div>
-                                <div>
-                                    <label htmlFor="card-cvc" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CVC*</label>
-                                    <div className="stripe-card">
-                                        <CardCvcElement id="card-cvc" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardCvc: '' }))} />
-                                    </div>
-                                    {formErrors.cardCvc && <p className="error-text">{formErrors.cardCvc}</p>}
-                                </div>
-                            </div>
+                                </>
+                            )}
 
                             <button
                                 type="submit"
-                                disabled={loading || couponLoading || !stripe || !elements}
+                                disabled={loading || couponLoading || (!trialWithoutCC && (!stripe || !elements))}
                                 className="w-full bg-[#f97316] text-white font-medium rounded-lg px-5 py-3.5 text-sm hover:bg-[#ea580c] focus:outline-none focus:ring-4 focus:ring-[#f97316]/50 dark:bg-[#f97316] dark:hover:bg-[#ea580c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                {loading ? 'Processing...' : 'Pay Now'}
+                                {loading ? 'Processing...' : trialWithoutCC ? 'Start Free Trial' : 'Pay Now'}
                             </button>
                         </form>
 
@@ -545,20 +394,29 @@ const PaymentForm: React.FC = () => {
                                             </div>
                                         )}
 
+                                        {trialWithoutCC && (
+                                            <div className="flex items-center justify-between gap-4">
+                                                <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">Trial</dt>
+                                                <dd className="text-sm font-medium text-[#10b981] dark:text-[#10b981]">No Credit Card Required</dd>
+                                            </div>
+                                        )}
+
                                         <div className="flex items-center justify-between gap-4 border-t border-gray-200 pt-3 dark:border-gray-600">
                                             <dt className="text-sm font-bold text-gray-900 dark:text-white">Total</dt>
-                                            <dd className="text-sm font-bold text-gray-900 dark:text-white">{selectedPlan ? formatPrice(calculateDiscountedAmount(selectedPlan.amount).discountedAmount) : formatPrice(0)}</dd>
+                                            <dd className="text-sm font-bold text-gray-900 dark:text-white">{selectedPlan && !trialWithoutCC ? formatPrice(calculateDiscountedAmount(selectedPlan.amount).discountedAmount) : 'Free'}</dd>
                                         </div>
                                     </dl>
                                 </div>
                             </div>
 
-                            <div className="mt-6 flex flex-wrap justify-center gap-4">
-                                <img className="h-8 w-auto dark:hidden" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
-                                <img className="h-8 w-auto hidden dark:flex" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa-dark.svg" alt="Visa" />
-                                <img className="h-8 w-auto dark:hidden" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
-                                <img className="h-8 w-auto hidden dark:flex" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard-dark.svg" alt="Mastercard" />
-                            </div>
+                            {!trialWithoutCC && (
+                                <div className="mt-6 flex flex-wrap justify-center gap-4">
+                                    <img className="h-8 w-auto dark:hidden" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa.svg" alt="Visa" />
+                                    <img className="h-8 w-auto hidden dark:flex" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/visa-dark.svg" alt="Visa" />
+                                    <img className="h-8 w-auto dark:hidden" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard.svg" alt="Mastercard" />
+                                    <img className="h-8 w-auto hidden dark:flex" src="https://flowbite.s3.amazonaws.com/blocks/e-commerce/brand-logos/mastercard-dark.svg" alt="Mastercard" />
+                                </div>
+                            )}
                         </div>
                     </div>
 
