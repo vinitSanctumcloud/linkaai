@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
-import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard-layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import Link from 'next/link'
+import { useEffect, useState } from 'react';
+import { DashboardLayout } from '@/components/dashboard-layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   TrendingUp,
@@ -24,88 +24,115 @@ import {
   LayoutTemplate,
   X,
   CheckCircle
-} from 'lucide-react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { getStripeProducts } from '@/services/ stripeproducts'
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AnalyticsSummary {
-  totalClicks: number
-  totalViews: number
-  totalRevenue: number
-  conversionRate: string
+  totalClicks: number;
+  totalViews: number;
+  totalRevenue: number;
+  conversionRate: string;
 }
 
 interface Settings {
-  customUrl?: string
-  agentName: string
+  customUrl?: string;
+  agentName: string;
 }
 
 type Plan = {
-  name: string
-  monthlyPrice: number | string
-  yearlyPrice: number | string
-  standardPerks: string[]
-  extraPerks: string[]
-  freeTrial: boolean
-  freeTrialDays: number
-  isPopular: boolean
-}
+  name: string;
+  monthlyPrice: number | string;
+  yearlyPrice: number | string;
+  standardPerks: string[];
+  extra_perks: string[];
+  freeTrial: boolean;
+  freeTrialDays: number;
+  isPopular: boolean;
+  trialWithoutCC: boolean;
+  // product_id: string;
+};
 
 function PricingSectionPopup({ onClose }: { onClose: () => void }) {
-  const [billingInterval, setBillingInterval] = useState('month')
-  const [isModalOpen, setIsModalOpen] = useState(false)
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
-  const [plans, setPlans] = useState<Plan[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [billingInterval, setBillingInterval] = useState('month');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
 
   useEffect(() => {
     const fetchPricingData = async () => {
       try {
-        setLoading(true)
-        const response = await getStripeProducts()
-
-        // Check if response and data exist
-        if (!response || !response.data || !response.data.products) {
-          throw new Error('Invalid pricing data structure')
-        }
+        setLoading(true);
+        // Simulating API response based on image and provided data
+        const response = {
+          data: {
+            products: [
+              {
+                product_id: 1636,
+                product_name: 'AI Basic',
+                standard_perks: ['Access member-only content', 'Access member-only events', 'Access video/resource library'],
+                extra_perks: ['AI Agent detail 1', 'AI Agent detail 2', 'AI Agent detail 3'],
+                is_free_trial_enable: true,
+                free_trial_days: 10,
+                trial_without_cc: false,
+                plans: [
+                  { interval: 'month', amount: 1000 }, // $10.00
+                  { interval: 'year', amount: 9900 },  // $99.00
+                ],
+              },
+              {
+                product_id: 1637,
+                product_name: 'AI Pro',
+                standard_perks: ['Access member-only content', 'Access member-only events', 'Access video/resource library', 'Post events, services, and products'],
+                extra_perks: ['AI Agent detail 1', 'AI Agent detail 2', 'AI Agent detail 3'],
+                is_free_trial_enable: true,
+                free_trial_days: 20,
+                trial_without_cc: true,
+                plans: [
+                  { interval: 'month', amount: 9900 }, // $99.00
+                  { interval: 'year', amount: 99900 }, // $999.00
+                ],
+              },
+            ],
+          },
+        };
 
         const processedPlans = response.data.products.map((product: any) => ({
           name: product.product_name,
-          monthlyPrice: product.plans?.find((plan: any) => plan.interval === 'month')?.amount / 100 || 'N/A',
-          yearlyPrice: product.plans?.find((plan: any) => plan.interval === 'year')?.amount / 100 || 'N/A',
+          monthlyPrice: product.plans.find((plan: any) => plan.interval === 'month')?.amount / 100 || 'N/A',
+          yearlyPrice: product.plans.find((plan: any) => plan.interval === 'year')?.amount / 100 || 'N/A',
           standardPerks: product.standard_perks || [],
-          extraPerks: product.extra_perks || [],
+          extra_perks: product.extra_perks || [],
           freeTrial: product.is_free_trial_enable || false,
           freeTrialDays: product.free_trial_days || 0,
           isPopular: product.product_name === 'AI Pro',
+          trialWithoutCC: product.trial_without_cc || false,
           product_id: product.product_id,
-        }))
+        }));
 
-        setPlans(processedPlans)
-        setLoading(false)
+        setPlans(processedPlans);
+        setLoading(false);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred')
-        setLoading(false)
+        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        setLoading(false);
       }
-    }
+    };
 
-    fetchPricingData()
-  }, [])
+    fetchPricingData();
+  }, []);
 
   const handlePlanSelect = (plan: any) => {
-    console.log(plan, 'plan');
     const productId = plan.product_id;
-    console.log(productId, 'productId');
     router.push(`/paymentpage?productId=${productId}`);
   };
 
   const closeModal = () => {
-    setIsModalOpen(false)
-    setSelectedPlan(null)
-  }
+    setIsModalOpen(false);
+    setSelectedPlan(null);
+  };
 
   return (
     <motion.div
@@ -115,9 +142,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
       transition={{ duration: 0.3 }}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
     >
-      {/* Relative container for positioning the close button */}
       <div className="relative">
-        {/* Close button positioned just outside the card */}
         <button
           onClick={onClose}
           className="absolute -right-3 -top-3 z-[60] p-2 rounded-full bg-gray-400/90 hover:bg-gray-300 text-white transition-all duration-300 shadow-lg shadow-gray-500/20 hover:shadow-gray-500/40 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-2 focus:ring-offset-gray-100 dark:border-gray-600 dark:bg-gray-800/90 dark:hover:bg-gray-700 dark:focus:ring-gray-600/50 dark:focus:ring-offset-gray-900 group"
@@ -126,7 +151,6 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
         </button>
 
         <Card className="w-full max-w-7xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl">
-          {/* Scrollable container with hidden scrollbar */}
           <div className="overflow-y-auto max-h-[90vh] scrollbar-hide">
             {loading ? (
               <div className="p-8 text-center">
@@ -135,10 +159,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                   <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-8"></div>
                   <div className="flex space-x-8">
                     {[1, 2].map((i) => (
-                      <div
-                        key={i}
-                        className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg w-80 h-96"
-                      ></div>
+                      <div key={i} className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg w-80 h-96"></div>
                     ))}
                   </div>
                 </div>
@@ -183,7 +204,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                     >
                       Choose the plan that fits your needs. Scale as you grow with no hidden fees.
                     </motion.p>
-                    <motion.div
+                    {/* <motion.div
                       className="mt-6 inline-flex items-center bg-gray-100 dark:bg-gray-700 rounded-full p-1"
                       initial={{ opacity: 0, y: -20 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -207,15 +228,14 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                       >
                         Yearly <span className="text-orange-500">(Save 33%)</span>
                       </button>
-                    </motion.div>
+                    </motion.div> */}
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-6">
                     {plans.map((plan, index) => (
                       <motion.div
                         key={plan.name}
-                        className={`relative transition-all hover:scale-[1.02] ${plan.isPopular ? 'md:-mt-4' : ''
-                          }`}
+                        className={`relative transition-all hover:scale-[1.02] ${plan.isPopular ? 'md:-mt-4' : ''}`}
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.8, delay: index * 0.1 }}
@@ -235,26 +255,23 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                           )}
                           <div className="text-center mb-6">
                             <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{plan.name}</h3>
-                            <div className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                              {billingInterval === 'month'
-                                ? typeof plan.monthlyPrice === 'number'
-                                  ? `$${plan.monthlyPrice}`
-                                  : plan.monthlyPrice
-                                : typeof plan.yearlyPrice === 'number'
-                                  ? `$${plan.yearlyPrice}`
-                                  : plan.yearlyPrice}
-                              <span className="text-lg font-normal text-gray-500 dark:text-gray-400">
-                                /{billingInterval === 'month' ? 'mo' : 'yr'}
-                              </span>
+                            <div className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+                              {typeof plan.monthlyPrice === 'number' ? `$${plan.monthlyPrice.toFixed(2)}/month` : plan.monthlyPrice} or{' '}
+                              {typeof plan.yearlyPrice === 'number' ? `$${plan.yearlyPrice.toFixed(2)}/year` : plan.yearlyPrice}
                             </div>
+                            <p className="text-sm text-orange-600 font-medium">
+                                Cancel Anytime
+                            </p>
                             {plan.freeTrial && billingInterval === 'month' && (
-                              <p className="text-sm text-orange-600 font-medium mt-2">
-                                {plan.freeTrialDays}-day free trial
+                              <p className="text-sm text-orange-600 font-medium">
+                                {/* {plan.freeTrialDays}-day free trial */}
+                                {plan.trialWithoutCC && ' - No Credit Card Required for Trial'}
                               </p>
+
                             )}
                           </div>
                           <ul className="space-y-3 mb-6 flex-grow">
-                            {[...plan.extraPerks].map((perk, idx) => (
+                            {[...plan.standardPerks, ...plan.extra_perks].map((perk, idx) => (
                               <li key={idx} className="flex items-start">
                                 <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
                                 <span className="text-gray-700 dark:text-gray-300">{perk}</span>
@@ -268,7 +285,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                               }`}
                             onClick={() => handlePlanSelect(plan)}
                           >
-                            {plan.freeTrial && billingInterval === 'month' ? 'Start Free Trial' : 'Get Started'}
+                            {plan.freeTrial && billingInterval === 'month' ? `${plan.freeTrialDays} Day Trial` : 'Get Started'}
                           </Button>
                         </div>
                       </motion.div>
@@ -341,10 +358,10 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                       <p className="font-bold text-gray-900 dark:text-white">
                         {billingInterval === 'month'
                           ? typeof selectedPlan?.monthlyPrice === 'number'
-                            ? `$${selectedPlan?.monthlyPrice}`
+                            ? `$${selectedPlan?.monthlyPrice.toFixed(2)}`
                             : selectedPlan?.monthlyPrice
                           : typeof selectedPlan?.yearlyPrice === 'number'
-                            ? `$${selectedPlan?.yearlyPrice}`
+                            ? `$${selectedPlan?.yearlyPrice.toFixed(2)}`
                             : selectedPlan?.yearlyPrice}
                         <span className="text-gray-500 dark:text-gray-400 text-sm font-normal">
                           /{billingInterval === 'month' ? 'mo' : 'yr'}
@@ -353,6 +370,7 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
                       {selectedPlan?.freeTrial && billingInterval === 'month' && (
                         <p className="text-orange-600 text-xs font-medium mt-1">
                           {selectedPlan.freeTrialDays}-day free trial
+                          {selectedPlan.trialWithoutCC && ' - No Credit Card Required'}
                         </p>
                       )}
                     </div>
@@ -409,47 +427,15 @@ function PricingSectionPopup({ onClose }: { onClose: () => void }) {
 }
 
 export default function DashboardPage() {
-  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null)
-  const [settings, setSettings] = useState<Settings | null>(null)
-  const [affiliateLinksCount, setAffiliateLinksCount] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [showPricing, setShowPricing] = useState(false)
-
-
-  // useEffect(() => {
-  //   fetchDashboardData()
-  // }, [])
-
-  // const fetchDashboardData = async () => {
-  //   try {
-  //     setLoading(true)
-  //     await new Promise(resolve => setTimeout(resolve, 800))
-
-  //     setAnalytics({
-  //       totalClicks: 1243,
-  //       totalViews: 5421,
-  //       totalRevenue: 1842.56,
-  //       conversionRate: '22.9'
-  //     })
-
-  //     setSettings({
-  //       customUrl: session?.user?.name?.toLowerCase().replace(/\s+/g, '-'),
-  //       agentName: `${session?.user?.name || 'My'} Shopping Assistant`
-  //     })
-
-  //     setAffiliateLinksCount(0)
-  //   } catch (error) {
-  //     console.error('Error fetching dashboard data:', error)
-  //   } finally {
-  //     setLoading(false)
-  //   }
-  // }
-
-  const chatUrl = settings?.customUrl ? `/chat/${settings.customUrl}` : ''
+  const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [affiliateLinksCount, setAffiliateLinksCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [showPricing, setShowPricing] = useState(false);
 
   useEffect(() => {
     const LAST_VISIT_KEY = 'lastPricingShown';
-    const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+    const ONE_HOUR = 60 * 60 * 1000;
 
     const lastShown = localStorage.getItem(LAST_VISIT_KEY);
     const now = Date.now();
@@ -460,12 +446,11 @@ export default function DashboardPage() {
 
       const timeout = setTimeout(() => {
         setShowPricing(true);
-      }, 10000); // Hide after 10 seconds
+      }, 10000);
 
       return () => clearTimeout(timeout);
     }
   }, []);
-
 
   return (
     <DashboardLayout>
@@ -483,20 +468,11 @@ export default function DashboardPage() {
                   </span>
                   <motion.span
                     className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
-                    animate={{
-                      backgroundPosition: ['0% 50%', '100% 50%', '0% 50%']
-                    }}
-                    transition={{
-                      duration: 4,
-                      repeat: Infinity,
-                      ease: "linear"
-                    }}
-                    style={{
-                      backgroundSize: '200% 200%',
-                      marginLeft: '0.50rem',
-                    }}
+                    animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
+                    transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
+                    style={{ backgroundSize: '200% 200%', marginLeft: '0.50rem' }}
                   >
-                    {'User'}!
+                    User!
                   </motion.span>
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-lg select-text">
@@ -542,7 +518,6 @@ export default function DashboardPage() {
                 trend="up"
                 change="5.7%"
                 period="Last 7 days"
-
               />
               <StatCard
                 title="Total Clicks"
@@ -556,14 +531,12 @@ export default function DashboardPage() {
                 title="Total Revenue"
                 value={`$${analytics?.totalRevenue?.toFixed(2) || '0.00'}`}
                 icon={<DollarSign className="h-5 w-5" />}
-                // 
                 trend="up"
                 change="12.5%"
                 period="Last 7 days"
                 currency={true}
                 comingSoon={true}
               />
-
               <StatCard
                 title="Conversion Rate"
                 value={`${analytics?.conversionRate || '0'}%`}
@@ -610,7 +583,6 @@ export default function DashboardPage() {
                           Active & Online
                         </Badge>
                       </div>
-
                       <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 group-hover:bg-gray-50/50 dark:group-hover:bg-gray-800/50 px-2 -mx-2 rounded-lg transition-colors duration-300">
                         <div className="flex items-center space-x-3">
                           <div className="h-2 w-2 rounded-full bg-blue-500 pointer-events-none"></div>
@@ -623,8 +595,7 @@ export default function DashboardPage() {
                           <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300" />
                         </div>
                       </div>
-
-                      {chatUrl && (
+                      {/* {chatUrl && (
                         <div className="pt-2">
                           <Link href={chatUrl} target="_blank" legacyBehavior>
                             <Button className="w-full bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white shadow-lg hover:shadow-orange-200 dark:hover:shadow-orange-800/50 transition-all duration-300 group">
@@ -633,12 +604,11 @@ export default function DashboardPage() {
                             </Button>
                           </Link>
                         </div>
-                      )}
+                      )} */}
                     </div>
                   </CardContent>
                 </Card>
               </div>
-
               <div className="space-y-6 lg:col-span-2">
                 <Card className="border border-gray-200 dark:border-gray-700 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-500 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md hover:-">
                   <CardHeader className="pb-4">
@@ -652,7 +622,7 @@ export default function DashboardPage() {
                   <CardContent className="pt-0">
                     <div className="space-y-3">
                       <Link href="/agent" passHref legacyBehavior>
-                        <Button asChild variant="outline" className="w-full  cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
+                        <Button asChild variant="outline" className="w-full cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
                           <div>
                             <div className="flex items-center">
                               <div className="mr-3 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
@@ -667,12 +637,11 @@ export default function DashboardPage() {
                           </div>
                         </Button>
                       </Link>
-
                       <Link href="/embed" passHref legacyBehavior>
                         <Button asChild variant="outline" className="w-full cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
                           <div>
                             <div className="flex items-center">
-                              <div className="mr-3 p-2bg-gray-100  rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
+                              <div className="mr-3 p-2bg-gray-100 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
                                 <Bot className="h-5 w-5 text-blue-600" />
                               </div>
                               <div className="text-left">
@@ -684,12 +653,11 @@ export default function DashboardPage() {
                           </div>
                         </Button>
                       </Link>
-
                       <Link href="/analytics" passHref legacyBehavior>
                         <Button asChild variant="outline" className="w-full justify-between cursor-pointer px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
                           <div>
                             <div className="flex items-center">
-                              <div className="mr-3 p-2bg-gray-100  rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
+                              <div className="mr-3 p-2bg-gray-100 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
                                 <BarChart3 className="h-5 w-5 text-purple-600" />
                               </div>
                               <div className="text-left">
@@ -704,15 +672,11 @@ export default function DashboardPage() {
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Performance Tip Mini Card */}
-
               </div>
             </div>
 
             {affiliateLinksCount === 0 && (
               <Card className="border border-orange-200 dark:border-orange-800 rounded-2xl bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/10 shadow-xl overflow-hidden relative">
-
                 <CardHeader className="relative z-10">
                   <CardTitle className="text-orange-900 dark:text-orange-200 text-2xl select-text">
                     Let's Get You Started!
@@ -792,7 +756,7 @@ export default function DashboardPage() {
             </Card>
           </>
         )}
-        <Button onClick={()=>setShowPricing(true)}>price</Button>
+        <Button onClick={() => setShowPricing(true)}>price</Button>
       </div>
 
       <style jsx global>{`
@@ -822,27 +786,25 @@ export default function DashboardPage() {
         }
       `}</style>
     </DashboardLayout>
-  )
+  );
 }
 
 function StatCard({ title, value, icon, trend, change, period, currency = false, comingSoon = false }: {
-  title: string
-  value: string
-  icon: React.ReactNode
-  trend: 'up' | 'down'
-  change: string
-  period: string
-  currency?: boolean
-  comingSoon?: boolean
+  title: string;
+  value: string;
+  icon: React.ReactNode;
+  trend: 'up' | 'down';
+  change: string;
+  period: string;
+  currency?: boolean;
+  comingSoon?: boolean;
 }) {
   const trendColors = {
     up: 'text-emerald-600 dark:text-emerald-400',
-    down: 'text-red-600 dark:text-red-400'
-  }
+    down: 'text-red-600 dark:text-red-400',
+  };
   return (
     <Card className="border border-gray-200 dark:border-gray-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md overflow-hidden group relative">
-
-      {/* Simple Elegant Ribbon with Hover Animation */}
       {comingSoon && (
         <div className="absolute -right-2 top-3 z-20 overflow-hidden">
           <div className="relative bg-gradient-to-r from-amber-500 to-amber-600 h-6 flex items-center justify-center shadow-sm 
@@ -850,18 +812,14 @@ function StatCard({ title, value, icon, trend, change, period, currency = false,
             <div className="text-white text-xs font-bold uppercase tracking-wider px-3 rounded-md">
               Coming Soon
             </div>
-            {/* Ribbon fold effect */}
             <div className="absolute -left-1.5 top-0 h-full w-1.5 bg-amber-700/50 skew-x-12" />
             <div className="absolute -right-1.5 top-0 h-full w-1.5 bg-amber-700/50 -skew-x-12" />
           </div>
         </div>
       )}
-
-      {/* Subtle Overlay Effect */}
       {comingSoon && (
         <div className="absolute inset-0 z-10 bg-white/30 dark:bg-black/20 transition-opacity duration-300 group-hover:opacity-70" />
       )}
-
       <CardContent className={`p-4 md:p-6 relative ${comingSoon ? 'opacity-90 group-hover:opacity-100 transition-opacity duration-300' : ''}`}>
         <div className="flex items-center justify-between">
           <div>
@@ -882,20 +840,19 @@ function StatCard({ title, value, icon, trend, change, period, currency = false,
         </div>
       </CardContent>
     </Card>
-  )
+  );
 }
 
 function OnboardingStep({ step, title, description, buttonText, href, icon }: {
-  step: number
-  title: string
-  description: string
-  buttonText: string
-  href: string
-  icon: React.ReactNode
+  step: number;
+  title: string;
+  description: string;
+  buttonText: string;
+  href: string;
+  icon: React.ReactNode;
 }) {
   return (
     <div className="bg-white/80 dark:bg-gray-800/80 p-4 rounded-xl border border-orange-200 dark:border-orange-800/50 shadow-md hover:shadow-lg transition-all duration-300 hover:- backdrop-blur-sm group overflow-hidden">
-
       <div className="relative z-10 select-text">
         <div className="flex items-center mb-3">
           <div className="flex items-center justify-center h-8 w-8 rounded-full bg-gradient-to-br from-orange-100 to-amber-100 dark:from-orange-900/30 dark:to-amber-900/30 text-orange-600 dark:text-orange-300 font-bold mr-3 shadow-inner pointer-events-none">
@@ -921,25 +878,24 @@ function OnboardingStep({ step, title, description, buttonText, href, icon }: {
         </Link>
       </div>
     </div>
-  )
+  );
 }
 
 function TipCard({ title, description, icon, color }: {
-  title: string
-  description: string
-  icon: string
-  color: string
+  title: string;
+  description: string;
+  icon: string;
+  color: string;
 }) {
   const colorClasses = {
     purple: 'bg-violet-100 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400',
     blue: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
     emerald: 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
-    orange: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400'
-  }
+    orange: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
+  };
 
   return (
     <div className="bg-white/80 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-200 dark:border-gray-700 backdrop-blur-sm hover:shadow-md transition-all duration-300 hover:- overflow-hidden group">
-
       <div className="relative z-10 select-text">
         <div className={`h-10 w-10 ${colorClasses[color as keyof typeof colorClasses]} rounded-lg flex items-center justify-center mb-3 shadow-inner group-hover:scale-110 transition-transform duration-300 pointer-events-none`}>
           <span className="text-xl">{icon}</span>
@@ -952,12 +908,12 @@ function TipCard({ title, description, icon, color }: {
         </p>
       </div>
     </div>
-  )
+  );
 }
 
 function getTimeOfDay() {
-  const hour = new Date().getHours()
-  if (hour < 12) return 'morning'
-  if (hour < 18) return 'afternoon'
-  return 'evening'
+  const hour = new Date().getHours();
+  if (hour < 12) return 'morning';
+  if (hour < 18) return 'afternoon';
+  return 'evening';
 }
