@@ -14,9 +14,17 @@ import Image from 'next/image'
 
 export function Header() {
   // const { data: session, status } = useSession()
-  const isLoggedIn = status === 'authenticated'
-  const userImage = '/default-profile.png'
-  const userName =  'User'
+  const token = localStorage.getItem("accessToken");
+  const isLoggedIn = !!token; // or token !== null
+
+  const userImage = isLoggedIn
+    ? localStorage.getItem("userImage") || "/default-profile.png"
+    : "/default-profile.png";
+
+  const userName = isLoggedIn
+    ? localStorage.getItem("userName") || "User"
+    : "User";
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur-md shadow-sm">
@@ -80,15 +88,15 @@ export function Header() {
             </DropdownMenu>
           ) : (
             <>
-              <Button 
-                asChild 
-                variant="outline" 
+              <Button
+                asChild
+                variant="outline"
                 className="border-orange-500 text-orange-500 hover:bg-orange-50 text-sm font-medium px-4 py-2"
               >
                 <Link href="/login">Sign In</Link>
               </Button>
-              <Button 
-                asChild 
+              <Button
+                asChild
                 className="bg-orange-600 hover:bg-orange-700 text-white text-sm font-medium px-4 py-2"
               >
                 <Link href="/signup">Get Started</Link>
