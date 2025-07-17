@@ -192,6 +192,7 @@ export const Logout = async () => {
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('accessToken')}`,
       },
       credentials: 'include', // Include credentials if tokens are managed via cookies
     });
@@ -202,6 +203,11 @@ export const Logout = async () => {
     console.log(data.message, 'Logout Response Message')
     console.log(response.ok, 'Logout Response OK')
 
+    // Clear localStorage on successful logout
+    localStorage.removeItem('accessToken')
+    localStorage.removeItem('user')
+    localStorage.removeItem('aiAgentData')
+
     if (!!response.ok) {
       throw new Error(data.message || 'Logout failed');
     }
@@ -211,6 +217,11 @@ export const Logout = async () => {
       message: data.message || 'Logged out successfully',
     };
   } catch (error) {
+    // Clear localStorage even if the API call fails to ensure clean state
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user');
+    localStorage.removeItem('aiAgentData');
+
     console.error('Logout error:', error);
     throw error;
   }

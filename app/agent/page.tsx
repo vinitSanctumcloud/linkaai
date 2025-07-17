@@ -69,13 +69,13 @@ export default function AgentBuilderPage() {
     name: '',
     trainingInstructions: '',
     greeting: '',
-    avatar: null,
+    avatar: 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.jpg',
     prompts: ['', '', '', ''],
     partnerLinks: [],
     linkaProMonetizations: [],
     conditionalPrompts: [],
     useConditionalPrompts: false,
-    greetingVideo: null,
+    greetingVideo: 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.mp4',
     greetingTitle: '',
     greetingImage: null // Corrected initialization
   })
@@ -346,27 +346,188 @@ export default function AgentBuilderPage() {
     }
   }
 
-  const nextStep = () => {
-    if (currentStep === 1 && (!agentConfig.greeting.trim() || !agentConfig.greetingTitle.trim())) {
-      toast.error('Please fill in the greeting and greeting title.')
-      return
-    }
-    if (currentStep === 2 && (!agentConfig.name.trim() || !agentConfig.trainingInstructions.trim())) {
-      toast.error('Please fill in the agent name and training instructions.')
-      return
-    }
-    if (currentStep === 4) {
-      if (!agentConfig.useConditionalPrompts && agentConfig.prompts.every(prompt => !prompt.trim())) {
-        toast.error('Please add at least one non-empty prompt or enable conditional prompts.')
-        return
+  const nextStep = async () => {
+    const accessToken = localStorage.getItem('accessToken');
+    if (!accessToken) throw new Error('No access token found');
+
+    try {
+      console.log(`nextStep ${currentStep}`);
+      console.log(agentConfig);
+
+      let response;
+      let payload;
+      let apiUrl;
+
+      switch (currentStep) {
+        case 1:
+          // Validate Step 1 fields
+          if (!agentConfig.greetingTitle.trim()) {
+            toast.error('Please provide a greeting title.');
+            return;
+          }
+          if (!agentConfig.greeting.trim()) {
+            toast.error('Please provide a welcome greeting.');
+            return;
+          }
+          // Optional: Allow proceeding without avatar or video, using default URLs
+          // if (!agentConfig.avatar && !agentConfig.greetingVideo) {
+          //   toast.error('Please upload either an avatar image or a greeting video.');
+          //   return;
+          // }
+
+          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/create-agent';
+          payload = {
+            avatar_image_url: agentConfig.avatar || 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.jpg',
+            avatar_video_url: agentConfig.greetingVideo || 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.mp4',
+            greeting_title: agentConfig.greetingTitle,
+            welcome_greeting: agentConfig.greeting,
+          };
+          break;
+
+        case 2:
+          // Validate Step 2 fields
+          if (!agentConfig.name.trim()) {
+            toast.error('Please provide an agent name.');
+            return;
+          }
+          if (!agentConfig.trainingInstructions.trim()) {
+            toast.error('Please provide training instructions.');
+            return;
+          }
+
+          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/add-agent-details';
+          payload = {
+            agent_name: 'saikat agent 1',
+            training_instructions: agentConfig.trainingInstructions,
+          };
+          break;
+
+        case 3:
+          // Validate Step 3 fields
+          if (!agentConfig.useConditionalPrompts && agentConfig.prompts.every((prompt) => !prompt.trim())) {
+            toast.error('Please add at least one non-empty prompt or enable conditional prompts.');
+            return;
+          }
+          if (agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length === 0) {
+            toast.error('Please add at least one conditional prompt.');
+            return;
+          }
+
+          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/add-prompts';
+          payload = {
+            prompts: agentConfig.useConditionalPrompts
+              ? agentConfig.conditionalPrompts.map((cp) => cp.mainPrompt).filter((p) => p.trim())
+              : agentConfig.prompts.filter((p) => p.trim()),
+          };
+          break;
+
+        case 4:
+          // Validate Step 4 fields (optional, as monetization might not be required)
+          if (
+            agentConfig.partnerLinks.length === 0 &&
+            agentConfig.linkaProMonetizations.length === 0
+          ) {
+            toast.warning('No monetization links added. You can skip this step if not needed.');
+          }
+
+          apiUrl = '/api/settings';
+          payload = {
+            agentName: agentConfig.name,
+            trainingInstructions: agentConfig.trainingInstructions,
+            agentGreeting: agentConfig.greeting,
+            avatarUrl: agentConfig.avatar,
+            agentPrompts: agentConfig.useConditionalPrompts
+              ? []
+              : agentConfig.prompts.filter((p) => p.trim()),
+            conditionalPrompts: agentConfig.useConditionalPrompts ? agentConfig.conditionalPrompts : [],
+            partnerLinks: agentConfig.partnerLinks.filter((link) => link.affiliateLink.trim() !== ''),
+            linkaProMonetizations: agentConfig.linkaProMonetizations.filter(
+              (link) => link.mainUrl.trim() !== ''
+            ),
+            greetingTitle: agentConfig.greetingTitle,
+            greetingImage: agentConfig.greetingImage,
+            greetingVideo: agentConfig.greetingVideo,
+          };
+          break;
+
+        case 5:
+          // Validate all required fields before final save
+          if (!agentConfig.greetingTitle.trim() || !agentConfig.greeting.trim()) {
+            toast.error('Please complete Step 1: Avatar & Greeting.');
+            return;
+          }
+          if (!agentConfig.avatar && !agentConfig.greetingVideo) {
+            toast.error('Please upload either an avatar image or a greeting video in Step 1.');
+            return;
+          }
+          if (!agentConfig.name.trim() || !agentConfig.trainingInstructions.trim()) {
+            toast.error('Please complete Step 2: AI Training.');
+            return;
+          }
+          if (
+            !agentConfig.useConditionalPrompts &&
+            agentConfig.prompts.every((prompt) => !prompt.trim())
+          ) {
+            toast.error('Please add at least one non-empty prompt in Step 3.');
+            return;
+          }
+          if (agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length === 0) {
+            toast.error('Please add at least one conditional prompt in Step 3.');
+            return;
+          }
+
+          apiUrl = '/api/settings';
+          payload = {
+            agentName: agentConfig.name,
+            trainingInstructions: agentConfig.trainingInstructions,
+            agentGreeting: agentConfig.greeting,
+            avatarUrl: agentConfig.avatar,
+            agentPrompts: agentConfig.useConditionalPrompts
+              ? []
+              : agentConfig.prompts.filter((p) => p.trim()),
+            conditionalPrompts: agentConfig.useConditionalPrompts ? agentConfig.conditionalPrompts : [],
+            partnerLinks: agentConfig.partnerLinks.filter((link) => link.affiliateLink.trim() !== ''),
+            linkaProMonetizations: agentConfig.linkaProMonetizations.filter(
+              (link) => link.mainUrl.trim() !== ''
+            ),
+            greetingTitle: agentConfig.greetingTitle,
+            greetingImage: agentConfig.greetingImage,
+            greetingVideo: agentConfig.greetingVideo,
+          };
+          break;
+
+        default:
+          toast.error('Invalid step.');
+          return;
       }
-      if (agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length === 0) {
-        toast.error('Please add at least one conditional prompt.')
-        return
+
+      response = await fetch(apiUrl, {
+        method: currentStep === 1 ? 'POST' : 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+            // Add any necessary authorization headers, e.g., Authorization: Bearer <token>
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (response.ok) {
+        toast.success(
+          currentStep === 5
+            ? 'AI Agent saved and published successfully!'
+            : `Step ${currentStep} saved successfully!`
+        );
+        if (currentStep < 5) setCurrentStep(currentStep + 1); // Proceed to next step
+      } else {
+        const errorData = await response.json();
+        console.error('API error:', errorData);
+        toast.error(`Failed to save Step ${currentStep}: ${errorData.message || 'Unknown error'}`);
       }
+    } catch (error) {
+      console.error('Error saving agent:', error);
+      toast.error('An error occurred while saving. Please try again.');
     }
-    if (currentStep < 5) setCurrentStep(currentStep + 1)
-  }
+  };
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1)
