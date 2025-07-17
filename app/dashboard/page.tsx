@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import {
   TrendingUp,
   Users,
@@ -22,10 +21,9 @@ import {
   ShoppingBag,
   Settings,
   LayoutTemplate,
-  X,
   CheckCircle
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface AnalyticsSummary {
   totalClicks: number;
@@ -39,386 +37,22 @@ interface Settings {
   agentName: string;
 }
 
-type Plan = {
-  name: string;
-  monthlyPrice: number | string;
-  yearlyPrice: number | string;
-  standardPerks: string[];
-  extra_perks: string[];
-  freeTrial: boolean;
-  freeTrialDays: number;
-  isPopular: boolean;
-  trialWithoutCC: boolean;
-  product_id: string;
-  accountId: string;
-};
-
-function PricingSectionPopup({ onClose }: { onClose: () => void }) {
-  const [billingInterval, setBillingInterval] = useState('month');
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const router = useRouter();
-
-  useEffect(() => {
-    const fetchPricingData = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/billing/products', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error('Failed to fetch pricing data');
-        }
-
-        const responseData = await response.json();
-        console.log(responseData);
-
-        const processedPlans = responseData.data.products.map((product: any) => ({
-          name: product.product_name,
-          monthlyPrice: product.plans.find((plan: any) => plan.interval === 'month')?.amount / 100 || 'N/A',
-          yearlyPrice: product.plans.find((plan: any) => plan.interval === 'year')?.amount / 100 || 'N/A',
-          standardPerks: product.standard_perks || [],
-          extra_perks: product.extra_perks || [],
-          freeTrial: product.is_free_trial_enable || false,
-          freeTrialDays: product.free_trial_days || 0,
-          isPopular: product.product_name === 'AI Pro',
-          trialWithoutCC: product.trial_without_cc || false,
-          product_id: product.product_id,
-          accountId: responseData.data.connected_account_id
-        }));
-
-        setPlans(processedPlans);
-        setLoading(false);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
-        setLoading(false);
-      }
-    };
-
-    fetchPricingData();
-  }, []);
-
-  const handlePlanSelect = (plan: any) => {
-    const productId = plan.product_id;
-    console.log(plan);
-    router.push(`/paymentpage?productId=${productId}&freeTrial=${plan.freeTrial}&trialWithoutCC=${plan.trialWithoutCC}&accountId=${plan.accountId}`);
-  };
-
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedPlan(null);
-  };
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-    >
-      <div className="relative">
-        <button
-          onClick={onClose}
-          className="absolute -right-3 -top-3 z-[60] p-2 rounded-full bg-gray-400/90 hover:bg-gray-300 text-white transition-all duration-300 shadow-lg shadow-gray-500/20 hover:shadow-gray-500/40 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-2 focus:ring-offset-gray-100 dark:border-gray-600 dark:bg-gray-800/90 dark:hover:bg-gray-700 dark:focus:ring-gray-600/50 dark:focus:ring-offset-gray-900 group"
-        >
-          <X className="h-5 w-5 transition-all duration-300 group-hover:scale-110 group-hover:filter group-hover:drop-shadow-[0_0_6px_rgba(209,213,219,0.8)] dark:group-hover:drop-shadow-[0_0_6px_rgba(107,114,128,0.8)] group-focus:scale-110 group-focus:filter group-focus:drop-shadow-[0_0_6px_rgba(209,213,219,0.8)] dark:group-focus:drop-shadow-[0_0_6px_rgba(107,114,128,0.8)]" />
-        </button>
-
-        <Card className="w-full max-w-7xl bg-white/90 dark:bg-gray-800/90 backdrop-blur-md border border-gray-200 dark:border-gray-700 rounded-2xl shadow-xl">
-          <div className="overflow-y-auto max-h-[90vh] scrollbar-hide">
-            {loading ? (
-              <div className="p-8 text-center">
-                <div className="animate-pulse flex flex-col items-center">
-                  <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
-                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-1/2 mb-8"></div>
-                  <div className="flex space-x-8">
-                    {[1, 2].map((i) => (
-                      <div key={i} className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg w-80 h-96"></div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            ) : error ? (
-              <div className="p-8 text-center">
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
-                  <p className="text-xl text-red-600 dark:text-red-400 font-medium">Error: {error}</p>
-                  <p className="text-gray-600 dark:text-gray-400 mt-2">
-                    Please try again later or{' '}
-                    <Link href="/contact" className="text-orange-600 hover:underline font-medium">
-                      contact us
-                    </Link>
-                    .
-                  </p>
-                  <Button
-                    variant="outline"
-                    className="mt-4 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                    onClick={() => window.location.reload()}
-                  >
-                    Retry
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <>
-                <div className="p-8">
-                  <div className="text-center mb-8">
-                    <motion.h2
-                      className="text-3xl font-bold text-gray-900 dark:text-white"
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5 }}
-                    >
-                      Simple, Transparent Pricing
-                    </motion.h2>
-                    <motion.p
-                      className="text-lg text-gray-600 dark:text-gray-400 mt-2 max-w-2xl mx-auto"
-                      initial={{ opacity: 0, y: -20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.1 }}
-                    >
-                      Choose the plan that fits your needs. Scale as you grow with no hidden fees.
-                    </motion.p>
-                  </div>
-
-                  <div className="grid md:grid-cols-3 gap-6">
-                    {plans.map((plan, index) => (
-                      <motion.div
-                        key={plan.name}
-                        className={`relative transition-all hover:scale-[1.02] ${plan.isPopular ? 'md:-mt-4' : ''}`}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: index * 0.1 }}
-                      >
-                        <div
-                          className={`p-6 rounded-2xl shadow-lg h-full flex flex-col ${plan.isPopular
-                            ? 'bg-gradient-to-br from-orange-50 to-white dark:from-orange-900/20 dark:to-gray-800 border-2 border-orange-500'
-                            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'
-                            }`}
-                        >
-                          {plan.isPopular && (
-                            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                              <span className="bg-orange-500 text-white px-4 py-1 rounded-full text-xs font-semibold tracking-wide shadow-md">
-                                MOST POPULAR
-                              </span>
-                            </div>
-                          )}
-                          <div className="text-center mb-6">
-                            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{plan.name}</h3>
-                            <div className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-                              {typeof plan.monthlyPrice === 'number' ? `$${plan.monthlyPrice.toFixed(2)}/month` : plan.monthlyPrice} or{' '}
-                              {typeof plan.yearlyPrice === 'number' ? `$${plan.yearlyPrice.toFixed(2)}/year` : plan.yearlyPrice}
-                            </div>
-                            <p className="text-sm text-orange-600 font-medium">
-                                Cancel Anytime
-                            </p>
-                            {plan.freeTrial && billingInterval === 'month' && (
-                              <p className="text-sm text-orange-600 font-medium">
-                                {plan.freeTrialDays}-day free trial
-                                {plan.trialWithoutCC && ' - No Credit Card Required for Trial'}
-                              </p>
-                            )}
-                          </div>
-                          <ul className="space-y-3 mb-6 flex-grow">
-                            {[...plan.standardPerks, ...plan.extra_perks].map((perk, idx) => (
-                              <li key={idx} className="flex items-start">
-                                <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                                <span className="text-gray-700 dark:text-gray-300">{perk}</span>
-                              </li>
-                            ))}
-                          </ul>
-                          <Button
-                            className={`w-full py-5 text-base font-medium ${plan.isPopular
-                              ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-200 dark:shadow-orange-800/50'
-                              : 'bg-gray-900 dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white'
-                              }`}
-                            onClick={() => handlePlanSelect(plan)}
-                          >
-                            {plan.freeTrial && billingInterval === 'month' ? `${plan.freeTrialDays} Day Trial` : 'Subscribe'}
-                          </Button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <div className="text-center mt-8">
-                    <motion.div
-                      className="inline-block bg-white dark:bg-gray-800 rounded-lg shadow-sm px-6 py-4 border border-gray-200 dark:border-gray-700"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.5, delay: 0.3 }}
-                    >
-                      <p className="text-gray-600 dark:text-gray-400">
-                        All plans include unlimited affiliate links and 24/7 automated responses
-                      </p>
-                      <p className="text-sm text-gray-500 dark:text-gray-500 mt-2">
-                        Need something custom?{' '}
-                        <Link href="/contact" className="text-orange-600 hover:underline font-medium">
-                          Contact us
-                        </Link>{' '}
-                        for enterprise solutions.
-                      </p>
-                    </motion.div>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </Card>
-      </div>
-
-      {isModalOpen && (
-        <motion.div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full mx-4 overflow-hidden"
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 25 }}
-          >
-            <div className="p-6">
-              <div className="flex justify-between items-start">
-                <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                  Confirm Your Plan
-                </h3>
-                <button
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 transition-colors"
-                  aria-label="Close"
-                >
-                  <X className="w-5 w-5" />
-                </button>
-              </div>
-              <div className="mt-6 mb-8">
-                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-100 dark:border-orange-800 rounded-lg p-4">
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <h4 className="font-bold text-gray-900 dark:text-white">{selectedPlan?.name}</h4>
-                      <p className="text-gray-600 dark:text-gray-400 text-sm">
-                        {billingInterval === 'month' ? 'Monthly' : 'Yearly'} billing
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-bold text-gray-900 dark:text-white">
-                        {billingInterval === 'month'
-                          ? typeof selectedPlan?.monthlyPrice === 'number'
-                            ? `$${selectedPlan?.monthlyPrice.toFixed(2)}`
-                            : selectedPlan?.monthlyPrice
-                          : typeof selectedPlan?.yearlyPrice === 'number'
-                            ? `$${selectedPlan?.yearlyPrice.toFixed(2)}`
-                            : selectedPlan?.yearlyPrice}
-                        <span className="text-gray-500 dark:text-gray-400 text-sm font-normal">
-                          /{billingInterval === 'month' ? 'mo' : 'yr'}
-                        </span>
-                      </p>
-                      {selectedPlan?.freeTrial && billingInterval === 'month' && (
-                        <p className="text-orange-600 text-xs font-medium mt-1">
-                          {selectedPlan.freeTrialDays}-day free trial
-                          {selectedPlan.trialWithoutCC && ' - No Credit Card Required'}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                <ul className="mt-4 space-y-2">
-                  <li className="flex items-center text-gray-600 dark:text-gray-300 text-sm">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    Unlimited affiliate links
-                  </li>
-                  <li className="flex items-center text-gray-600 dark:text-gray-300 text-sm">
-                    <CheckCircle className="w-4 h-4 text-green-500 mr-2" />
-                    24/7 automated responses
-                  </li>
-                </ul>
-              </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-3">
-                <Button
-                  variant="outline"
-                  className="border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700"
-                  onClick={closeModal}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
-                  asChild
-                >
-                  <Link href="/signup">
-                    {selectedPlan?.freeTrial && billingInterval === 'month'
-                      ? 'Start Free Trial'
-                      : 'Continue to Payment'}
-                  </Link>
-                </Button>
-              </div>
-            </div>
-            <div className="bg-gray-50 dark:bg-gray-900 px-6 py-4 border-t border-gray-200 dark:border-gray-700">
-              <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                By continuing, you agree to our{' '}
-                <Link href="/terms" className="text-orange-600 hover:underline">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="text-orange-600 hover:underline">
-                  Privacy Policy
-                </Link>
-              </p>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </motion.div>
-  );
-}
-
 export default function DashboardPage() {
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [affiliateLinksCount, setAffiliateLinksCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [showPricing, setShowPricing] = useState(false);
-
-  useEffect(() => {
-    const LAST_VISIT_KEY = 'lastPricingShown';
-    const ONE_HOUR = 60 * 60 * 1000;
-
-    const lastShown = localStorage.getItem(LAST_VISIT_KEY);
-    const now = Date.now();
-
-    if (!lastShown || now - parseInt(lastShown) > ONE_HOUR) {
-      setShowPricing(true);
-      localStorage.setItem(LAST_VISIT_KEY, now.toString());
-
-      const timeout = setTimeout(() => {
-        setShowPricing(true);
-      }, 10000);
-
-      return () => clearTimeout(timeout);
-    }
-  }, []);
 
   return (
     <DashboardLayout>
-      <AnimatePresence>
-        {showPricing && <PricingSectionPopup onClose={() => setShowPricing(false)} />}
-      </AnimatePresence>
       <div className="space-y-6 md:space-y-8 px-4 sm:px-6 lg:px-8 py-6 max-w-[90%] mx-auto">
         <div className="mb-6 animate-fade-in relative">
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
+                <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white mb-3">
+                  <Link href="/pricing">Subscription</Link>
+                </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white select-text">
                   <span className="bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
                     Good {getTimeOfDay()} ,
@@ -703,7 +337,6 @@ export default function DashboardPage() {
             </Card>
           </>
         )}
-        <Button onClick={() => setShowPricing(true)}>price</Button>
       </div>
 
       <style jsx global>{`
