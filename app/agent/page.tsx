@@ -94,7 +94,7 @@ export default function AgentBuilderPage() {
     { id: 1, title: 'Avatar & Greeting', description: 'Upload photo and create opening message' },
     { id: 2, title: 'AI Training', description: 'Name your agent and provide training instructions' },
     { id: 3, title: 'Prompts', description: 'Design conversation starters and branching logic' },
-    { id: 4, title: 'Partner URLs', description: 'Add your affiliate links and monetization options' },
+    { id: 4, title: 'Monetization', description: 'Add your affiliate links and monetization options' },
     { id: 5, title: 'Preview & Test', description: 'Test your AI agent' }
   ]
 

@@ -33,8 +33,8 @@ const navigation = [
   { name: 'Embed Code', href: '/embed', icon: Code },
   { name: 'Analytics', href: '/analytics', icon: BarChart3 },
   { name: 'Settings', href: '/settings', icon: Settings },
-  { name: 'Affiliate Marketplace', href: '/affiliatemarketplace', icon: Store },
-  { name: 'Go To TCM', href: '/gototcm', icon: BadgeDollarSign },
+  { name: 'The Creator Marketplace', href: '/affiliatemarketplace', icon: Store },
+  // { name: 'Go To TCM', href: '/gototcm', icon: BadgeDollarSign },
 ]
 
 interface DashboardLayoutProps {
