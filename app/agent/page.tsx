@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog'
 import { Switch } from '@/components/ui/switch'
-import { Upload, Bot, Plus, X, Save, Send, Mic, Eye, ArrowLeft, ArrowRight, Edit, Trash2, GitBranch, MessageSquare, InfoIcon, LinkIcon, Link2, ImageIcon } from 'lucide-react'
+import { Upload, Bot, Plus, X, Save, Send, Mic, Eye, ArrowLeft, ArrowRight, Edit, Trash2, GitBranch, MessageSquare, InfoIcon, LinkIcon, Link2, ImageIcon, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ConditionalPrompt {
@@ -33,6 +33,7 @@ interface PartnerLink {
 interface affiliateimage {
   name?: string
 }
+
 interface LinkaProMonetization {
   id: string
   category: string
@@ -40,10 +41,10 @@ interface LinkaProMonetization {
   mainUrl: string
   mainimage?: mainimage
 }
+
 interface mainimage {
   name?: string
 }
-
 
 interface AgentConfig {
   name: string
@@ -55,14 +56,15 @@ interface AgentConfig {
   linkaProMonetizations: LinkaProMonetization[]
   conditionalPrompts: ConditionalPrompt[]
   useConditionalPrompts: boolean
-  video: string | null
+  greetingVideo: string | null
   greetingTitle: string
+  greetingImage: string | null // Corrected from greeringImage
 }
 
 export default function AgentBuilderPage() {
   const [currentStep, setCurrentStep] = useState(1)
   const [showPreview, setShowPreview] = useState(false)
-  const [activeTab, setActiveTab] = useState<'partner' | 'aipro'>('partner') // New state for tab
+  const [activeTab, setActiveTab] = useState<'partner' | 'aipro'>('partner')
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: '',
     trainingInstructions: '',
@@ -73,8 +75,9 @@ export default function AgentBuilderPage() {
     linkaProMonetizations: [],
     conditionalPrompts: [],
     useConditionalPrompts: false,
-    video: null,
-    greetingTitle: ''
+    greetingVideo: null,
+    greetingTitle: '',
+    greetingImage: null // Corrected initialization
   })
 
   // Conditional prompt modal states
@@ -90,8 +93,8 @@ export default function AgentBuilderPage() {
   const steps = [
     { id: 1, title: 'Avatar & Greeting', description: 'Upload photo and create opening message' },
     { id: 2, title: 'AI Training', description: 'Name your agent and provide training instructions' },
-    { id: 3, title: 'Partner URLs', description: 'Add your affiliate links and monetization options' },
-    { id: 4, title: 'Prompts', description: 'Design conversation starters and branching logic' },
+    { id: 3, title: 'Prompts', description: 'Design conversation starters and branching logic' },
+    { id: 4, title: 'Partner URLs', description: 'Add your affiliate links and monetization options' },
     { id: 5, title: 'Preview & Test', description: 'Test your AI agent' }
   ]
 
@@ -170,12 +173,11 @@ export default function AgentBuilderPage() {
           affiliateLink: '',
           productReview: '',
           socialMediaLink: '',
-          affiliateimage: undefined // or { name: '' }
+          affiliateimage: undefined
         }
       ]
     }))
   }
-
 
   const updatePartnerLink = (id: string, field: string, value: string | File | null) => {
     console.log(field, value, 'data')
@@ -184,8 +186,8 @@ export default function AgentBuilderPage() {
       partnerLinks: prevConfig.partnerLinks.map((link) =>
         link.id === id ? { ...link, [field]: value } : link
       ),
-    }));
-  };
+    }))
+  }
 
   const removePartnerLink = (id: string) => {
     setAgentConfig(prev => ({
@@ -202,8 +204,8 @@ export default function AgentBuilderPage() {
     }))
   }
 
-  const updateLinkaProMonetization = (id: string, field: keyof LinkaProMonetization, value: string | File | null ) => {
-    console.log(field, value , 'dara')
+  const updateLinkaProMonetization = (id: string, field: keyof LinkaProMonetization, value: string | File | null) => {
+    console.log(field, value, 'dara')
     setAgentConfig(prev => ({
       ...prev,
       linkaProMonetizations: prev.linkaProMonetizations.map(link => link.id === id ? { ...link, [field]: value } : link)
@@ -218,29 +220,103 @@ export default function AgentBuilderPage() {
     toast.success('Linka Pro Monetization removed!')
   }
 
-  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setAgentConfig(prev => ({
-          ...prev,
-          video: e.target?.result as string
-        }))
-      }
-      reader.readAsDataURL(file)
-    }
-  }
-
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setAgentConfig(prev => ({ ...prev, avatar: e.target?.result as string }))
-      }
-      reader.readAsDataURL(file)
+    if (!file) {
+      toast.error('No file selected.')
+      return
     }
+    if (!file.type.includes('image')) {
+      toast.error('Please select a valid image file.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit for avatar
+      toast.error('Image file size exceeds 5MB limit.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      console.log('Avatar upload success:', result.slice(0, 50))
+      setAgentConfig((prev) => ({
+        ...prev,
+        avatar: result,
+      }))
+    }
+    reader.onerror = () => {
+      console.error('Error reading avatar image file:', file.name)
+      toast.error('Error reading image file. Please try again.')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleGreetingImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      toast.error('No file selected.')
+      return
+    }
+    if (!file.type.includes('image')) {
+      toast.error('Please select a valid image file.')
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit for greeting image
+      toast.error('Image file size exceeds 5MB limit.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      console.log('Greeting image upload success:', result.slice(0, 50))
+      setAgentConfig((prev) => ({
+        ...prev,
+        greetingImage: result,
+        greetingVideo: null // Clear video if image is uploaded
+      }))
+    }
+    reader.onerror = () => {
+      console.error('Error reading greeting image file:', file.name)
+      toast.error('Error reading image file. Please try again.')
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) {
+      toast.error('No file selected.')
+      return
+    }
+    if (!file.type.includes('video')) {
+      toast.error('Please select a valid video file.')
+      return
+    }
+    const validFormats = ['video/mp4', 'video/webm', 'video/ogg']
+    if (!validFormats.includes(file.type)) {
+      console.error('Unsupported video format:', file.type)
+      toast.error('Unsupported video format. Please use MP4, WebM, or OGG.')
+      return
+    }
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit for video
+      console.error('Video file too large:', file.size)
+      toast.error('Video file size exceeds 10MB limit.')
+      return
+    }
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      const result = e.target?.result as string
+      console.log('Video upload success:', result.slice(0, 50))
+      setAgentConfig((prev) => ({
+        ...prev,
+        greetingVideo: result,
+        greetingImage: null // Clear image if video is uploaded
+      }))
+    }
+    reader.onerror = () => {
+      console.error('Error reading video file:', file.name)
+      toast.error('Error reading video file. Please try a different file.')
+    }
+    reader.readAsDataURL(file)
   }
 
   const handleSave = async () => {
@@ -272,21 +348,21 @@ export default function AgentBuilderPage() {
 
   const nextStep = () => {
     if (currentStep === 1 && (!agentConfig.greeting.trim() || !agentConfig.greetingTitle.trim())) {
-      toast.error('Please fill in the greeting and greeting title.');
-      return;
+      toast.error('Please fill in the greeting and greeting title.')
+      return
     }
     if (currentStep === 2 && (!agentConfig.name.trim() || !agentConfig.trainingInstructions.trim())) {
-      toast.error('Please fill in the agent name and training instructions.');
-      return;
+      toast.error('Please fill in the agent name and training instructions.')
+      return
     }
     if (currentStep === 4) {
       if (!agentConfig.useConditionalPrompts && agentConfig.prompts.every(prompt => !prompt.trim())) {
-        toast.error('Please add at least one non-empty prompt or enable conditional prompts.');
-        return;
+        toast.error('Please add at least one non-empty prompt or enable conditional prompts.')
+        return
       }
       if (agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length === 0) {
-        toast.error('Please add at least one conditional prompt.');
-        return;
+        toast.error('Please add at least one conditional prompt.')
+        return
       }
     }
     if (currentStep < 5) setCurrentStep(currentStep + 1)
@@ -301,92 +377,145 @@ export default function AgentBuilderPage() {
       case 1:
         return (
           <Card className="border-none shadow-lg rounded-2xl overflow-hidden bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
               <div className="space-y-1">
-                <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight">
+                <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight" >
                   Avatar & Greeting
                 </CardTitle>
-                <p className="text-sm text-linka-night/70 font-light">
+                <p className="text-xs sm:text-sm text-linka-night/70 font-light">
                   Personalize your AI's identity, avatar, and welcome message
                 </p>
               </div>
             </CardHeader>
-            <CardContent className="px-6 pb-8 space-y-8">
-              <div className="flex flex-col items-center">
-                <div className="relative group">
-                  <div className="w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
-                    {agentConfig.avatar ? (
-                      <img
-                        src={agentConfig.avatar}
-                        alt="Agent Avatar"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                    ) : agentConfig.video ? (
-                      <video
-                        src={agentConfig.video}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover rounded-full"
-                      />
-                    ) : (
-                      <Bot className="w-14 h-14 sm:w-20 sm:h-20 text-white/90 animate-pulse" />
-                    )}
-                  </div>
-                  <div className="flex gap-3 absolute -bottom-2 right-6 sm:right-7">
-                    <div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleAvatarUpload}
-                        className="hidden"
-                        id="avatar-upload"
-                      />
-                      <label
-                        htmlFor="avatar-upload"
-                        className="bg-white border-2 border-linka-dark-orange text-linka-dark-orange rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-dark-orange hover:text-white shadow-md flex items-center gap-1.5"
-                      >
-                        <Upload className="w-5 h-5" strokeWidth={2.5} />
-                        <span className="text-xs font-medium hidden sm:inline">Image</span>
-                        <span className="sr-only">Upload avatar image</span>
-                      </label>
+            <CardContent className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
+              {/* Avatar and Greeting Media Container */}
+              <div className="flex flex-col md:flex-row items-center w-full gap-6 sm:gap-8">
+                {/* Avatar Upload Section */}
+                <div className="flex flex-col items-center w-full md:w-1/2">
+                  <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet mb-3 sm:mb-4">Avatar</h3>
+                  <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+                      {agentConfig.avatar ? (
+                        <img
+                          src={agentConfig.avatar}
+                          alt="Avatar"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          onError={() => toast.error('Error loading avatar image.')}
+                        />
+                      ) : (
+                        <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+                      )}
                     </div>
-                    <div>
-                      <input
-                        type="file"
-                        accept="video/*"
-                        onChange={handleVideoUpload}
-                        className="hidden"
-                        id="video-upload"
-                      />
-                      <label
-                        htmlFor="video-upload"
-                        className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2.5 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1.5"
-                      >
-                        <Upload className="w-5 h-5" strokeWidth={2.5} />
-                        <span className="text-xs font-medium hidden sm:inline">Video</span>
-                        <span className="sr-only">Upload avatar video</span>
-                      </label>
+                    <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
+                      <div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarUpload}
+                          className="hidden"
+                          id="avatar-upload"
+                        />
+                        <label
+                          htmlFor="avatar-upload"
+                          className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                        >
+                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                          <span className="text-xs font-medium hidden sm:inline">Upload</span>
+                          <span className="sr-only">Upload avatar image</span>
+                        </label>
+                      </div>
                     </div>
                   </div>
+                  <p className="text-xs text-linka-night/60 mt-3 sm:mt-5 font-medium text-center">
+                    Recommended: Image (1:1 aspect ratio, max 5MB)
+                  </p>
                 </div>
-                <p className="text-xs text-linka-night/60 mt-5 font-medium">
-                  Recommended: Video (max 10MB, under 30s, 1:1 aspect ratio)
-                </p>
+
+                {/* Greeting Media Upload Section */}
+                <div className="flex flex-col items-center w-full md:w-1/2">
+                  <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet mb-3 sm:mb-4">Greeting Media</h3>
+                  <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+                      {agentConfig.greetingVideo ? (
+                        <video
+                          src={agentConfig.greetingVideo}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          className="w-full h-full object-cover rounded-full"
+                          onError={(e) => {
+                            console.error('Greeting video error:', e)
+                            toast.error('Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.')
+                          }}
+                        />
+                      ) : agentConfig.greetingImage ? (
+                        <img
+                          src={agentConfig.greetingImage}
+                          alt="Greeting Image"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          onError={() => toast.error('Error loading greeting image.')}
+                        />
+                      ) : (
+                        <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+                      )}
+                    </div>
+                    <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
+                      <div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleGreetingImageUpload}
+                          className="hidden"
+                          id="greeting-image-upload"
+                        />
+                        <label
+                          htmlFor="greeting-image-upload"
+                          className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                        >
+                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                          <span className="text-xs font-medium hidden sm:inline">Image</span>
+                          <span className="sr-only">Upload greeting image</span>
+                        </label>
+                      </div>
+                      <div>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={handleVideoUpload}
+                          className="hidden"
+                          id="greeting-video-upload"
+                        />
+                        <label
+                          htmlFor="greeting-video-upload"
+                          className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                        >
+                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                          <span className="text-xs font-medium hidden sm:inline">Video</span>
+                          <span className="sr-only">Upload greeting video</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-xs text-linka-night/60 mt-3 sm:mt-5 font-medium text-center">
+                    Recommended: Video (max 10MB, under 30s) or Image (max 5MB)
+                  </p>
+                </div>
               </div>
-              <div className="space-y-3">
-                <Label htmlFor="greeting-title" className="text-linka-russian-violet font-medium flex items-center gap-1">
+
+              {/* Greeting Title Input */}
+              <div className="space-y-2 sm:space-y-3">
+                <Label htmlFor="greeting-title" className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base">
                   Greeting Title <span className="text-xs text-linka-dark-orange">(Max 50 chars)</span>
                 </Label>
-                <Textarea
+                <input
                   id="greeting-title"
-                  placeholder="Example: Hi I'm Your AI ,"
+                  type="text"
+                  placeholder="Example: Hi I'm { Your Name }"
                   value={agentConfig.greetingTitle || ""}
                   onChange={(e) => handleInputChange('greetingTitle', e.target.value)}
-                  rows={1}
                   maxLength={50}
-                  className="w-full px-4 py-3 text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
                 />
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-linka-night/50 italic">
@@ -399,8 +528,10 @@ export default function AgentBuilderPage() {
                   </span>
                 </div>
               </div>
-              <div className="space-y-3">
-                <Label htmlFor="greeting" className="text-linka-russian-violet font-medium flex items-center gap-1">
+
+              {/* Greeting Textarea */}
+              <div className="space-y-2 sm:space-y-3">
+                <Label htmlFor="greeting" className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base">
                   Opening Greeting <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
                 </Label>
                 <Textarea
@@ -410,7 +541,7 @@ export default function AgentBuilderPage() {
                   onChange={(e) => handleInputChange('greeting', e.target.value)}
                   rows={3}
                   maxLength={120}
-                  className="w-full px-4 py-3 text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
+                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
                 />
                 <div className="flex justify-between items-center">
                   <p className="text-xs text-linka-night/50 italic">
@@ -423,16 +554,18 @@ export default function AgentBuilderPage() {
                   </span>
                 </div>
               </div>
-              <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-5 border border-linka-alice-blue/80 overflow-hidden relative">
+
+              {/* Live Preview */}
+              <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-4 sm:p-5 border border-linka-alice-blue/80 overflow-hidden relative">
                 <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
-                <p className="text-xs text-linka-night/60 mb-3 font-medium uppercase tracking-wider">
+                <p className="text-xs text-linka-night/60 mb-2 sm:mb-3 font-medium uppercase tracking-wider">
                   Live Preview
                 </p>
-                <div className="text-center space-y-3 relative z-10">
-                  <h4 className="text-xl md:text-2xl font-medium text-linka-russian-violet animate-in fade-in">
-                    {agentConfig.greetingTitle || "Hi I'm Your AI ,"}
+                <div className="text-center space-y-2 sm:space-y-3 relative z-10">
+                  <h4 className="text-lg sm:text-xl md:text-2xl font-medium text-linka-russian-violet animate-in fade-in">
+                    {agentConfig.greetingTitle || "Hi I'm Your AI"}
                   </h4>
-                  <p className="text-lg md:text-xl font-semibold text-linka-night/90 animate-in fade-in delay-100">
+                  <p className="text-base sm:text-lg md:text-xl font-semibold text-linka-night/90 animate-in fade-in delay-100">
                     {agentConfig.greeting || 'I can help you find the coolest places in NYC to visit!'}
                   </p>
                 </div>
@@ -505,7 +638,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
             </CardContent>
           </Card>
         )
-      case 3:
+      case 4:
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
             <CardHeader className="px-6 pt-6 pb-4">
@@ -570,7 +703,9 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                               <X className="w-5 h-5" />
                               <span className="sr-only">Remove Partner Link</span>
                             </Button>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                            {/* Row 1: Category + Affiliate Brand Name */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label htmlFor={`category-${link.id}`} className="text-linka-russian-violet font-medium">
                                   Category <span className="text-red-500">*</span>
@@ -583,6 +718,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                   className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                 />
                               </div>
+
                               <div className="space-y-2">
                                 <Label htmlFor={`brand-${link.id}`} className="text-linka-russian-violet font-medium">
                                   Affiliate Brand Name <span className="text-red-500">*</span>
@@ -595,61 +731,42 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                   className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                 />
                               </div>
+                            </div>
+
+                            {/* Row 2: Social Media Link + Product Review */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <Label
-                                  htmlFor={`image-${link.id}`}
-                                  className="text-linka-russian-violet font-medium block text-sm"
-                                >
-                                  Affiliate Image (Optional)
+                                <Label htmlFor={`social-media-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Social Media Link (Optional)
                                 </Label>
-
-                                <div className="relative flex items-center">
-                                  <ImageIcon className="absolute left-3 w-5 h-5 text-linka-dark-orange pointer-events-none" />
-
-                                  <div className="relative w-full">
-                                    <Input
-                                      id={`image-${link.id}`}
-                                      type="file"
-                                      accept="image/*"
-                                      onChange={(e) => {
-                                        const file = e.target.files ? e.target.files[0] : null;
-                                        updatePartnerLink(link.id, 'affiliateimage', file);
-                                      }}
-                                      className="
-                                                  pl-10 pr-4 py-2 w-full 
-                                                  border border-linka-alice-blue rounded-md text-sm 
-                                                  bg-white text-linka-russian-violet opacity-0
-                                                  absolute z-10 cursor-pointer
-                                                  h-full
-                                                "
-                                    />
-                                    <div className="
-                                                  pl-10 pr-4 py-2 w-full 
-                                                  border border-linka-alice-blue rounded-md text-sm 
-                                                  bg-white text-linka-russian-violet
-                                                  flex items-center
-                                                ">
-                                      <span className="text-linka-night/40">
-                                        {link.affiliateimage ? link.affiliateimage?.name : 'Choose file...'}
-                                      </span>
-                                      <span className="
-                                                  ml-auto mr-4 py-2 px-4 
-                                                  rounded-md border-0 
-                                                  text-sm font-medium 
-                                                  bg-linka-carolina-blue text-white 
-                                                  hover:bg-linka-carolina-blue/90
-                                                  active:bg-linka-carolina-blue/80
-                                                  cursor-pointer
-                                                ">
-                                        Browse
-                                      </span>
-                                    </div>
-                                  </div>
+                                <div className="relative">
+                                  <Input
+                                    id={`social-media-${link.id}`}
+                                    placeholder="https://social-media.com/yourpage"
+                                    value={link.socialMediaLink || ''}
+                                    onChange={(e) => updatePartnerLink(link.id, 'socialMediaLink', e.target.value)}
+                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                  <Share2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
                                 </div>
-
-                                
                               </div>
 
+                              <div className="space-y-2">
+                                <Label htmlFor={`product-review-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Product Review (Optional)
+                                </Label>
+                                <Input
+                                  id={`product-review-${link.id}`}
+                                  placeholder="e.g., Great for budget travelers!"
+                                  value={link.productReview}
+                                  onChange={(e) => updatePartnerLink(link.id, 'productReview', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40 w-full"
+                                />
+                              </div>
+                            </div>
+
+                            {/* Row 3: Affiliate Link + Affiliate Image */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label htmlFor={`affiliate-link-${link.id}`} className="text-linka-russian-violet font-medium">
                                   Affiliate Link <span className="text-red-500">*</span>
@@ -665,33 +782,66 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                   <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
                                 </div>
                               </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`social-media-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Social Media Link (Optional)
+
+                              <div className="space-y-3">
+                                <Label className="text-linka-russian-violet font-medium block text-sm">
+                                  Affiliate Image
                                 </Label>
-                                <div className="relative">
-                                  <Input
-                                    id={`social-media-${link.id}`}
-                                    placeholder="https://social-media-link.com"
-                                    value={link.socialMediaLink}
-                                    onChange={(e) => updatePartnerLink(link.id, 'socialMediaLink', e.target.value)}
-                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                  />
-                                  <Link2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
+                                <div className="flex items-center gap-4">
+                                  {/* Image Preview */}
+                                  {link.affiliateimage ? (
+                                    <div className="relative">
+                                      <div className="w-16 h-16 rounded-md overflow-hidden border border-linka-alice-blue">
+                                        {/* <img
+                                          src={URL.createObjectURL(link.affiliateimage)}
+                                          alt="Uploaded preview"
+                                          className="w-full h-full object-cover"
+                                        /> */}
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => updatePartnerLink(link.id, 'affiliateimage', null)}
+                                        className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-sm hover:bg-red-50"
+                                      >
+                                        <X className="w-3 h-3 text-red-500" />
+                                      </Button>
+                                    </div>
+                                  ) : link.affiliateLink ? (
+                                    <div className="relative w-16 h-16 rounded-md overflow-hidden border border-linka-alice-blue bg-gray-100 flex items-center justify-center">
+                                      <img
+                                        src={`https://api.microlink.io/?url=${encodeURIComponent(link.affiliateLink)}&screenshot=true&meta=false&embed=screenshot.url`}
+                                        alt="Link preview"
+                                        className="w-full h-full object-cover"
+                                      // onError={(e) => {
+                                      //   e.target.style.display = 'none';
+                                      // }}
+                                      />
+                                    </div>
+                                  ) : null}
+
+                                  {/* Upload/Update Button */}
+                                  <div className="flex-1">
+                                    <Label htmlFor={`image-upload-${link.id}`} className="cursor-pointer">
+                                      <div className="flex items-center justify-center px-4 py-2 border border-linka-alice-blue rounded-md bg-white hover:bg-linka-carolina-blue/10 transition-colors">
+                                        <ImageIcon className="w-4 h-4 mr-2 text-linka-dark-orange" />
+                                        <span className="text-sm">
+                                          {link.affiliateimage ? 'Update Image' : 'Add Image'}
+                                        </span>
+                                      </div>
+                                    </Label>
+                                    <Input
+                                      id={`image-upload-${link.id}`}
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => {
+                                        const file = e.target.files ? e.target.files[0] : null;
+                                        updatePartnerLink(link.id, 'affiliateimage', file);
+                                      }}
+                                      className="hidden"
+                                    />
+                                  </div>
                                 </div>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`product-review-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Product Review (Optional)
-                                </Label>
-                                <Textarea
-                                  id={`product-review-${link.id}`}
-                                  placeholder="e.g., Great for budget travelers!"
-                                  value={link.productReview}
-                                  onChange={(e) => updatePartnerLink(link.id, 'productReview', e.target.value)}
-                                  rows={2}
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
                               </div>
                             </div>
                           </CardContent>
@@ -747,7 +897,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                               <X className="w-5 h-5" />
                               <span className="sr-only">Remove AI Pro Link</span>
                             </Button>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                               <div className="space-y-2">
                                 <Label htmlFor={`pro-category-${link.id}`} className="text-linka-russian-violet font-medium">
                                   Category <span className="text-red-500">*</span>
@@ -787,7 +937,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                   <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
                                 </div>
                               </div>
-                              <div className="space-y-2">
+                              {/* <div className="space-y-2">
                                 <Label
                                   htmlFor={`image-${link.id}`}
                                   className="text-linka-russian-violet font-medium block text-sm"
@@ -838,7 +988,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                     </div>
                                   </div>
                                 </div>
-                              </div>
+                              </div> */}
                             </div>
                           </CardContent>
                         </Card>
@@ -894,7 +1044,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
             </CardContent>
           </Card>
         )
-      case 4:
+      case 3:
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
             <CardHeader className="px-6 pt-6 pb-4">
@@ -1130,20 +1280,25 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   {/* Avatar/Video Section */}
                   <div className="flex justify-center mb-6 w-full">
                     <div className="w-52 h-52 sm:w-72 sm:h-72 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
-                      {agentConfig.avatar ? (
-                        <img
-                          src={agentConfig.avatar}
-                          alt="AI Agent"
-                          className="w-full h-full object-cover"
-                        />
-                      ) : agentConfig.video ? (
+                      {agentConfig.greetingVideo ? (
                         <video
-                          src={agentConfig.video}
+                          src={agentConfig.greetingVideo}
                           autoPlay
                           muted
                           loop
                           playsInline
                           className="w-full h-full object-cover rounded-full"
+                          onError={(e) => {
+                            console.error('Live preview video error:', e)
+                            toast.error('Error loading video in preview. Please ensure the file is a valid MP4, WebM, or OGG.')
+                          }}
+                        />
+                      ) : agentConfig.greetingImage ? (
+                        <img
+                          src={agentConfig.greetingImage}
+                          alt="AI Agent"
+                          className="w-full h-full object-cover"
+                          onError={() => toast.error('Error loading greeting image in preview.')}
                         />
                       ) : (
                         <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
@@ -1212,7 +1367,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   </div>
                   <ul className="list-disc pl-5 space-y-1 text-xs text-blue-800">
                     <li>Ask relevant questions to test your avatar.</li>
-                    <li>Preview images may take a moment to load on first launch.</li>
+                    <li>Preview images and videos may take a moment to load on first launch.</li>
                     <li>Refine your agent’s persona and instructions based on results.</li>
                   </ul>
                 </div>

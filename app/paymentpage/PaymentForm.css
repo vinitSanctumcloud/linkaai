@@ -2,6 +2,40 @@
 .custom-tooltip::after {
     border-top-color: #f97316;
 }
+.react-datepicker {
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    width: 100%;
+    font-family: 'Inter', sans-serif;
+}
+.react-datepicker__header {
+    background-color: #f97316;
+    color: white;
+    border-bottom: none;
+    border-radius: 0.5rem 0.5rem 0 0;
+    padding: 1rem;
+}
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+    background-color: #f97316;
+    color: white;
+}
+.react-datepicker__day:hover {
+    background-color: #ea580c;
+    color: white;
+}
+.react-datepicker__month-select,
+.react-datepicker__year-select {
+    background-color: #fff;
+    color: #000;
+    border-radius: 0.25rem;
+    padding: 0.25rem;
+    font-size: 0.875rem;
+}
+/* Minimal CSS for react-datepicker and pseudo-elements */
+.custom-tooltip::after {
+    border-top-color: #f97316;
+}
 
 .react-datepicker {
     border: 1px solid #d1d5db;

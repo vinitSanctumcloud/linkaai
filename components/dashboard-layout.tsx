@@ -253,7 +253,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     </Link>
 
                     {isComingSoon && (
-                      <span className="absolute -top-1 right-10 inline-flex items-center px-1.5 py-0.5 text-xs font-semibold bg-gradient-to-r from-[#f9943b] via-[#ff6b35] to-[#ff4757] text-white rounded-full shadow-lg animate-bounce hover:animate-none transition-all duration-500 hover:scale-110 hover:shadow-xl hover:from-[#e8832a] hover:via-[#e85a24] hover:to-[#e83646] before:absolute before:inset-0 before:rounded-full before:bg-gradient-to-r before:from-[#faa94c] before:via-[#ff7c46] before:to-[#ff5868] before:animate-ping before:opacity-30">
+                      <span className="absolute -top-1 right-0 inline-flex items-center px-1.5 py-0.5 text-xs font-semibold bg-gradient-to-r from-[#f9943b] via-[#ff6b35] to-[#ff4757] text-white rounded-full shadow-lg ">
                         <span className="relative z-10">Coming Soon</span>
                       </span>
                     )}
