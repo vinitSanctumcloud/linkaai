@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-// import { useSession, signOut } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { User, LogOut, Settings, BarChart3 } from 'lucide-react'
 import {
@@ -11,20 +10,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import Image from 'next/image'
+import { useEffect, useState } from 'react'
 
 export function Header() {
-  // const { data: session, status } = useSession()
-  const token = localStorage.getItem("accessToken");
-  const isLoggedIn = !!token; // or token !== null
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userImage, setUserImage] = useState('/default-profile.png')
+  const [userName, setUserName] = useState('User')
 
-  const userImage = isLoggedIn
-    ? localStorage.getItem("userImage") || "/default-profile.png"
-    : "/default-profile.png";
-
-  const userName = isLoggedIn
-    ? localStorage.getItem("userName") || "User"
-    : "User";
-
+  useEffect(() => {
+    // Only access localStorage in the browser
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accessToken')
+      setIsLoggedIn(!!token)
+      setUserImage(localStorage.getItem('userImage') || '/default-profile.png')
+      setUserName(localStorage.getItem('userName') || 'User')
+      console.log(token, 'token')
+    }
+  }, [])
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white/95 backdrop-blur-md shadow-sm">
@@ -77,13 +79,6 @@ export function Header() {
                     Settings
                   </Link>
                 </DropdownMenuItem>
-                {/* <DropdownMenuItem 
-                  onClick={() => signOut({ callbackUrl: '/' })}
-                  className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50"
-                >
-                  <LogOut className="mr-2 h-4 w-4 text-orange-600" />
-                  Sign out
-                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
