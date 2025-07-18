@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DashboardLayout } from '@/components/dashboard-layout'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -13,6 +13,7 @@ import { Switch } from '@/components/ui/switch'
 import { Upload, Bot, Plus, X, Save, Send, Mic, Eye, ArrowLeft, ArrowRight, Edit, Trash2, GitBranch, MessageSquare, InfoIcon, LinkIcon, Link2, ImageIcon, Share2 } from 'lucide-react'
 import { toast } from 'sonner'
 
+// Interfaces remain unchanged
 interface ConditionalPrompt {
   id: string
   mainPrompt: string
@@ -50,7 +51,6 @@ interface AgentConfig {
   name: string
   trainingInstructions: string
   greeting: string
-  avatar: string | null
   prompts: string[]
   partnerLinks: PartnerLink[]
   linkaProMonetizations: LinkaProMonetization[]
@@ -58,7 +58,7 @@ interface AgentConfig {
   useConditionalPrompts: boolean
   greetingVideo: string | null
   greetingTitle: string
-  greetingImage: string | null // Corrected from greeringImage
+  greetingImage: string | null
 }
 
 export default function AgentBuilderPage() {
@@ -69,15 +69,22 @@ export default function AgentBuilderPage() {
     name: '',
     trainingInstructions: '',
     greeting: '',
-    avatar: 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.jpg',
     prompts: ['', '', '', ''],
     partnerLinks: [],
     linkaProMonetizations: [],
+    // partnerLinks: [
+    //   { id: '1', category: 'Travel', affiliateBrandName: 'TripAdvisor', affiliateLink: 'https://tripadvisor.com', productReview: 'Great travel reviews', socialMediaLink: 'https://twitter.com/tripadvisor', affiliateimage: { name: 'travel.jpg' } },
+    //   { id: '2', category: 'Fashion', affiliateBrandName: 'Zara', affiliateLink: 'https://zara.com', productReview: 'Stylish clothing', socialMediaLink: 'https://instagram.com/zara', affiliateimage: { name: 'fashion.jpg' } }
+    // ],
+    // linkaProMonetizations: [
+    //   { id: '1', category: 'Tech', affiliateBrandName: 'Apple', mainUrl: 'https://apple.com', mainimage: { name: 'tech.jpg' } },
+    //   { id: '2', category: 'Fitness', affiliateBrandName: 'Nike', mainUrl: 'https://nike.com', mainimage: { name: 'fitness.jpg' } }
+    // ],
     conditionalPrompts: [],
     useConditionalPrompts: false,
-    greetingVideo: 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.mp4',
     greetingTitle: '',
-    greetingImage: null // Corrected initialization
+    greetingVideo: null,
+    greetingImage: null
   })
 
   // Conditional prompt modal states
@@ -90,15 +97,18 @@ export default function AgentBuilderPage() {
     option2: { label: '', followUps: ['', '', ''] }
   })
 
+  // Monetization modal state
+  const [isMonetizationModalOpen, setIsMonetizationModalOpen] = useState(false)
+
   const steps = [
-    { id: 1, title: 'Avatar & Greeting', description: 'Upload photo and create opening message' },
+    { id: 1, title: 'Greeting Media', description: 'Upload image or video and create opening message' },
     { id: 2, title: 'AI Training', description: 'Name your agent and provide training instructions' },
     { id: 3, title: 'Prompts', description: 'Design conversation starters and branching logic' },
     { id: 4, title: 'Monetization', description: 'Add your affiliate links and monetization options' },
     { id: 5, title: 'Preview & Test', description: 'Test your AI agent' }
   ]
 
-  // Conditional prompt handlers
+  // Conditional prompt handlers (unchanged)
   const openConditionalModal = (prompt?: ConditionalPrompt) => {
     if (prompt) {
       setEditingConditionalPrompt(prompt)
@@ -180,7 +190,6 @@ export default function AgentBuilderPage() {
   }
 
   const updatePartnerLink = (id: string, field: string, value: string | File | null) => {
-    console.log(field, value, 'data')
     setAgentConfig((prevConfig) => ({
       ...prevConfig,
       partnerLinks: prevConfig.partnerLinks.map((link) =>
@@ -205,7 +214,6 @@ export default function AgentBuilderPage() {
   }
 
   const updateLinkaProMonetization = (id: string, field: keyof LinkaProMonetization, value: string | File | null) => {
-    console.log(field, value, 'dara')
     setAgentConfig(prev => ({
       ...prev,
       linkaProMonetizations: prev.linkaProMonetizations.map(link => link.id === id ? { ...link, [field]: value } : link)
@@ -219,104 +227,114 @@ export default function AgentBuilderPage() {
     }))
     toast.success('Linka Pro Monetization removed!')
   }
-
-  const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  
+  const handleGreetingMediaUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
     const file = event.target.files?.[0]
     if (!file) {
       toast.error('No file selected.')
       return
     }
-    if (!file.type.includes('image')) {
-      toast.error('Please select a valid image file.')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit for avatar
-      toast.error('Image file size exceeds 5MB limit.')
-      return
-    }
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      console.log('Avatar upload success:', result.slice(0, 50))
-      setAgentConfig((prev) => ({
-        ...prev,
-        avatar: result,
-      }))
-    }
-    reader.onerror = () => {
-      console.error('Error reading avatar image file:', file.name)
-      toast.error('Error reading image file. Please try again.')
-    }
-    reader.readAsDataURL(file)
-  }
 
-  const handleGreetingImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) {
-      toast.error('No file selected.')
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) {
+      toast.error('No access token found. Please log in.')
       return
     }
-    if (!file.type.includes('image')) {
-      toast.error('Please select a valid image file.')
-      return
-    }
-    if (file.size > 5 * 1024 * 1024) { // 5MB limit for greeting image
-      toast.error('Image file size exceeds 5MB limit.')
-      return
-    }
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      console.log('Greeting image upload success:', result.slice(0, 50))
-      setAgentConfig((prev) => ({
-        ...prev,
-        greetingImage: result,
-        greetingVideo: null // Clear video if image is uploaded
-      }))
-    }
-    reader.onerror = () => {
-      console.error('Error reading greeting image file:', file.name)
-      toast.error('Error reading image file. Please try again.')
-    }
-    reader.readAsDataURL(file)
-  }
 
-  const handleVideoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (!file) {
-      toast.error('No file selected.')
-      return
+    if (type === 'image') {
+      if (!file.type.includes('image')) {
+        toast.error('Please select a valid image file.')
+        return
+      }
+
+      const maxSize = 5 * 1024 * 1024 // 5MB for image
+      if (file.size > maxSize) {
+        toast.error('Image file size exceeds 5MB limit.')
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('images[]', file)
+      formData.append('upload_path', 'ai_agent')
+
+      try {
+        const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/upload/image', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const imageUrl = data.url // Adjust based on actual API response structure
+          if (!imageUrl) {
+            toast.error('No image URL returned from the server.')
+            return
+          }
+
+          setAgentConfig((prev) => ({
+            ...prev,
+            greetingImage: imageUrl,
+            greetingVideo: null // Clear video if image is uploaded
+          }))
+          toast.success('Image uploaded successfully!')
+        } else {
+          const errorData = await response.json()
+          toast.error(`Failed to upload image: ${errorData.message || 'Unknown error'}`)
+        }
+      } catch (error) {
+        console.error('Error uploading image:', error)
+        toast.error('An error occurred while uploading the image. Please try again.')
+      }
+    } else if (type === 'video') {
+      if (!file.type.includes('video')) {
+        toast.error('Please select a valid video file.')
+        return
+      }
+
+      const validFormats = ['video/mp4', 'video/webm', 'video/ogg']
+      if (!validFormats.includes(file.type)) {
+        toast.error('Unsupported video format. Please use MP4, WebM, or OGG.')
+        return
+      }
+
+      const maxSize = 10 * 1024 * 1024 // 10MB for video
+      if (file.size > maxSize) {
+        toast.error('Video file size exceeds 10MB limit.')
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('video', file)
+
+      try {
+        const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/upload/video', {
+          method: 'POST',
+          body: formData
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const videoUrl = data.url // Adjust based on actual API response structure
+          if (!videoUrl) {
+            toast.error('No video URL returned from the server.')
+            return
+          }
+
+          setAgentConfig((prev) => ({
+            ...prev,
+            greetingVideo: videoUrl,
+            greetingImage: null // Clear image if video is uploaded
+          }))
+          toast.success('Video uploaded successfully!')
+        } else {
+          const errorData = await response.json()
+          toast.error(`Failed to upload video: ${errorData.message || 'Unknown error'}`)
+        }
+      } catch (error) {
+        console.error('Error uploading video:', error)
+        toast.error('An error occurred while uploading the video. Please try again.')
+      }
     }
-    if (!file.type.includes('video')) {
-      toast.error('Please select a valid video file.')
-      return
-    }
-    const validFormats = ['video/mp4', 'video/webm', 'video/ogg']
-    if (!validFormats.includes(file.type)) {
-      console.error('Unsupported video format:', file.type)
-      toast.error('Unsupported video format. Please use MP4, WebM, or OGG.')
-      return
-    }
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit for video
-      console.error('Video file too large:', file.size)
-      toast.error('Video file size exceeds 10MB limit.')
-      return
-    }
-    const reader = new FileReader()
-    reader.onload = (e) => {
-      const result = e.target?.result as string
-      console.log('Video upload success:', result.slice(0, 50))
-      setAgentConfig((prev) => ({
-        ...prev,
-        greetingVideo: result,
-        greetingImage: null // Clear image if video is uploaded
-      }))
-    }
-    reader.onerror = () => {
-      console.error('Error reading video file:', file.name)
-      toast.error('Error reading video file. Please try a different file.')
-    }
-    reader.readAsDataURL(file)
   }
 
   const handleSave = async () => {
@@ -328,11 +346,13 @@ export default function AgentBuilderPage() {
           agentName: agentConfig.name,
           trainingInstructions: agentConfig.trainingInstructions,
           agentGreeting: agentConfig.greeting,
-          avatarUrl: agentConfig.avatar,
           agentPrompts: agentConfig.useConditionalPrompts ? [] : agentConfig.prompts.filter(p => p.trim()),
           conditionalPrompts: agentConfig.useConditionalPrompts ? agentConfig.conditionalPrompts : [],
           partnerLinks: agentConfig.partnerLinks.filter(link => link.affiliateLink.trim() !== ''),
-          linkaProMonetizations: agentConfig.linkaProMonetizations.filter(link => link.mainUrl.trim() !== '')
+          linkaProMonetizations: agentConfig.linkaProMonetizations.filter(link => link.mainUrl.trim() !== ''),
+          greetingTitle: agentConfig.greetingTitle,
+          greetingImage: agentConfig.greetingImage,
+          greetingVideo: agentConfig.greetingVideo
         }),
       })
 
@@ -347,95 +367,85 @@ export default function AgentBuilderPage() {
   }
 
   const nextStep = async () => {
-    const accessToken = localStorage.getItem('accessToken');
-    if (!accessToken) throw new Error('No access token found');
+    const accessToken = localStorage.getItem('accessToken')
+    if (!accessToken) {
+      toast.error('No access token found')
+      return
+    }
 
     try {
-      console.log(`nextStep ${currentStep}`);
-      console.log(agentConfig);
-
-      let response;
-      let payload;
-      let apiUrl;
+      let response
+      let payload
+      let apiUrl
 
       switch (currentStep) {
         case 1:
-          // Validate Step 1 fields
           if (!agentConfig.greetingTitle.trim()) {
-            toast.error('Please provide a greeting title.');
-            return;
+            toast.error('Please provide a greeting title.')
+            return
           }
           if (!agentConfig.greeting.trim()) {
-            toast.error('Please provide a welcome greeting.');
-            return;
+            toast.error('Please provide a welcome greeting.')
+            return
           }
-          // Optional: Allow proceeding without avatar or video, using default URLs
-          // if (!agentConfig.avatar && !agentConfig.greetingVideo) {
-          //   toast.error('Please upload either an avatar image or a greeting video.');
-          //   return;
-          // }
-
-          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/create-agent';
+          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/create-agent'
           payload = {
-            avatar_image_url: agentConfig.avatar || 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.jpg',
-            avatar_video_url: agentConfig.greetingVideo || 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.mp4',
+            greeting_media_type: agentConfig.greetingVideo ? 'video' : 'image',
             greeting_title: agentConfig.greetingTitle,
             welcome_greeting: agentConfig.greeting,
-          };
-          break;
+            greeting_image_url: agentConfig.greetingImage,
+            greeting_video_url: agentConfig.greetingVideo
+          }
+          break
 
         case 2:
-          // Validate Step 2 fields
           if (!agentConfig.name.trim()) {
-            toast.error('Please provide an agent name.');
-            return;
+            toast.error('Please provide an agent name.')
+            return
           }
           if (!agentConfig.trainingInstructions.trim()) {
-            toast.error('Please provide training instructions.');
-            return;
+            toast.error('Please provide training instructions.')
+            return
           }
 
-          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/add-agent-details';
+          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/add-agent-details'
           payload = {
-            agent_name: 'saikat agent 1',
-            training_instructions: agentConfig.trainingInstructions,
-          };
-          break;
+            agent_name: agentConfig.name,
+            training_instructions: agentConfig.trainingInstructions
+          }
+          break
 
         case 3:
-          // Validate Step 3 fields
           if (!agentConfig.useConditionalPrompts && agentConfig.prompts.every((prompt) => !prompt.trim())) {
-            toast.error('Please add at least one non-empty prompt or enable conditional prompts.');
-            return;
+            toast.error('Please add at least one non-empty prompt or enable conditional prompts.')
+            return
           }
           if (agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length === 0) {
-            toast.error('Please add at least one conditional prompt.');
-            return;
+            toast.error('Please add at least one conditional prompt.')
+            return
           }
 
-          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/add-prompts';
+          apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/add-prompts'
           payload = {
             prompts: agentConfig.useConditionalPrompts
               ? agentConfig.conditionalPrompts.map((cp) => cp.mainPrompt).filter((p) => p.trim())
-              : agentConfig.prompts.filter((p) => p.trim()),
-          };
-          break;
+              : agentConfig.prompts.filter((p) => p.trim())
+          }
+          break
 
         case 4:
-          // Validate Step 4 fields (optional, as monetization might not be required)
           if (
             agentConfig.partnerLinks.length === 0 &&
             agentConfig.linkaProMonetizations.length === 0
           ) {
-            toast.warning('No monetization links added. You can skip this step if not needed.');
+            toast.warning('No monetization links added. You can skip this step if not needed.')
           }
 
-          apiUrl = '/api/settings';
+          apiUrl = '/api/settings'
           payload = {
             agentName: agentConfig.name,
             trainingInstructions: agentConfig.trainingInstructions,
             agentGreeting: agentConfig.greeting,
-            avatarUrl: agentConfig.avatar,
             agentPrompts: agentConfig.useConditionalPrompts
               ? []
               : agentConfig.prompts.filter((p) => p.trim()),
@@ -446,42 +456,40 @@ export default function AgentBuilderPage() {
             ),
             greetingTitle: agentConfig.greetingTitle,
             greetingImage: agentConfig.greetingImage,
-            greetingVideo: agentConfig.greetingVideo,
-          };
-          break;
+            greetingVideo: agentConfig.greetingVideo
+          }
+          break
 
         case 5:
-          // Validate all required fields before final save
           if (!agentConfig.greetingTitle.trim() || !agentConfig.greeting.trim()) {
-            toast.error('Please complete Step 1: Avatar & Greeting.');
-            return;
+            toast.error('Please complete Step 1: Greeting Media.')
+            return
           }
-          if (!agentConfig.avatar && !agentConfig.greetingVideo) {
-            toast.error('Please upload either an avatar image or a greeting video in Step 1.');
-            return;
+          if (!agentConfig.greetingImage && !agentConfig.greetingVideo) {
+            toast.error('Please upload either an image or a video in Step 1.')
+            return
           }
           if (!agentConfig.name.trim() || !agentConfig.trainingInstructions.trim()) {
-            toast.error('Please complete Step 2: AI Training.');
-            return;
+            toast.error('Please complete Step 2: AI Training.')
+            return
           }
           if (
             !agentConfig.useConditionalPrompts &&
             agentConfig.prompts.every((prompt) => !prompt.trim())
           ) {
-            toast.error('Please add at least one non-empty prompt in Step 3.');
-            return;
+            toast.error('Please add at least one non-empty prompt in Step 3.')
+            return
           }
           if (agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length === 0) {
-            toast.error('Please add at least one conditional prompt in Step 3.');
-            return;
+            toast.error('Please add at least one conditional prompt in Step 3.')
+            return
           }
 
-          apiUrl = '/api/settings';
+          apiUrl = '/api/settings'
           payload = {
             agentName: agentConfig.name,
             trainingInstructions: agentConfig.trainingInstructions,
             agentGreeting: agentConfig.greeting,
-            avatarUrl: agentConfig.avatar,
             agentPrompts: agentConfig.useConditionalPrompts
               ? []
               : agentConfig.prompts.filter((p) => p.trim()),
@@ -492,13 +500,13 @@ export default function AgentBuilderPage() {
             ),
             greetingTitle: agentConfig.greetingTitle,
             greetingImage: agentConfig.greetingImage,
-            greetingVideo: agentConfig.greetingVideo,
-          };
-          break;
+            greetingVideo: agentConfig.greetingVideo
+          }
+          break
 
         default:
-          toast.error('Invalid step.');
-          return;
+          toast.error('Invalid step.')
+          return
       }
 
       response = await fetch(apiUrl, {
@@ -506,28 +514,26 @@ export default function AgentBuilderPage() {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${accessToken}`
-            // Add any necessary authorization headers, e.g., Authorization: Bearer <token>
         },
-        body: JSON.stringify(payload),
-      });
+        body: JSON.stringify(payload)
+      })
 
       if (response.ok) {
         toast.success(
           currentStep === 5
             ? 'AI Agent saved and published successfully!'
             : `Step ${currentStep} saved successfully!`
-        );
-        if (currentStep < 5) setCurrentStep(currentStep + 1); // Proceed to next step
+        )
+        if (currentStep < 5) setCurrentStep(currentStep + 1)
       } else {
-        const errorData = await response.json();
-        console.error('API error:', errorData);
-        toast.error(`Failed to save Step ${currentStep}: ${errorData.message || 'Unknown error'}`);
+        const errorData = await response.json()
+        toast.error(`Failed to save Step ${currentStep}: ${errorData.message || 'Unknown error'}`)
       }
     } catch (error) {
-      console.error('Error saving agent:', error);
-      toast.error('An error occurred while saving. Please try again.');
+      toast.error(`Error saving agent: ${error}`)
+      toast.error('An error occurred while saving. Please try again.')
     }
-  };
+  }
 
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1)
@@ -540,131 +546,82 @@ export default function AgentBuilderPage() {
           <Card className="border-none shadow-lg rounded-2xl overflow-hidden bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
             <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
               <div className="space-y-1">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight" >
-                  Avatar & Greeting
+                <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight">
+                  Greeting Media
                 </CardTitle>
                 <p className="text-xs sm:text-sm text-linka-night/70 font-light">
-                  Personalize your AI's identity, avatar, and welcome message
+                  Upload an image or video and create your opening message
                 </p>
               </div>
             </CardHeader>
             <CardContent className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
-              {/* Avatar and Greeting Media Container */}
-              <div className="flex flex-col md:flex-row items-center w-full gap-6 sm:gap-8">
-                {/* Avatar Upload Section */}
-                <div className="flex flex-col items-center w-full md:w-1/2">
-                  <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet mb-3 sm:mb-4">Avatar</h3>
-                  <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
-                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
-                      {agentConfig.avatar ? (
-                        <img
-                          src={agentConfig.avatar}
-                          alt="Avatar"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          onError={() => toast.error('Error loading avatar image.')}
-                        />
-                      ) : (
-                        <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
-                      )}
+              <div className="flex flex-col items-center w-full">
+                <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet mb-3 sm:mb-4">AI Agent Greeting</h3>
+                <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
+                  <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+                    {agentConfig.greetingVideo ? (
+                      <video
+                        src={agentConfig.greetingVideo}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="w-full h-full object-cover rounded-full"
+                        onError={() => toast.error('Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.')}
+                      />
+                    ) : agentConfig.greetingImage ? (
+                      <img
+                        src={agentConfig.greetingImage}
+                        alt="Greeting Image"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        onError={() => toast.error('Error loading greeting image.')}
+                      />
+                    ) : (
+                      <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+                    )}
+                  </div>
+                  <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleGreetingMediaUpload(e, 'image')}
+                        className="hidden"
+                        id="greeting-image-upload"
+                      />
+                      <label
+                        htmlFor="greeting-image-upload"
+                        className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                      >
+                        <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                        <span className="text-xs font-medium hidden sm:inline">Image</span>
+                        <span className="sr-only">Upload greeting image</span>
+                      </label>
                     </div>
-                    <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
-                      <div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          className="hidden"
-                          id="avatar-upload"
-                        />
-                        <label
-                          htmlFor="avatar-upload"
-                          className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
-                        >
-                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
-                          <span className="text-xs font-medium hidden sm:inline">Upload</span>
-                          <span className="sr-only">Upload avatar image</span>
-                        </label>
-                      </div>
+                    <div>
+                      <input
+                        type="file"
+                        accept="video/*"
+                        onChange={(e) => handleGreetingMediaUpload(e, 'video')}
+                        className="hidden"
+                        id="greeting-video-upload"
+                      />
+                      <label
+                        htmlFor="greeting-video-upload"
+                        className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                      >
+                        <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                        <span className="text-xs font-medium hidden sm:inline">Video</span>
+                        <span className="sr-only">Upload greeting video</span>
+                      </label>
                     </div>
                   </div>
-                  <p className="text-xs text-linka-night/60 mt-3 sm:mt-5 font-medium text-center">
-                    Recommended: Image (1:1 aspect ratio, max 5MB)
-                  </p>
                 </div>
-
-                {/* Greeting Media Upload Section */}
-                <div className="flex flex-col items-center w-full md:w-1/2">
-                  <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet mb-3 sm:mb-4">Greeting Media</h3>
-                  <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
-                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
-                      {agentConfig.greetingVideo ? (
-                        <video
-                          src={agentConfig.greetingVideo}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          className="w-full h-full object-cover rounded-full"
-                          onError={(e) => {
-                            console.error('Greeting video error:', e)
-                            toast.error('Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.')
-                          }}
-                        />
-                      ) : agentConfig.greetingImage ? (
-                        <img
-                          src={agentConfig.greetingImage}
-                          alt="Greeting Image"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          onError={() => toast.error('Error loading greeting image.')}
-                        />
-                      ) : (
-                        <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
-                      )}
-                    </div>
-                    <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
-                      <div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleGreetingImageUpload}
-                          className="hidden"
-                          id="greeting-image-upload"
-                        />
-                        <label
-                          htmlFor="greeting-image-upload"
-                          className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
-                        >
-                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
-                          <span className="text-xs font-medium hidden sm:inline">Image</span>
-                          <span className="sr-only">Upload greeting image</span>
-                        </label>
-                      </div>
-                      <div>
-                        <input
-                          type="file"
-                          accept="video/*"
-                          onChange={handleVideoUpload}
-                          className="hidden"
-                          id="greeting-video-upload"
-                        />
-                        <label
-                          htmlFor="greeting-video-upload"
-                          className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
-                        >
-                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
-                          <span className="text-xs font-medium hidden sm:inline">Video</span>
-                          <span className="sr-only">Upload greeting video</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                  <p className="text-xs text-linka-night/60 mt-3 sm:mt-5 font-medium text-center">
-                    Recommended: Video (max 10MB, under 30s) or Image (max 5MB)
-                  </p>
-                </div>
+                <p className="text-xs text-linka-night/60 mt-3 sm:mt-5 font-medium text-center">
+                  Upload either an image (max 5MB) or a video (max 10MB, MP4/WebM/OGG)
+                </p>
               </div>
 
-              {/* Greeting Title Input */}
               <div className="space-y-2 sm:space-y-3">
                 <Label htmlFor="greeting-title" className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base">
                   Greeting Title <span className="text-xs text-linka-dark-orange">(Max 50 chars)</span>
@@ -690,7 +647,6 @@ export default function AgentBuilderPage() {
                 </div>
               </div>
 
-              {/* Greeting Textarea */}
               <div className="space-y-2 sm:space-y-3">
                 <Label htmlFor="greeting" className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base">
                   Opening Greeting <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
@@ -716,7 +672,6 @@ export default function AgentBuilderPage() {
                 </div>
               </div>
 
-              {/* Live Preview */}
               <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-4 sm:p-5 border border-linka-alice-blue/80 overflow-hidden relative">
                 <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
                 <p className="text-xs text-linka-night/60 mb-2 sm:mb-3 font-medium uppercase tracking-wider">
@@ -821,7 +776,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     : 'border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10'
                     } transition-all duration-300 hover:scale-105`}
                 >
-                  Partner URLs
+                  Linka Basic
                 </Button>
                 <Button
                   variant={activeTab === 'aipro' ? 'default' : 'outline'}
@@ -833,349 +788,40 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                 >
                   Linka AI Pro Monetization
                 </Button>
+                <Button className='ml-auto'>
+                  Upgarde
+                </Button>
               </div>
             </CardHeader>
+            <CardContent>
+              {activeTab === 'aipro' ? (
+                <div className="space-y-2">
+                <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                  <Link2 className="w-5 h-5 text-linka-carolina-blue" />
+                        AI Smart Recommendations </h3>
+                  <p className="text-xs text-linka-night/60">
+                    Add monetization links for AI Pro services
+                  </p>
+                </div> 
+              ) : (<div className="space-y-2">
+                <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                  <Link2 className="w-5 h-5 text-linka-carolina-blue" />
+                    Partner Links
+                  </h3>
+                  <p className="text-xs text-linka-night/60">
+                    Add affiliate links with detailed information for your AI to recommend
+                  </p>
+                </div> )} 
+            </CardContent>
             <CardContent className="px-6 pb-6 space-y-8">
-              {activeTab === 'partner' && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                      <Link2 className="w-5 h-5 text-linka-carolina-blue" />
-                      Partner Links
-                    </h3>
-                    <p className="text-xs text-linka-night/60">
-                      Add affiliate links with detailed information for your AI to recommend
-                    </p>
-                  </div>
-                  {agentConfig.partnerLinks.length > 0 ? (
-                    <div className="space-y-4">
-                      {agentConfig.partnerLinks.map((link) => (
-                        <Card
-                          key={link.id}
-                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
-                        >
-                          <CardContent className="p-4 space-y-4 relative">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removePartnerLink(link.id)}
-                              className="absolute top-2 right-2 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-110"
-                            >
-                              <X className="w-5 h-5" />
-                              <span className="sr-only">Remove Partner Link</span>
-                            </Button>
-
-                            {/* Row 1: Category + Affiliate Brand Name */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor={`category-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Category <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                  id={`category-${link.id}`}
-                                  placeholder="e.g., Travel, Fashion"
-                                  value={link.category}
-                                  onChange={(e) => updatePartnerLink(link.id, 'category', e.target.value)}
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label htmlFor={`brand-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Affiliate Brand Name <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                  id={`brand-${link.id}`}
-                                  placeholder="e.g., Booking.com, Nike"
-                                  value={link.affiliateBrandName}
-                                  onChange={(e) => updatePartnerLink(link.id, 'affiliateBrandName', e.target.value)}
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Row 2: Social Media Link + Product Review */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor={`social-media-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Social Media Link (Optional)
-                                </Label>
-                                <div className="relative">
-                                  <Input
-                                    id={`social-media-${link.id}`}
-                                    placeholder="https://social-media.com/yourpage"
-                                    value={link.socialMediaLink || ''}
-                                    onChange={(e) => updatePartnerLink(link.id, 'socialMediaLink', e.target.value)}
-                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                  />
-                                  <Share2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
-                                </div>
-                              </div>
-
-                              <div className="space-y-2">
-                                <Label htmlFor={`product-review-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Product Review (Optional)
-                                </Label>
-                                <Input
-                                  id={`product-review-${link.id}`}
-                                  placeholder="e.g., Great for budget travelers!"
-                                  value={link.productReview}
-                                  onChange={(e) => updatePartnerLink(link.id, 'productReview', e.target.value)}
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40 w-full"
-                                />
-                              </div>
-                            </div>
-
-                            {/* Row 3: Affiliate Link + Affiliate Image */}
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor={`affiliate-link-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Affiliate Link <span className="text-red-500">*</span>
-                                </Label>
-                                <div className="relative">
-                                  <Input
-                                    id={`affiliate-link-${link.id}`}
-                                    placeholder="https://affiliate-link.com"
-                                    value={link.affiliateLink}
-                                    onChange={(e) => updatePartnerLink(link.id, 'affiliateLink', e.target.value)}
-                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                  />
-                                  <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
-                                </div>
-                              </div>
-
-                              <div className="space-y-3">
-                                <Label className="text-linka-russian-violet font-medium block text-sm">
-                                  Affiliate Image
-                                </Label>
-                                <div className="flex items-center gap-4">
-                                  {/* Image Preview */}
-                                  {link.affiliateimage ? (
-                                    <div className="relative">
-                                      <div className="w-16 h-16 rounded-md overflow-hidden border border-linka-alice-blue">
-                                        {/* <img
-                                          src={URL.createObjectURL(link.affiliateimage)}
-                                          alt="Uploaded preview"
-                                          className="w-full h-full object-cover"
-                                        /> */}
-                                      </div>
-                                      <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => updatePartnerLink(link.id, 'affiliateimage', null)}
-                                        className="absolute -top-2 -right-2 bg-white rounded-full p-1 shadow-sm hover:bg-red-50"
-                                      >
-                                        <X className="w-3 h-3 text-red-500" />
-                                      </Button>
-                                    </div>
-                                  ) : link.affiliateLink ? (
-                                    <div className="relative w-16 h-16 rounded-md overflow-hidden border border-linka-alice-blue bg-gray-100 flex items-center justify-center">
-                                      <img
-                                        src={`https://api.microlink.io/?url=${encodeURIComponent(link.affiliateLink)}&screenshot=true&meta=false&embed=screenshot.url`}
-                                        alt="Link preview"
-                                        className="w-full h-full object-cover"
-                                      // onError={(e) => {
-                                      //   e.target.style.display = 'none';
-                                      // }}
-                                      />
-                                    </div>
-                                  ) : null}
-
-                                  {/* Upload/Update Button */}
-                                  <div className="flex-1">
-                                    <Label htmlFor={`image-upload-${link.id}`} className="cursor-pointer">
-                                      <div className="flex items-center justify-center px-4 py-2 border border-linka-alice-blue rounded-md bg-white hover:bg-linka-carolina-blue/10 transition-colors">
-                                        <ImageIcon className="w-4 h-4 mr-2 text-linka-dark-orange" />
-                                        <span className="text-sm">
-                                          {link.affiliateimage ? 'Update Image' : 'Add Image'}
-                                        </span>
-                                      </div>
-                                    </Label>
-                                    <Input
-                                      id={`image-upload-${link.id}`}
-                                      type="file"
-                                      accept="image/*"
-                                      onChange={(e) => {
-                                        const file = e.target.files ? e.target.files[0] : null;
-                                        updatePartnerLink(link.id, 'affiliateimage', file);
-                                      }}
-                                      className="hidden"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
-                      <Link2 className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
-                        No Partner Links Added
-                      </h3>
-                      <p className="text-linka-night/60 mb-4">
-                        Add your first affiliate link to get started
-                      </p>
-                    </div>
-                  )}
-                  <Button
-                    variant="outline"
-                    onClick={addPartnerLink}
-                    className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {agentConfig.partnerLinks.length > 0 ? 'Add Another Partner Link' : 'Add First Partner Link'}
-                  </Button>
-                </div>
-              )}
-              {activeTab === 'aipro' && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                      <LinkIcon className="w-5 h-5 text-linka-dark-orange" />
-                      AI Pro Monetization
-                    </h3>
-                    <p className="text-xs text-linka-night/60">
-                      Add monetization links for AI Pro services
-                    </p>
-                  </div>
-                  {agentConfig.linkaProMonetizations.length > 0 ? (
-                    <div className="space-y-4">
-                      {agentConfig.linkaProMonetizations.map((link) => (
-                        <Card
-                          key={link.id}
-                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
-                        >
-                          <CardContent className="p-4 space-y-4 relative">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeLinkaProMonetization(link.id)}
-                              className="absolute top-2 right-2 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-110"
-                            >
-                              <X className="w-5 h-5" />
-                              <span className="sr-only">Remove AI Pro Link</span>
-                            </Button>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor={`pro-category-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Category <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                  id={`pro-category-${link.id}`}
-                                  placeholder="e.g., Subscription, Service"
-                                  value={link.category}
-                                  onChange={(e) => updateLinkaProMonetization(link.id, 'category', e.target.value)}
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`pro-brand-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Affiliate Brand Name <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                  id={`pro-brand-${link.id}`}
-                                  placeholder="e.g., AI Pro"
-                                  value={link.affiliateBrandName}
-                                  onChange={(e) => updateLinkaProMonetization(link.id, 'affiliateBrandName', e.target.value)}
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor={`pro-main-url-${link.id}`} className="text-linka-russian-violet font-medium">
-                                  Main URL <span className="text-red-500">*</span>
-                                </Label>
-                                <div className="relative">
-                                  <Input
-                                    id={`pro-main-url-${link.id}`}
-                                    placeholder="https://main-url.com"
-                                    value={link.mainUrl}
-                                    onChange={(e) => updateLinkaProMonetization(link.id, 'mainUrl', e.target.value)}
-                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                  />
-                                  <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
-                                </div>
-                              </div>
-                              {/* <div className="space-y-2">
-                                <Label
-                                  htmlFor={`image-${link.id}`}
-                                  className="text-linka-russian-violet font-medium block text-sm"
-                                >
-                                  Main Image (Optional)
-                                </Label>
-
-                                <div className="relative flex items-center">
-                                  <ImageIcon className="absolute left-3 w-5 h-5 text-linka-dark-orange pointer-events-none" />
-
-                                  <div className="relative w-full">
-                                    <Input
-                                      id={`image-${link.id}`}
-                                      type="file"
-                                      accept="image/*"
-                                      onChange={(e) => {
-                                        const file = e.target.files ? e.target.files[0] : null;
-                                        updateLinkaProMonetization(link.id, 'mainimage', file);
-                                      }}
-                                      className="
-                                                  pl-10 pr-4 py-2 w-full 
-                                                  border border-linka-alice-blue rounded-md text-sm 
-                                                  bg-white text-linka-russian-violet opacity-0
-                                                  absolute z-10 cursor-pointer
-                                                  h-full
-                                                "
-                                    />
-                                    <div className="
-                                                  pl-10 pr-4 py-2 w-full 
-                                                  border border-linka-alice-blue rounded-md text-sm 
-                                                  bg-white text-linka-russian-violet
-                                                  flex items-center
-                                                ">
-                                      <span className="text-linka-night/40">
-                                        {link.mainimage ? link.mainimage?.name : 'Choose file...'}
-                                      </span>
-                                      <span className="
-                                                      ml-auto mr-4 py-2 px-4 
-                                                      rounded-md border-0 
-                                                      text-sm font-medium 
-                                                      bg-linka-carolina-blue text-white 
-                                                      hover:bg-linka-carolina-blue/90
-                                                      active:bg-linka-carolina-blue/80
-                                                      cursor-pointer
-                                                    ">
-                                        Browse
-                                      </span>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div> */}
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
-                      <LinkIcon className="w-12 h-12 text-linka-dark-orange/70 mx-auto mb-4" />
-                      <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
-                        No AI Pro Monetization Added
-                      </h3>
-                      <p className="text-linka-night/60 mb-4">
-                        Add your first AI Pro monetization link to get started
-                      </p>
-                    </div>
-                  )}
-                  <Button
-                    variant="outline"
-                    onClick={addLinkaProMonetization}
-                    className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    {agentConfig.linkaProMonetizations.length > 0 ? 'Add Another Monetization Link' : 'Add First Monetization Link'}
-                  </Button>
-                </div>
-              )}
+              <Button
+                variant="outline"
+                onClick={() => setIsMonetizationModalOpen(true)}
+                className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {activeTab === 'partner' ? (agentConfig.partnerLinks.length > 0 ? 'Add Another Partner Link' : 'Add First Partner Link') : (agentConfig.linkaProMonetizations.length > 0 ? 'Add Another Monetization Link' : 'Add First Monetization Link')}
+              </Button>
               <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-4">
                 <div className="flex items-start gap-2">
                   <InfoIcon className="w-4 h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
@@ -1219,23 +865,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
               </div>
             </CardHeader>
             <CardContent className="px-6 pb-8 space-y-6">
-              <div className="flex items-center justify-between p-4 bg-linka-alice-blue/50 rounded-xl border border-linka-alice-blue transition-all duration-300 hover:bg-linka-alice-blue/70">
-                <div className="space-y-1">
-                  <Label htmlFor="conditional-toggle" className="text-linka-russian-violet font-medium flex items-center gap-2">
-                    <GitBranch className="w-4 h-4 text-linka-dark-orange" />
-                    Enable Conditional Prompts
-                  </Label>
-                  <p className="text-xs text-linka-night/60">
-                    Create dynamic conversations that adapt to user choices
-                  </p>
-                </div>
-                <Switch
-                  id="conditional-toggle"
-                  checked={agentConfig.useConditionalPrompts}
-                  onCheckedChange={(checked) => handleInputChange('useConditionalPrompts', checked)}
-                  className="data-[state=checked]:bg-linka-dark-orange"
-                />
-              </div>
               {!agentConfig.useConditionalPrompts ? (
                 <div className="space-y-6 animate-in fade-in">
                   <div className="space-y-2">
@@ -1438,7 +1067,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
               </CardHeader>
               <CardContent className="px-6 pb-6">
                 <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[90vh] flex flex-col w-[full] lg:w-[50%] mx-auto">
-                  {/* Avatar/Video Section */}
                   <div className="flex justify-center mb-6 w-full">
                     <div className="w-52 h-52 sm:w-72 sm:h-72 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
                       {agentConfig.greetingVideo ? (
@@ -1449,15 +1077,12 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                           loop
                           playsInline
                           className="w-full h-full object-cover rounded-full"
-                          onError={(e) => {
-                            console.error('Live preview video error:', e)
-                            toast.error('Error loading video in preview. Please ensure the file is a valid MP4, WebM, or OGG.')
-                          }}
+                          onError={() => toast.error('Error loading video in preview. Please ensure the file is a valid MP4, WebM, or OGG.')}
                         />
                       ) : agentConfig.greetingImage ? (
                         <img
                           src={agentConfig.greetingImage}
-                          alt="AI Agent"
+                          alt="Greeting Media"
                           className="w-full h-full object-cover"
                           onError={() => toast.error('Error loading greeting image in preview.')}
                         />
@@ -1466,7 +1091,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                       )}
                     </div>
                   </div>
-                  {/* Greeting Section */}
                   <div className="text-center mb-6 sm:mb-8">
                     <h4 className="text-lg sm:text-xl font-semibold text-gray-800">
                       {agentConfig.greetingTitle || 'Your Agent'}
@@ -1475,7 +1099,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                       {agentConfig.greeting || 'Ready to assist you with your needs!'}
                     </p>
                   </div>
-                  {/* Prompts Section */}
                   <div className="flex-1 overflow-y-auto px-1 sm:px-4">
                     <div className="space-y-4">
                       <div>
@@ -1498,7 +1121,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                       </div>
                     </div>
                   </div>
-                  {/* Input Section */}
                   <div className="mt-4 sm:mt-6">
                     <div className="flex bg-gray-200 rounded-full px-4 py-2 items-center gap-2">
                       <input
@@ -1520,7 +1142,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     </div>
                   </div>
                 </div>
-                {/* Pro Tip Box */}
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-base">⚡️</span>
@@ -1541,9 +1162,33 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
     }
   }
 
+  const saveMonetization = () => {
+    // Ensure all required fields are filled
+    const hasEmptyRequiredFields = agentConfig.linkaProMonetizations.some(link => 
+      !link.category.trim() || !link.affiliateBrandName.trim() || !link.mainUrl.trim()
+    );
+    if (hasEmptyRequiredFields) {
+      toast.error('Please fill in all required fields (Category, Affiliate Brand Name, Main URL)');
+      return;
+    }
+
+    setIsMonetizationModalOpen(false);
+    toast.success('Monetization saved successfully!');
+  };
+
+  // Add new link when modal opens
+  useEffect(() => {
+    if (isMonetizationModalOpen && activeTab === 'aipro' && agentConfig.linkaProMonetizations.length === 0) {
+      addLinkaProMonetization();
+    }
+    if (isMonetizationModalOpen && activeTab === 'partner' && agentConfig.partnerLinks.length === 0) {
+      addPartnerLink();
+    }
+  }, [isMonetizationModalOpen, activeTab, agentConfig.linkaProMonetizations.length, agentConfig.partnerLinks.length]);
+
   return (
     <DashboardLayout>
-      <div className=" mx-auto px-2 py-6 sm:py-4 w-full">
+      <div className="mx-auto px-2 py-6 sm:py-4 w-full">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-linka-russian-violet mb-4 sm:mb-0">Build Your AI Agent</h1>
           <div className="flex gap-4">
@@ -1725,7 +1370,291 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
             </div>
           </DialogContent>
         </Dialog>
+        <Dialog open={isMonetizationModalOpen} onOpenChange={setIsMonetizationModalOpen}>
+          <DialogContent className="max-w-full sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{activeTab === 'partner' ? 'Partner Links' : 'AI Pro Monetization'}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-6">
+              {activeTab === 'partner' ? (
+                <div>
+                  {agentConfig.partnerLinks.length > 0 ? (
+                    <div className="space-y-4">
+                      {agentConfig.partnerLinks.map((link) => (
+                        <Card
+                          key={link.id}
+                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
+                        >
+                          <CardContent className="p-4 space-y-4 relative">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`partner-category-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Category <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`partner-category-${link.id}`}
+                                  placeholder="e.g., Travel, Fashion"
+                                  value={link.category}
+                                  onChange={(e) => updatePartnerLink(link.id, 'category', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`partner-link-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Affiliate Link <span className="text-red-500">*</span>
+                                </Label>
+                                <div className="relative">
+                                  <Input
+                                    id={`partner-link-${link.id}`}
+                                    placeholder="https://affiliate-link.com"
+                                    value={link.affiliateLink}
+                                    onChange={(e) => updatePartnerLink(link.id, 'affiliateLink', e.target.value)}
+                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                  <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
+                                </div>
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`partner-brand-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Brand Name <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`partner-brand-${link.id}`}
+                                  placeholder="e.g., TripAdvisor"
+                                  value={link.affiliateBrandName}
+                                  onChange={(e) => updatePartnerLink(link.id, 'affiliateBrandName', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`partner-social-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Social Media
+                                </Label>
+                                <Input
+                                  id={`partner-social-${link.id}`}
+                                  placeholder="https://social-media.com"
+                                  value={link.socialMediaLink || ''}
+                                  onChange={(e) => updatePartnerLink(link.id, 'socialMediaLink', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`partner-review-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Product Review
+                                </Label>
+                                <Input
+                                  id={`partner-review-${link.id}`}
+                                  placeholder="e.g., Great product!"
+                                  value={link.productReview || ''}
+                                  onChange={(e) => updatePartnerLink(link.id, 'productReview', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`image-${link.id}`}
+                                  className="text-linka-russian-violet font-medium block text-sm"
+                                >
+                                  Affiliate Image (Optional)
+                                </Label>
+
+                                <div className="relative flex items-center">
+                                  <ImageIcon className="absolute left-3 w-5 h-5 text-linka-dark-orange pointer-events-none" />
+
+                                  <div className="relative w-full">
+                                    <Input
+                                      id={`image-${link.id}`}
+                                      type="file"
+                                      accept="image/*"
+                                      onChange={(e) => {
+                                        const file = e.target.files ? e.target.files[0] : null;
+                                        updatePartnerLink(link.id, 'affiliateimage', file);
+                                      }}
+                                      className="
+                                                  pl-10 pr-4 py-2 w-full 
+                                                  border border-linka-alice-blue rounded-md text-sm 
+                                                  bg-white text-linka-russian-violet opacity-0
+                                                  absolute z-10 cursor-pointer
+                                                  h-full
+                                                "
+                                    />
+                                    <div className="
+                                                  pl-10 pr-4 py-2 w-full 
+                                                  border border-linka-alice-blue rounded-md text-sm 
+                                                  bg-white text-linka-russian-violet
+                                                  flex items-center
+                                                ">
+                                      <span className="text-linka-night/40">
+                                        {link.affiliateimage ? link.affiliateimage?.name : 'Choose file...'}
+                                      </span>
+                                      <span className="
+                                                  ml-auto mr-4 py-2 px-4 
+                                                  rounded-md border-0 
+                                                  text-sm font-medium 
+                                                  bg-linka-carolina-blue text-white 
+                                                  hover:bg-linka-carolina-blue/90
+                                                  active:bg-linka-carolina-blue/80
+                                                  cursor-pointer
+                                                ">
+                                        Browse
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
+                      <LinkIcon className="w-12 h-12 text-linka-dark-orange/70 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
+                        No Partner Links Added
+                      </h3>
+                      <p className="text-linka-night/60 mb-4">
+                        Add your first partner link to get started
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-4 mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsMonetizationModalOpen(false)}
+                      className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue hover:text-white transition-transform hover:scale-105"
+                    >
+                      Cancel
+                    </Button>
+                    {/* <Button
+                      onClick={addPartnerLink}
+                      className="bg-linka-dark-orange hover:bg-linka-dark-orange/80 transition-transform hover:scale-105"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Link
+                    </Button> */}
+                    <Button
+                      onClick={() => {
+                        const hasEmptyRequiredFields = agentConfig.partnerLinks.some(link => 
+                          !link.category.trim() || !link.affiliateBrandName.trim() || !link.affiliateLink.trim()
+                        );
+                        if (hasEmptyRequiredFields) {
+                          toast.error('Please fill in all required fields (Category, Affiliate Brand Name, Affiliate Link)');
+                          return;
+                        }
+                        setIsMonetizationModalOpen(false);
+                        toast.success('Partner links saved successfully!');
+                      }}
+                      className="bg-linka-dark-orange hover:bg-linka-dark-orange/80 transition-transform hover:scale-105"
+                    >
+                      <Save className="w-4 h-4 mr-2" />
+                      Save
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  {agentConfig.linkaProMonetizations.length > 0 ? (
+                    <div className="space-y-4">
+                      {agentConfig.linkaProMonetizations.map((link) => (
+                        <Card
+                          key={link.id}
+                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
+                        >
+                          <CardContent className="p-4 space-y-4 relative">
+                            {/* <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => removeLinkaProMonetization(link.id)}
+                              className="absolute top-2 right-2 text-red-500 hover:bg-red-50 transition-all duration-200 hover:scale-110"
+                            >
+                              <X className="w-5 h-5" />
+                              <span className="sr-only">Remove AI Pro Link</span>
+                            </Button> */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor={`pro-category-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Category <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`pro-category-${link.id}`}
+                                  placeholder="e.g., Subscription, Service"
+                                  value={link.category}
+                                  onChange={(e) => updateLinkaProMonetization(link.id, 'category', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`pro-brand-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Main Affiliate Brand Name <span className="text-red-500">*</span>
+                                </Label>
+                                <Input
+                                  id={`pro-brand-${link.id}`}
+                                  placeholder="e.g., AI Pro"
+                                  value={link.affiliateBrandName}
+                                  onChange={(e) => updateLinkaProMonetization(link.id, 'affiliateBrandName', e.target.value)}
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`pro-main-url-${link.id}`} className="text-linka-russian-violet font-medium">
+                                  Category URL <span className="text-red-500">*</span>
+                                </Label>
+                                <div className="relative">
+                                  <Input
+                                    id={`pro-main-url-${link.id}`}
+                                    placeholder="https://main-url.com"
+                                    value={link.mainUrl}
+                                    onChange={(e) => updateLinkaProMonetization(link.id, 'mainUrl', e.target.value)}
+                                    className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                  <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-linka-dark-orange" />
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
+                      <LinkIcon className="w-12 h-12 text-linka-dark-orange/70 mx-auto mb-4" />
+                      <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
+                        No AI Pro Monetization Added
+                      </h3>
+                      <p className="text-linka-night/60 mb-4">
+                        Add your first AI Pro monetization link to get started
+                      </p>
+                    </div>
+                  )}
+                  <div className="flex justify-end gap-4 mt-4">
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsMonetizationModalOpen(false)}
+                      className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue hover:text-white transition-transform hover:scale-105"
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      onClick={addLinkaProMonetization}
+                      className="bg-linka-dark-orange hover:bg-linka-dark-orange/80 transition-transform hover:scale-105"
+                    >
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add New Link
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   )
 }
+
+
