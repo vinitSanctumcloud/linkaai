@@ -20,6 +20,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // New state for hover
   const router = useRouter();
 
   const MOBILE_BREAKPOINT = 1024; // lg
@@ -174,6 +175,8 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             'dark:bg-gray-800 dark:border-gray-700',
             isMobile ? (isOpen ? 'w-64 translate-x-0' : '-translate-x-full') : 'translate-x-0'
           )}
+          onMouseEnter={() => !isMobile && setIsSidebarHovered(true)}
+          onMouseLeave={() => !isMobile && setIsSidebarHovered(false)}
           aria-label="Main navigation"
         >
           <div className="flex flex-col h-full overflow-y-auto">
@@ -304,7 +307,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         </aside>
 
         {/* Overlay for sidebar */}
-        {(isOpen || (!isMobile && document.querySelector('.sidebar:hover'))) && (
+        {(isOpen || (!isMobile && isSidebarHovered)) && (
           <div
             className={cn(
               'fixed inset-0 z-40 bg-black/40 dark:bg-black/60 transition-opacity duration-300',
