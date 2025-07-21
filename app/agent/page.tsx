@@ -78,6 +78,14 @@ interface AgentConfig {
 
 export default function AgentBuilderPage() {
   const [currentStep, setCurrentStep] = useState(1)
+  const [progressData, setProgressData] = useState<{
+    completed_steps: number;
+    current_status: string;
+    next_step: number;
+    completed_at?: string;
+  } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false)
   const [activeTab, setActiveTab] = useState<'partner' | 'aipro'>('partner')
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
@@ -409,6 +417,14 @@ export default function AgentBuilderPage() {
 
       if (response.ok) {
         toast.success('AI Agent saved successfully!')
+        // Update progress data
+        setProgressData((prev) => ({
+          ...prev,
+          completed_steps: Math.max(prev?.completed_steps || 0, currentStep),
+          next_step: currentStep < 5 ? currentStep + 1 : 5,
+          current_status: `Saved step ${currentStep}`,
+          completed_at: new Date().toISOString(),
+        }));
       } else {
         toast.error('Failed to save AI Agent')
       }
@@ -418,6 +434,11 @@ export default function AgentBuilderPage() {
   }
 
   const nextStep = async () => {
+    if (progressData && currentStep > progressData.completed_steps + 1) {
+      toast.error('Please complete the current step before proceeding.');
+      return;
+    }
+
     const accessToken = localStorage.getItem('accessToken')
     if (!accessToken) {
       toast.error('No access token found')
@@ -583,7 +604,15 @@ export default function AgentBuilderPage() {
           currentStep === 5
             ? 'AI Agent saved and published successfully!'
             : `Step ${currentStep} saved successfully!`
-        )
+        );
+        // Update progress data after successful save
+        setProgressData((prev) => ({
+          ...prev,
+          completed_steps: Math.max(prev?.completed_steps || 0, currentStep),
+          next_step: currentStep + 1,
+          current_status: `Completed step ${currentStep}`,
+          completed_at: new Date().toISOString(),
+        }));
         if (currentStep < 5) setCurrentStep(currentStep + 1)
       } else {
         const errorData = await response.json()
@@ -1438,6 +1467,47 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
     toast.success('Monetization saved successfully!');
   };
 
+  useEffect(() => {
+    const fetchProgress = async () => {
+      setIsLoading(true);
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        setError('No access token found. Please log in.');
+        toast.error('No access token found. Please log in.');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/agent/progress', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setProgressData(data.data.progress);
+          setCurrentStep(data.data.progress.next_step || 1); // Set current step to next_step from API
+          toast.success('Progress loaded successfully!');
+        } else {
+          const errorData = await response.json();
+          setError(`Failed to fetch progress: ${errorData.message || 'Unknown error'}`);
+          toast.error(`Failed to fetch progress: ${errorData.message || 'Unknown error'}`);
+        }
+      } catch (err) {
+        setError('An error occurred while fetching progress.');
+        toast.error('An error occurred while fetching progress.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProgress();
+  }, []);
+
   // Add new link when modal opens
   useEffect(() => {
     if (isMonetizationModalOpen && activeTab === 'aipro' && agentConfig.linkaProMonetizations.length === 0) {
@@ -1477,27 +1547,44 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
               {steps.map((step, index) => (
                 <div key={step.id} className="relative">
                   <div
-                    className={`stepper-item flex items-center p-3 sm:p-4 rounded-xl cursor-pointer transition-all hover:scale-105 hover:shadow-md ${currentStep === step.id
-                      ? 'bg-orange-100 text-linka-russian-violet border-2 border-orange-300'
-                      : 'bg-white text-linka-russian-violet hover:bg-orange-50 border border-orange-200'
+                    className={`stepper-item flex items-center p-3 sm:p-4 rounded-xl cursor-pointer transition-all hover:scale-105 hover:shadow-md ${progressData && progressData.completed_steps >= step.id
+                        ? 'bg-white text-linka-russian-violet border-2 border-orange-200'
+                        : currentStep === step.id
+                          ? 'bg-orange-100 text-linka-russian-violet border-2 border-orange-300'
+                          : 'bg-white text-linka-russian-violet hover:bg-orange-50 border border-orange-200'
                       }`}
-                    onClick={() => setCurrentStep(step.id)}
+                    onClick={() => {
+                      if (progressData && progressData.completed_steps >= step.id - 1) {
+                        setCurrentStep(step.id);
+                      } else {
+                        toast.error('Please complete the previous steps first.');
+                      }
+                    }}
                   >
                     <div
-                      className={`stepper-number w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-white font-bold transition-all ${currentStep === step.id
-                        ? 'bg-orange-500 ring-2 ring-orange-300 ring-offset-2'
-                        : 'bg-orange-400'
-                        } mr-3 sm:mr-4`}
+                      className={`stepper-number w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-white font-bold transition-all ${progressData && progressData.completed_steps >= step.id
+                          ? 'bg-orange-400'
+                          : currentStep === step.id
+                            ? 'bg-orange-500 ring-2 ring-orange-500 ring-offset-2'
+                            : 'bg-orange-400'
+                        } mr-10 sm:mr-4`}
                     >
-                      {index + 1}
+                      {progressData && progressData.completed_steps >= step.id ? (
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                      ) : (
+                        index + 1
+                      )}
                     </div>
                     <div>
                       <h3 className="text-sm sm:text-base font-semibold">{step.title}</h3>
+                      <p className="text-xs text-linka-night/60">{step.description}</p>
                     </div>
                   </div>
                   {index < steps.length - 1 && (
                     <div
-                      className={`absolute left-5 sm:left-6 top-14 sm:top-16 w-0.5 h-8 sm:h-10 ${index < currentStep ? 'bg-orange-200' : 'bg-orange-300'}`}
+                      className={`absolute left-5 sm:left-6 top-14 sm:top-16 w-0.5 h-8 sm:h-10 bg-orange-300`}
                     ></div>
                   )}
                 </div>
