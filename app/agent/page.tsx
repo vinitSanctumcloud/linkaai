@@ -63,15 +63,17 @@ interface mainimage {
 interface AgentConfig {
   name: string
   trainingInstructions: string
-  greeting: string
   prompts: string[]
   partnerLinks: PartnerLink[]
   linkaProMonetizations: LinkaProMonetization[]
   conditionalPrompts: ConditionalPrompt[]
   useConditionalPrompts: boolean
-  greetingVideo: string | null
+  // greetingVideo: string | null
+  // greetingImage: string | null
   greetingTitle: string
-  greetingImage: string | null
+  greeting: string;
+  greetingMediaType: string | null;
+  greetingMedia: string | null;
 }
 
 export default function AgentBuilderPage() {
@@ -81,7 +83,6 @@ export default function AgentBuilderPage() {
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: '',
     trainingInstructions: '',
-    greeting: '',
     prompts: ['', '', '', ''],
     // partnerLinks: [],
     // linkaProMonetizations: [],
@@ -114,8 +115,11 @@ export default function AgentBuilderPage() {
     conditionalPrompts: [],
     useConditionalPrompts: false,
     greetingTitle: '',
-    greetingVideo: null,
-    greetingImage: null
+    greeting: '',
+    // greetingVideo: null,
+    // greetingImage: null
+    greetingMediaType: null,
+    greetingMedia: null,
   })
 
   // Conditional prompt modal states
@@ -140,7 +144,7 @@ export default function AgentBuilderPage() {
   ]
 
   const handleEditLink = (index: number, type: 'partner' | 'aipro') => {
-  // Logic to edit the link at the given index
+    // Logic to edit the link at the given index
   };
 
   const handleDeleteLink = (index: number, type: 'partner' | 'aipro') => {
@@ -267,8 +271,10 @@ export default function AgentBuilderPage() {
     }))
     toast.success('Linka Pro Monetization removed!')
   }
-  
+
   const handleGreetingMediaUpload = async (event: React.ChangeEvent<HTMLInputElement>, type: 'image' | 'video') => {
+    console.log(type);
+    console.log(event);
     const file = event.target.files?.[0]
     if (!file) {
       toast.error('No file selected.')
@@ -305,16 +311,21 @@ export default function AgentBuilderPage() {
 
         if (response.ok) {
           const data = await response.json()
-          const imageUrl = data.url // Adjust based on actual API response structure
+          console.log(data);
+          const imageUrl = data.data.cdn + data.data.images[0]; // Adjust based on actual API response structure
           if (!imageUrl) {
             toast.error('No image URL returned from the server.')
             return
           }
 
+          console.log(imageUrl);
+
           setAgentConfig((prev) => ({
             ...prev,
-            greetingImage: imageUrl,
-            greetingVideo: null // Clear video if image is uploaded
+            greetingMedia: imageUrl,
+            greetingMediaType: 'image'
+            // greetingImage: imageUrl,
+            // greetingVideo: null // Clear video if image is uploaded
           }))
           toast.success('Image uploaded successfully!')
         } else {
@@ -362,8 +373,10 @@ export default function AgentBuilderPage() {
 
           setAgentConfig((prev) => ({
             ...prev,
-            greetingVideo: videoUrl,
-            greetingImage: null // Clear image if video is uploaded
+            // greetingVideo: videoUrl,
+            // greetingImage: null // Clear image if video is uploaded
+            greetingMedia: videoUrl,
+            greetingMediaType: 'video'
           }))
           toast.success('Video uploaded successfully!')
         } else {
@@ -385,14 +398,12 @@ export default function AgentBuilderPage() {
         body: JSON.stringify({
           agentName: agentConfig.name,
           trainingInstructions: agentConfig.trainingInstructions,
-          agentGreeting: agentConfig.greeting,
           agentPrompts: agentConfig.useConditionalPrompts ? [] : agentConfig.prompts.filter(p => p.trim()),
           conditionalPrompts: agentConfig.useConditionalPrompts ? agentConfig.conditionalPrompts : [],
           partnerLinks: agentConfig.partnerLinks.filter(link => link.affiliateLink.trim() !== ''),
           linkaProMonetizations: agentConfig.linkaProMonetizations.filter(link => link.mainUrl.trim() !== ''),
+          // agentGreeting: agentConfig.greeting,
           greetingTitle: agentConfig.greetingTitle,
-          greetingImage: agentConfig.greetingImage,
-          greetingVideo: agentConfig.greetingVideo
         }),
       })
 
@@ -413,6 +424,8 @@ export default function AgentBuilderPage() {
       return
     }
 
+    console.log(agentConfig);
+
     try {
       let response
       let payload
@@ -430,11 +443,11 @@ export default function AgentBuilderPage() {
           }
           apiUrl = 'https://api.tagwell.co/api/v4/ai-agent/create-agent'
           payload = {
-            greeting_media_type: agentConfig.greetingVideo ? 'video' : 'image',
+            avatar_image_url: null,
             greeting_title: agentConfig.greetingTitle,
             welcome_greeting: agentConfig.greeting,
-            greeting_image_url: agentConfig.greetingImage,
-            greeting_video_url: agentConfig.greetingVideo
+            greeting_media_url: agentConfig.greetingMedia || 'https://ddvtek8w6blll.cloudfront.net/linka/general/Weekend-in-Taipei.jpg',
+            greeting_media_type: agentConfig.greetingMediaType || 'image',
           }
           break
 
@@ -495,8 +508,8 @@ export default function AgentBuilderPage() {
               (link) => link.mainUrl.trim() !== ''
             ),
             greetingTitle: agentConfig.greetingTitle,
-            greetingImage: agentConfig.greetingImage,
-            greetingVideo: agentConfig.greetingVideo
+            // greetingImage: agentConfig.greetingImage,
+            // greetingVideo: agentConfig.greetingVideo
           }
           break
 
@@ -505,7 +518,7 @@ export default function AgentBuilderPage() {
             toast.error('Please complete Step 1: Greeting Media.')
             return
           }
-          if (!agentConfig.greetingImage && !agentConfig.greetingVideo) {
+          if (!agentConfig.greetingMedia) {
             toast.error('Please upload either an image or a video in Step 1.')
             return
           }
@@ -539,8 +552,10 @@ export default function AgentBuilderPage() {
               (link) => link.mainUrl.trim() !== ''
             ),
             greetingTitle: agentConfig.greetingTitle,
-            greetingImage: agentConfig.greetingImage,
-            greetingVideo: agentConfig.greetingVideo
+            greeting_title: agentConfig.greetingTitle,
+            welcome_greeting: agentConfig.greeting,
+            greeting_media_url: agentConfig.greetingMedia,
+            greeting_media_type: agentConfig.greetingMediaType,
           }
           break
 
@@ -549,6 +564,11 @@ export default function AgentBuilderPage() {
           return
       }
 
+      console.log(apiUrl);
+      console.log(payload);
+      console.log(currentStep);
+      console.log(accessToken);
+
       response = await fetch(apiUrl, {
         method: currentStep === 1 ? 'POST' : 'PUT',
         headers: {
@@ -556,7 +576,7 @@ export default function AgentBuilderPage() {
           'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify(payload)
-      })
+      });
 
       if (response.ok) {
         toast.success(
@@ -599,23 +619,25 @@ export default function AgentBuilderPage() {
                 <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet mb-3 sm:mb-4">AI Agent Greeting</h3>
                 <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
                   <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
-                    {agentConfig.greetingVideo ? (
-                      <video
-                        src={agentConfig.greetingVideo}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover rounded-full"
-                        onError={() => toast.error('Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.')}
-                      />
-                    ) : agentConfig.greetingImage ? (
-                      <img
-                        src={agentConfig.greetingImage}
-                        alt="Greeting Image"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        onError={() => toast.error('Error loading greeting image.')}
-                      />
+                    {agentConfig.greetingMedia && agentConfig.greetingMediaType ? (
+                      agentConfig.greetingMediaType === 'video' ? (
+                        <video
+                          src={agentConfig.greetingMedia}
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          className="w-full h-full object-cover rounded-full"
+                          onError={() => toast.error('Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.')}
+                        />
+                      ) : (
+                        <img
+                          src={agentConfig.greetingMedia}
+                          alt="Greeting Image"
+                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                          onError={() => toast.error('Error loading greeting image.')}
+                        />
+                      )
                     ) : (
                       <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
                     )}
@@ -890,208 +912,206 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
           //     </div>
           //   </CardContent>
           // </Card>
-<Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
-    <CardHeader className="px-6 pt-6 pb-4">
-      <div className="space-y-1">
-        <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
-          <LinkIcon className="w-5 h-5 text-linka-dark-orange" />
-          Partner URLs & Monetization
-        </CardTitle>
-        <p className="text-sm text-linka-night/70 font-light">
-          Add affiliate links and Linka Pro monetization options
-        </p>
-      </div>
-      <div className="flex gap-2 mt-4">
-        <Button
-          variant={activeTab === 'partner' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('partner')}
-          className={`${activeTab === 'partner'
-            ? 'bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white'
-            : 'border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10'
-            } transition-all duration-300 hover:scale-105`}
-        >
-          Linka Basic
-        </Button>
-        <Button
-          variant={activeTab === 'aipro' ? 'default' : 'outline'}
-          onClick={() => setActiveTab('aipro')}
-          className={`${activeTab === 'aipro'
-            ? 'bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white'
-            : 'border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10'
-            } transition-all duration-300 hover:scale-105`}
-        >
-          Linka AI Pro Monetization
-        </Button>
-        <Button className='ml-auto'>
-          Upgrade
-        </Button>
-      </div>
-    </CardHeader>
-    <CardContent>
-      {activeTab === 'aipro' ? (
-        <div className="space-y-2">
-          <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-            <Link2 className="w-5 h-5 text-linka-carolina-blue" />
-            AI Smart Recommendations
-          </h3>
-          <p className="text-xs text-linka-night/60">
-            Add monetization links for AI Pro services
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-            <Link2 className="w-5 h-5 text-linka-carolina-blue" />
-            Partner Links
-          </h3>
-          <p className="text-xs text-linka-night/60">
-            Add affiliate links with detailed information for your AI to recommend
-          </p>
-        </div>
-      )}
-    </CardContent>
-    <CardContent className="px-6 pb-6 space-y-8">
-      {activeTab === 'partner' && agentConfig.partnerLinks.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-linka-night/80">
-            <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-              <tr>
-                <th scope="col" className="px-6 py-3">Link Name</th>
-                <th scope="col" className="px-6 py-3">URL</th>
-                <th scope="col" className="px-6 py-3">Status</th>
-                <th scope="col" className="px-6 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agentConfig.partnerLinks.map((link, index) => (
-                <tr key={index} className="bg-white border-b hover:bg-linka-alice-blue/10">
-                  <td className="px-6 py-4">{link.name}</td>
-                  <td className="px-6 py-4">
-                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-linka-carolina-blue hover:underline">
-                      {link.url}
-                    </a>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      link.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {link.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditLink(index, 'partner')}
-                      className="text-linka-carolina-blue hover:text-linka-dark-orange"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteLink(index, 'partner')}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : activeTab === 'aipro' && agentConfig.linkaProMonetizations.length > 0 ? (
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm text-left text-linka-night/80">
-            <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-              <tr>
-                <th scope="col" className="px-6 py-3">Link Name</th>
-                <th scope="col" className="px-6 py-3">URL</th>
-                <th scope="col" className="px-6 py-3">Status</th>
-                <th scope="col" className="px-6 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {agentConfig.linkaProMonetizations.map((link, index) => (
-                <tr key={index} className="bg-white border-b hover:bg-linka-alice-blue/10">
-                  <td className="px-6 py-4">{link.name}</td>
-                  <td className="px-6 py-4">
-                    <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-linka-carolina-blue hover:underline">
-                      {link.url}
-                    </a>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      link.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                    }`}>
-                      {link.status}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleEditLink(index, 'aipro')}
-                      className="text-linka-carolina-blue hover:text-linka-dark-orange"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDeleteLink(index, 'aipro')}
-                      className="text-red-500 hover:text-red-700"
-                    >
-                      Delete
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className="text-sm text-linka-night/60 text-center">
-          {activeTab === 'partner' ? 'No partner links added yet.' : 'No monetization links added yet.'}
-        </p>
-      )}
-      <Button
-        variant="outline"
-        onClick={() => setIsMonetizationModalOpen(true)}
-        className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
-      >
-        <Plus className="w-4 h-4 mr-2" />
-        {activeTab === 'partner' ? (agentConfig.partnerLinks.length > 0 ? 'Add Another Partner Link' : 'Add First Partner Link') : (agentConfig.linkaProMonetizations.length > 0 ? 'Add Another Monetization Link' : 'Add First Monetization Link')}
-      </Button>
-      <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-4">
-        <div className="flex items-start gap-2">
-          <InfoIcon className="w-4 h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
-          <div>
-            <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
-            <ul className="text-xs text-linka-night/60 space-y-1">
-              <li className="flex items-start gap-1.5">
-                <span>•</span>
-                <span>Test all links before sharing</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span>•</span>
-                <span>Ensure affiliate links are valid and trackable</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span>•</span>
-                <span>Provide detailed product reviews to enhance user trust</span>
-              </li>
-              <li className="flex items-start gap-1.5">
-                <span>•</span>
-                <span>Upload high-quality images to enhance visual appeal</span>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
+          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+            <CardHeader className="px-6 pt-6 pb-4">
+              <div className="space-y-1">
+                <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
+                  <LinkIcon className="w-5 h-5 text-linka-dark-orange" />
+                  Partner URLs & Monetization
+                </CardTitle>
+                <p className="text-sm text-linka-night/70 font-light">
+                  Add affiliate links and Linka Pro monetization options
+                </p>
+              </div>
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant={activeTab === 'partner' ? 'default' : 'outline'}
+                  onClick={() => setActiveTab('partner')}
+                  className={`${activeTab === 'partner'
+                    ? 'bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white'
+                    : 'border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10'
+                    } transition-all duration-300 hover:scale-105`}
+                >
+                  Linka Basic
+                </Button>
+                <Button
+                  variant={activeTab === 'aipro' ? 'default' : 'outline'}
+                  onClick={() => setActiveTab('aipro')}
+                  className={`${activeTab === 'aipro'
+                    ? 'bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white'
+                    : 'border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10'
+                    } transition-all duration-300 hover:scale-105`}
+                >
+                  Linka AI Pro Monetization
+                </Button>
+                <Button className='ml-auto'>
+                  Upgrade
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {activeTab === 'aipro' ? (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                    <Link2 className="w-5 h-5 text-linka-carolina-blue" />
+                    AI Smart Recommendations
+                  </h3>
+                  <p className="text-xs text-linka-night/60">
+                    Add monetization links for AI Pro services
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                    <Link2 className="w-5 h-5 text-linka-carolina-blue" />
+                    Partner Links
+                  </h3>
+                  <p className="text-xs text-linka-night/60">
+                    Add affiliate links with detailed information for your AI to recommend
+                  </p>
+                </div>
+              )}
+            </CardContent>
+            <CardContent className="px-6 pb-6 space-y-8">
+              {activeTab === 'partner' && agentConfig.partnerLinks.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-linka-night/80">
+                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                      <tr>
+                        <th scope="col" className="px-6 py-3">Link Name</th>
+                        <th scope="col" className="px-6 py-3">URL</th>
+                        <th scope="col" className="px-6 py-3">Status</th>
+                        <th scope="col" className="px-6 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {agentConfig.partnerLinks.map((link, index) => (
+                        <tr key={index} className="bg-white border-b hover:bg-linka-alice-blue/10">
+                          <td className="px-6 py-4">{link.name}</td>
+                          <td className="px-6 py-4">
+                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-linka-carolina-blue hover:underline">
+                              {link.url}
+                            </a>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-full text-xs ${link.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                              {link.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditLink(index, 'partner')}
+                              className="text-linka-carolina-blue hover:text-linka-dark-orange"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteLink(index, 'partner')}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : activeTab === 'aipro' && agentConfig.linkaProMonetizations.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left text-linka-night/80">
+                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                      <tr>
+                        <th scope="col" className="px-6 py-3">Link Name</th>
+                        <th scope="col" className="px-6 py-3">URL</th>
+                        <th scope="col" className="px-6 py-3">Status</th>
+                        <th scope="col" className="px-6 py-3">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {agentConfig.linkaProMonetizations.map((link, index) => (
+                        <tr key={index} className="bg-white border-b hover:bg-linka-alice-blue/10">
+                          <td className="px-6 py-4">{link.name}</td>
+                          <td className="px-6 py-4">
+                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="text-linka-carolina-blue hover:underline">
+                              {link.url}
+                            </a>
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-full text-xs ${link.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                              {link.status}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleEditLink(index, 'aipro')}
+                              className="text-linka-carolina-blue hover:text-linka-dark-orange"
+                            >
+                              Edit
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteLink(index, 'aipro')}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              Delete
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-sm text-linka-night/60 text-center">
+                  {activeTab === 'partner' ? 'No partner links added yet.' : 'No monetization links added yet.'}
+                </p>
+              )}
+              <Button
+                variant="outline"
+                onClick={() => setIsMonetizationModalOpen(true)}
+                className="w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02]"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                {activeTab === 'partner' ? (agentConfig.partnerLinks.length > 0 ? 'Add Another Partner Link' : 'Add First Partner Link') : (agentConfig.linkaProMonetizations.length > 0 ? 'Add Another Monetization Link' : 'Add First Monetization Link')}
+              </Button>
+              <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-4">
+                <div className="flex items-start gap-2">
+                  <InfoIcon className="w-4 h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
+                  <div>
+                    <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
+                    <ul className="text-xs text-linka-night/60 space-y-1">
+                      <li className="flex items-start gap-1.5">
+                        <span>•</span>
+                        <span>Test all links before sharing</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span>•</span>
+                        <span>Ensure affiliate links are valid and trackable</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span>•</span>
+                        <span>Provide detailed product reviews to enhance user trust</span>
+                      </li>
+                      <li className="flex items-start gap-1.5">
+                        <span>•</span>
+                        <span>Upload high-quality images to enhance visual appeal</span>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )
       case 3:
         return (
@@ -1311,9 +1331,9 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                 <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[90vh] flex flex-col w-[full] lg:w-[50%] mx-auto">
                   <div className="flex justify-center mb-6 w-full">
                     <div className="w-52 h-52 sm:w-72 sm:h-72 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
-                      {agentConfig.greetingVideo ? (
+                      {agentConfig.greetingMedia ? (
                         <video
-                          src={agentConfig.greetingVideo}
+                          src={agentConfig.greetingMedia}
                           autoPlay
                           muted
                           loop
@@ -1321,9 +1341,9 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                           className="w-full h-full object-cover rounded-full"
                           onError={() => toast.error('Error loading video in preview. Please ensure the file is a valid MP4, WebM, or OGG.')}
                         />
-                      ) : agentConfig.greetingImage ? (
+                      ) : agentConfig.greetingMedia ? (
                         <img
-                          src={agentConfig.greetingImage}
+                          src={agentConfig.greetingMedia}
                           alt="Greeting Media"
                           className="w-full h-full object-cover"
                           onError={() => toast.error('Error loading greeting image in preview.')}
@@ -1406,7 +1426,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
 
   const saveMonetization = () => {
     // Ensure all required fields are filled
-    const hasEmptyRequiredFields = agentConfig.linkaProMonetizations.some(link => 
+    const hasEmptyRequiredFields = agentConfig.linkaProMonetizations.some(link =>
       !link.category.trim() || !link.affiliateBrandName.trim() || !link.mainUrl.trim()
     );
     if (hasEmptyRequiredFields) {
@@ -1781,7 +1801,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     </Button> */}
                     <Button
                       onClick={() => {
-                        const hasEmptyRequiredFields = agentConfig.partnerLinks.some(link => 
+                        const hasEmptyRequiredFields = agentConfig.partnerLinks.some(link =>
                           !link.category.trim() || !link.affiliateBrandName.trim() || !link.affiliateLink.trim()
                         );
                         if (hasEmptyRequiredFields) {
