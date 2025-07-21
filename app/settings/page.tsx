@@ -1,122 +1,32 @@
 'use client'
-
-import { useEffect, useState } from 'react'
-import { DashboardLayout } from '@/components/dashboard-layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { toast } from 'sonner'
-import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X } from 'lucide-react'
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog'
+import { useEffect, useState } from 'react';
+import { DashboardLayout } from '@/components/dashboard-layout';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
+import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
-import { format } from "date-fns";
-import { API } from "@/config/api";
+import { format } from 'date-fns';
+import { API } from '@/config/api';
 
-// === API FUNCTIONS ===
-
-export const fetchSubscriptionDetails = async () => {
-  try {
-    const res = await fetch(API.SUBSCRIPTION_DETIALS, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
-    });
-
-    const data = await res.json();
-    if (data.data.subscription?.plan) {
-      return data.data.subscription;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Failed to fetch subscription details:", error);
-    return null;
-  }
-};
-
-export const fetchPaymentDetails = async () => {
-  try {
-    const res = await fetch(API.PAYMENT_METHOD, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
-    });
-
-    const data = await res.json();
-    if (data.message === "Success.") {
-      return data.data.payment_method.card;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Failed to fetch payment details:", error);
-    return null;
-  }
-};
-
-export const fetchTokenDetails = async () => {
-  try {
-    const res = await fetch(API.GET_TOKEN_PLAN, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
-    });
-
-    const data = await res.json();
-    if (data.message === "Success") {
-      return data.data;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Failed to fetch token details:", error);
-    return null;
-  }
-};
-
-export const fetchBillingHistory = async (page = 1) => {
-  try {
-    const res = await fetch(`${API.BILLING_HISTORY}?page=${page}`, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
-      },
-    });
-
-    const data = await res.json();
-    if (data.message === "Success") {
-      return data.data;
-    } else {
-      return null;
-    }
-  } catch (error) {
-    console.error("Failed to fetch billing history:", error);
-    return null;
-  }
-};
-
+// === INTERFACES ===
 interface Settings {
-  id: string
-  agentName: string
-  brandColor: string
-  voiceEnabled: boolean
-  customUrl?: string
-  welcomeMessage?: string
-  instructions?: string
-  avatarUrl?: string
-  chatLimit?: number
+  id: string;
+  agentName: string;
+  brandColor: string;
+  voiceEnabled: boolean;
+  customUrl?: string;
+  welcomeMessage?: string;
+  instructions?: string;
+  avatarUrl?: string;
+  chatLimit?: number;
 }
 
-interface subscription {
+interface Subscription {
   subscription_status: string;
   subscription_type: string;
   start_date: number;
@@ -133,21 +43,21 @@ interface subscription {
   product: {
     product_name: string;
   };
-};
+}
 
 interface PaymentMethodResponse {
   brand: string;
   last_4: string;
   expiry_month: number;
   expiry_year: number;
-};
+}
 
 interface TokenInfo {
   products: any;
   totalTokenPurchase: number;
   tokenBalance: number;
   isActiveMember: boolean;
-};
+}
 
 interface Currency {
   id: number;
@@ -155,7 +65,7 @@ interface Currency {
   currency_name: string;
   currency_symbol: string;
   smallest_unit: number;
-};
+}
 
 interface TokenPlan {
   id: number;
@@ -167,18 +77,18 @@ interface TokenPlan {
   longDescription: string | null;
   isDefault: boolean;
   currency: Currency;
-};
+}
 
-interface Subscription {
+interface SubscriptionHistory {
   payment_id: number;
   created_at: string;
-  period_start: string;  // If needed, you can cast it to number
+  period_start: string;
   period_end: string;
   stripe_invoice_id: string;
   amount_paid: number;
   pdf_url: string;
   type: string;
-};
+}
 
 interface Meta {
   total: number;
@@ -190,14 +100,14 @@ interface Meta {
 }
 
 interface BookingHistoryResponse {
-  subscriptions: Subscription[];
+  subscriptions: SubscriptionHistory[];
   meta: Meta;
 }
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false) // Added for account deletion loading state
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [formData, setFormData] = useState({
     agentName: '',
     brandColor: '#FF6B35',
@@ -207,342 +117,453 @@ export default function SettingsPage() {
     instructions: '',
     avatarUrl: '',
     newPassword: '',
-    chatLimit: 0
-  })
-  const [avatarPreview, setAvatarPreview] = useState<string>('')
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
-  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
-  const [email, setEmail] = useState('user@example.com')
-  const [phone, setPhone] = useState('+1 234-567-8900')
-  const [isEmailVerified, setIsEmailVerified] = useState(true)
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false)
-  const [newEmail, setNewEmail] = useState('')
-  const [newPhone, setNewPhone] = useState('')
-  const [showCurrent, setShowCurrent] = useState(false)
-  const [showNew, setShowNew] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
-  const [currentPassword, setCurrentPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [passwordStrength, setPasswordStrength] = useState(0)
-  const [currentPasswordError, setCurrentPasswordError] = useState('') // Added for error handling
-  const [confirmPasswordError, setConfirmPasswordError] = useState('') // Added for error handling
-  const [subscription, setSubscription] = useState<subscription | null>(null)
-  const [paymentCardDetails, setPaymentCardDetails] = useState<PaymentMethodResponse | null>(null)
-  const [tokendetails, setTokenDetails] = useState<TokenInfo | null>(null)
-  const [bookingHistory, setBookingHistory] = useState<BookingHistoryResponse | null>(null)
+    chatLimit: 0,
+  });
+  const [avatarPreview, setAvatarPreview] = useState<string>('');
+  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
+  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
+  const [email, setEmail] = useState('user@example.com');
+  const [phone, setPhone] = useState('+1 234-567-8900');
+  const [isEmailVerified, setIsEmailVerified] = useState(true);
+  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
+  const [newPhone, setNewPhone] = useState('');
+  const [showCurrent, setShowCurrent] = useState(false);
+  const [showNew, setShowNew] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordStrength, setPasswordStrength] = useState(0);
+  const [currentPasswordError, setCurrentPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+  const [paymentCardDetails, setPaymentCardDetails] = useState<PaymentMethodResponse | null>(null);
+  const [tokendetails, setTokenDetails] = useState<TokenInfo | null>(null);
+  const [bookingHistory, setBookingHistory] = useState<BookingHistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
-
-  useEffect(() => {
-    fetchSettings()
-  }, [])
-
-  // Calculate password strength whenever newPassword changes
-  useEffect(() => {
-    const calculatePasswordStrength = () => {
-      let strength = 0
-      if (formData.newPassword.length >= 8) strength += 1
-      if (/[A-Z]/.test(formData.newPassword)) strength += 1
-      if (/[0-9]/.test(formData.newPassword)) strength += 1
-      if (/[^A-Za-z0-9]/.test(formData.newPassword)) strength += 1
-      setPasswordStrength(strength)
-    }
-    calculatePasswordStrength()
-  }, [formData.newPassword])
-
-  useEffect(() => {
-    const getSubscription = async () => {
-      const data = await fetchSubscriptionDetails();
-      setSubscription(data);
-      setLoading(false);
-    };
-
-    const getCardDetails = async () => {
-      const data = await fetchPaymentDetails();
-      setPaymentCardDetails(data)
-      setLoading(false)
-    }
-
-    const getTokenDetails = async () => {
-      const data = await fetchTokenDetails()
-      setTokenDetails(data)
-      setLoading(false)
-    }
-
-    const getBookingDetails = async () => {
-      const data = await fetchBillingHistory()
-      setBookingHistory(data)
-      setLoading(false)
-    }
-    getSubscription();
-    getCardDetails();
-    getTokenDetails();
-    getBookingDetails();
-  }, []);
-
-  const fetchSettings = async () => {
+  // === API FUNCTIONS ===
+  const fetchSubscriptionDetails = async () => {
     try {
-      const response = await fetch('/api/settings')
-      if (response.ok) {
-        const data = await response.json()
-        setSettings(data)
-        setFormData({
-          agentName: data.agentName || '',
-          brandColor: data.brandColor || '#FF6B35',
-          voiceEnabled: data.voiceEnabled ?? true,
-          customUrl: data.customUrl || '',
-          welcomeMessage: data.welcomeMessage || '',
-          instructions: data.instructions || '',
-          avatarUrl: data.avatarUrl || '',
-          newPassword: '',
-          chatLimit: 0
-        })
-        setAvatarPreview(data.avatarUrl || '')
+      const res = await fetch(API.SUBSCRIPTION_DETIALS, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+
+      const data = await res.json();
+      if (data.data.subscription) {
+        return data.data.subscription;
+      } else {
+        return null;
       }
     } catch (error) {
-      console.error('Error fetching settings:', error)
-      toast.error('Failed to load settings. Please try again.')
+      console.error('Failed to fetch subscription details:', error);
+      return null;
     }
-  }
+  };
+
+  const fetchPaymentDetails = async () => {
+    try {
+      const res = await fetch(API.PAYMENT_METHOD, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+
+      const data = await res.json();
+      if (data.message === 'Success.') {
+        return data.data.payment_method.card;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to fetch payment details:', error);
+      return null;
+    }
+  };
+
+  const fetchTokenDetails = async () => {
+    try {
+      const res = await fetch(API.GET_TOKEN_PLAN, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+
+      const data = await res.json();
+      if (data.message === 'Success') {
+        return data.data;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to fetch token details:', error);
+      return null;
+    }
+  };
+
+  const fetchBillingHistory = async (page = 1) => {
+    try {
+      const res = await fetch(`${API.BILLING_HISTORY}?page=${page}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+      });
+
+      const data = await res.json();
+      if (data.message === 'Success') {
+        return data.data;
+      } else {
+        return null;
+      }
+    } catch (error) {
+      console.error('Failed to fetch billing history:', error);
+      return null;
+    }
+  };
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        // Fetch settings
+        const settingsResponse = await fetch('/api/settings', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        });
+        if (settingsResponse.ok) {
+          const data = await settingsResponse.json();
+          setSettings(data);
+          setFormData({
+            agentName: data.agentName || '',
+            brandColor: data.brandColor || '#FF6B35',
+            voiceEnabled: data.voiceEnabled ?? true,
+            customUrl: data.customUrl || '',
+            welcomeMessage: data.welcomeMessage || '',
+            instructions: data.instructions || '',
+            avatarUrl: data.avatarUrl || '',
+            newPassword: '',
+            chatLimit: data.chatLimit || 0,
+          });
+          setAvatarPreview(data.avatarUrl || '');
+        } else {
+          toast.error('Failed to load settings. Please try again.');
+        }
+
+        // Fetch subscription, payment, token, and billing details
+        const [subscriptionData, paymentData, tokenData, billingData] = await Promise.all([
+          fetchSubscriptionDetails(),
+          fetchPaymentDetails(),
+          fetchTokenDetails(),
+          fetchBillingHistory(),
+        ]);
+
+        setSubscription(subscriptionData);
+        setPaymentCardDetails(paymentData);
+        setTokenDetails(tokenData);
+        setBookingHistory(billingData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('An error occurred while fetching data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const handleSave = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      })
+        body: JSON.stringify(formData),
+      });
 
       if (response.ok) {
-        toast.success('Settings updated successfully!')
-        fetchSettings()
+        toast.success('Settings updated successfully!');
+        // Re-fetch settings to ensure UI reflects the latest data
+        const settingsResponse = await fetch('/api/settings', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        });
+        if (settingsResponse.ok) {
+          const data = await settingsResponse.json();
+          setSettings(data);
+          setFormData({
+            agentName: data.agentName || '',
+            brandColor: data.brandColor || '#FF6B35',
+            voiceEnabled: data.voiceEnabled ?? true,
+            customUrl: data.customUrl || '',
+            welcomeMessage: data.welcomeMessage || '',
+            instructions: data.instructions || '',
+            avatarUrl: data.avatarUrl || '',
+            newPassword: '',
+            chatLimit: data.chatLimit || 0,
+          });
+          setAvatarPreview(data.avatarUrl || '');
+        }
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to update settings')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update settings');
       }
     } catch (error) {
-      toast.error('An error occurred. Please try again.')
+      toast.error('An error occurred. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleEmailChange = async () => {
     if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-      toast.error('Please enter a valid email address.')
-      return
+      toast.error('Please enter a valid email address.');
+      return;
     }
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/change-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newEmail })
-      })
+        body: JSON.stringify({ email: newEmail }),
+      });
       if (response.ok) {
-        setEmail(newEmail)
-        setIsEmailVerified(false)
-        setIsEmailModalOpen(false)
-        setNewEmail('')
-        toast.success('Email updated successfully! Please verify your new email.')
+        setEmail(newEmail);
+        setIsEmailVerified(false);
+        setIsEmailModalOpen(false);
+        setNewEmail('');
+        toast.success('Email updated successfully! Please verify your new email.');
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to update email')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update email');
       }
     } catch (error) {
-      toast.error('An error occurred. Please try again.')
+      toast.error('An error occurred. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handlePhoneChange = async () => {
     if (!newPhone || !/^\+?[1-9]\d{1,14}$/.test(newPhone)) {
-      toast.error('Please enter a valid phone number.')
-      return
+      toast.error('Please enter a valid phone number.');
+      return;
     }
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/change-phone', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: newPhone })
-      })
+        body: JSON.stringify({ phone: newPhone }),
+      });
       if (response.ok) {
-        setPhone(newPhone)
-        setIsPhoneVerified(false)
-        setIsPhoneModalOpen(false)
-        setNewPhone('')
-        toast.success('Phone number updated successfully! Please verify your new phone number.')
+        setPhone(newPhone);
+        setIsPhoneVerified(false);
+        setIsPhoneModalOpen(false);
+        setNewPhone('');
+        toast.success('Phone number updated successfully! Please verify your new phone number.');
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to update phone number')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update phone number');
       }
     } catch (error) {
-      toast.error('An error occurred. Please try again.')
+      toast.error('An error occurred. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleVerifyEmail = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/verify-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      })
+        body: JSON.stringify({ email }),
+      });
       if (response.ok) {
-        setIsEmailVerified(true)
-        toast.success('Verification email sent! Please check your inbox.')
+        setIsEmailVerified(true);
+        toast.success('Verification email sent! Please check your inbox.');
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to send verification email')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to send verification email');
       }
     } catch (error) {
-      toast.error('Failed to send verification email. Please try again.')
+      toast.error('Failed to send verification email. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleVerifyPhone = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/verify-phone', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone })
-      })
+        body: JSON.stringify({ phone }),
+      });
       if (response.ok) {
-        setIsPhoneVerified(true)
-        toast.success('Verification code sent to your phone!')
+        setIsPhoneVerified(true);
+        toast.success('Verification code sent to your phone!');
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to send verification code')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to send verification code');
       }
     } catch (error) {
-      toast.error('Failed to send verification code. Please try again.')
+      toast.error('Failed to send verification code. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setCurrentPasswordError('')
-    setConfirmPasswordError('')
+    e.preventDefault();
+    setCurrentPasswordError('');
+    setConfirmPasswordError('');
 
     if (!currentPassword) {
-      setCurrentPasswordError('Current password is required')
-      return
+      setCurrentPasswordError('Current password is required');
+      return;
     }
     if (formData.newPassword !== confirmPassword) {
-      setConfirmPasswordError('Passwords do not match')
-      return
+      setConfirmPasswordError('Passwords do not match');
+      return;
     }
     if (passwordStrength < 3) {
-      setConfirmPasswordError('Password must be at least 8 characters and include an uppercase letter and a number')
-      return
+      setConfirmPasswordError('Password must be at least 8 characters and include an uppercase letter and a number');
+      return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/change-password', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           currentPassword,
-          newPassword: formData.newPassword
-        })
-      })
+          newPassword: formData.newPassword,
+        }),
+      });
 
       if (response.ok) {
-        toast.success('Password updated successfully!')
-        setCurrentPassword('')
-        setFormData({ ...formData, newPassword: '' })
-        setConfirmPassword('')
-        setPasswordStrength(0)
+        toast.success('Password updated successfully!');
+        setCurrentPassword('');
+        setFormData({ ...formData, newPassword: '' });
+        setConfirmPassword('');
+        setPasswordStrength(0);
       } else {
-        const error = await response.json()
+        const error = await response.json();
         if (error.error.includes('current password')) {
-          setCurrentPasswordError(error.error)
+          setCurrentPasswordError(error.error);
         } else {
-          setConfirmPasswordError(error.error || 'Failed to update password')
+          setConfirmPasswordError(error.error || 'Failed to update password');
         }
       }
     } catch (error) {
-      setConfirmPasswordError('An error occurred. Please try again.')
+      setConfirmPasswordError('An error occurred. Please try again.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleResetTraining = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/reset-training', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
+        headers: { 'Content-Type': 'application/json' },
+      });
       if (response.ok) {
-        toast.success('Agent training reset successfully!')
-        fetchSettings()
+        toast.success('Agent training reset successfully!');
+        // Re-fetch settings
+        const settingsResponse = await fetch('/api/settings', {
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+          },
+        });
+        if (settingsResponse.ok) {
+          const data = await settingsResponse.json();
+          setSettings(data);
+          setFormData({
+            agentName: data.agentName || '',
+            brandColor: data.brandColor || '#FF6B35',
+            voiceEnabled: data.voiceEnabled ?? true,
+            customUrl: data.customUrl || '',
+            welcomeMessage: data.welcomeMessage || '',
+            instructions: data.instructions || '',
+            avatarUrl: data.avatarUrl || '',
+            newPassword: '',
+            chatLimit: data.chatLimit || 0,
+          });
+          setAvatarPreview(data.avatarUrl || '');
+        }
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to reset agent training')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to reset agent training');
       }
     } catch (error) {
-      toast.error('An error occurred while resetting agent training.')
+      toast.error('An error occurred while resetting agent training.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleClearHistory = async () => {
-    setIsLoading(true)
+    setIsLoading(true);
     try {
       const response = await fetch('/api/clear-history', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
+        headers: { 'Content-Type': 'application/json' },
+      });
       if (response.ok) {
-        toast.success('Chat history cleared successfully!')
+        toast.success('Chat history cleared successfully!');
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to clear chat history')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to clear chat history');
       }
     } catch (error) {
-      toast.error('An error occurred while clearing chat history.')
+      toast.error('An error occurred while clearing chat history.');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   const handleAccountDeletion = async () => {
-    setIsDeleting(true)
+    setIsDeleting(true);
     try {
       const response = await fetch('/api/delete-account', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' }
-      })
+        headers: { 'Content-Type': 'application/json' },
+      });
       if (response.ok) {
-        toast.success('Account deletion request sent. You will be logged out.')
-        // Redirect to logout or home page
-        window.location.href = '/logout'
+        toast.success('Account deletion request sent. You will be logged out.');
+        window.location.href = '/logout';
       } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to delete account')
+        const error = await response.json();
+        toast.error(error.error || 'Failed to delete account');
       }
     } catch (error) {
-      toast.error('An error occurred while deleting account.')
+      toast.error('An error occurred while deleting account.');
     } finally {
-      setIsDeleting(false)
+      setIsDeleting(false);
     }
-  }
-
+  };
 
   const fetchPage = async (page: number) => {
     setLoading(true);
@@ -553,7 +574,6 @@ export default function SettingsPage() {
     setLoading(false);
   };
 
-  // Go to previous page
   const fetchPreviousPage = () => {
     const prevPage = bookingHistory?.meta?.current_page
       ? bookingHistory.meta.current_page - 1
@@ -564,7 +584,6 @@ export default function SettingsPage() {
     }
   };
 
-  // Go to next page
   const fetchNextPage = () => {
     const nextPage = bookingHistory?.meta?.current_page
       ? bookingHistory.meta.current_page + 1
@@ -573,8 +592,8 @@ export default function SettingsPage() {
     fetchPage(nextPage);
   };
 
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://earnlinks.ai'
-  const chatUrl = formData.customUrl ? `${baseUrl}/chat/${formData.customUrl}` : ''
+  const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://earnlinks.ai';
+  const chatUrl = formData.customUrl ? `${baseUrl}/chat/${formData.customUrl}` : '';
 
   return (
     <DashboardLayout>
@@ -774,10 +793,11 @@ export default function SettingsPage() {
                   <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     Subscription
                     <div
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${subscription?.subscription_status
-                        ? "bg-green-50 text-green-700 border-green-200"
-                        : "bg-red-50 text-red-600 border-red-200"
-                        }`}
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                        subscription?.subscription_status
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-red-50 text-red-600 border-red-200'
+                      }`}
                     >
                       {subscription?.subscription_status ? (
                         <>
@@ -801,25 +821,25 @@ export default function SettingsPage() {
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Plan Name</p>
                         <p className="text-base font-medium text-gray-800">
-                          {subscription?.product.product_name || "N/A"}
+                          {subscription?.product.product_name || 'N/A'}
                         </p>
                       </div>
 
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Subscription Type</p>
                         <p className="text-base font-medium text-gray-800 capitalize">
-                          {subscription?.subscription_type || "N/A"}
+                          {subscription?.subscription_type || 'N/A'}
                         </p>
                       </div>
 
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Plan Billing</p>
                         <p className="text-base font-medium text-gray-800">
-                          {(subscription?.currency?.currency_symbol || "$") +
+                          {(subscription?.currency?.currency_symbol || '$') +
                             (subscription?.plan?.amount != null
                               ? (subscription.plan.amount / 100).toFixed(2)
-                              : "0.00")}{" "}
-                          / {subscription?.plan?.interval || "N/A"}
+                              : '0.00')}{' '}
+                          / {subscription?.plan?.interval || 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -831,7 +851,7 @@ export default function SettingsPage() {
                         <p className="text-base font-medium text-gray-800">
                           {subscription?.start_date
                             ? new Date(subscription.start_date * 1000).toLocaleDateString()
-                            : "N/A"}
+                            : 'N/A'}
                         </p>
                       </div>
 
@@ -847,7 +867,7 @@ export default function SettingsPage() {
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Platform</p>
                         <p className="text-base font-medium text-gray-800">
-                          {subscription?.subscription_platform || "N/A"}
+                          {subscription?.subscription_platform || 'N/A'}
                         </p>
                       </div>
                     </div>
@@ -872,12 +892,8 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-end gap-2">
-                    <p className="text-4xl font-bold text-green-600">
-                      {tokendetails?.tokenBalance}
-                    </p>
-                    <p className="text-lg text-gray-800 font-semibold">
-                      / {tokendetails?.totalTokenPurchase}
-                    </p>
+                    <p className="text-4xl font-bold text-green-600">{tokendetails?.tokenBalance}</p>
+                    <p className="text-lg text-gray-800 font-semibold">/ {tokendetails?.totalTokenPurchase}</p>
                   </div>
 
                   {/* Progress Bar */}
@@ -885,38 +901,20 @@ export default function SettingsPage() {
                     <div
                       className="bg-green-500 h-3 rounded-full transition-all duration-300"
                       style={{
-                        width: `${tokendetails?.tokenBalance !== undefined &&
+                        width: `${
+                          tokendetails?.tokenBalance !== undefined &&
                           tokendetails?.totalTokenPurchase !== undefined &&
                           tokendetails?.totalTokenPurchase > 0
-                          ? (tokendetails.tokenBalance / tokendetails.totalTokenPurchase) * 100
-                          : 0
-                          }%`,
+                            ? (tokendetails.tokenBalance / tokendetails.totalTokenPurchase) * 100
+                            : 0
+                        }%`,
                       }}
                     ></div>
                   </div>
 
-
                   <p className="text-sm text-gray-500">
                     Tokens are used to access brand contact information. 1 token = 1 contact unlock.
                   </p>
-
-                  {/* Explanation */}
-                  {/* <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 border border-gray-200">
-                    <p><strong>How tokens work:</strong></p>
-                    <ul className="list-disc list-inside mt-1 space-y-1">
-                      <li>You start with {tokendetails?.totalTokenPurchase} tokens.</li>
-                      <li>
-                        You have used{" "}
-                        {tokendetails?.totalTokenPurchase !== undefined &&
-                          tokendetails?.tokenBalance !== undefined
-                          ? tokendetails.totalTokenPurchase - tokendetails.tokenBalance
-                          : 0}{" "}
-                        tokens.
-                      </li>
-
-                      <li>Each token lets you access 1 brand's contact details.</li>
-                    </ul>
-                  </div> */}
                 </CardContent>
               </Card>
 
@@ -929,17 +927,19 @@ export default function SettingsPage() {
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Card Brand</p>
                     <div className="flex items-center gap-2">
-                      {paymentCardDetails?.brand === "visa" ? (
+                      {paymentCardDetails?.brand === 'visa' ? (
                         <FaCcVisa className="h-5 w-5 text-blue-600" />
-                      ) : paymentCardDetails?.brand === "mastercard" ? (
+                      ) : paymentCardDetails?.brand === 'mastercard' ? (
                         <FaCcMastercard className="h-5 w-5 text-red-600" />
-                      ) : paymentCardDetails?.brand === "amex" ? (
+                      ) : paymentCardDetails?.brand === 'amex' ? (
                         <FaCcAmex className="h-5 w-5 text-blue-500" />
                       ) : (
                         <CreditCard className="h-4 w-4 text-gray-400" />
                       )}
                       <p className="text-base font-medium text-gray-800 capitalize">
-                        {paymentCardDetails?.brand ? `${paymentCardDetails.brand.charAt(0).toUpperCase() + paymentCardDetails.brand.slice(1)}` : "N/A"}
+                        {paymentCardDetails?.brand
+                          ? `${paymentCardDetails.brand.charAt(0).toUpperCase() + paymentCardDetails.brand.slice(1)}`
+                          : 'N/A'}
                       </p>
                     </div>
                   </div>
@@ -949,7 +949,7 @@ export default function SettingsPage() {
                     <div className="flex items-center gap-2">
                       <CreditCard className="h-4 w-4 text-gray-400" />
                       <p className="text-base font-medium text-gray-800">
-                        {paymentCardDetails?.last_4 ? `•••• ${paymentCardDetails.last_4}` : "•••• ••••"}
+                        {paymentCardDetails?.last_4 ? `•••• ${paymentCardDetails.last_4}` : '•••• ••••'}
                       </p>
                     </div>
                   </div>
@@ -958,8 +958,10 @@ export default function SettingsPage() {
                     <p className="text-sm text-gray-500 mb-1">Expires</p>
                     <p className="text-base font-medium text-gray-800">
                       {paymentCardDetails?.expiry_month && paymentCardDetails?.expiry_year
-                        ? `${String(paymentCardDetails.expiry_month).padStart(2, '0')}/${String(paymentCardDetails.expiry_year).slice(-2)}`
-                        : "MM/YY"}
+                        ? `${String(paymentCardDetails.expiry_month).padStart(2, '0')}/${String(
+                            paymentCardDetails.expiry_year
+                          ).slice(-2)}`
+                        : 'MM/YY'}
                     </p>
                   </div>
 
@@ -979,13 +981,11 @@ export default function SettingsPage() {
             {/* Token Purchase Section */}
             <Card className="border border-gray-200 rounded-lg shadow-sm">
               <CardHeader className="border-b border-gray-200">
-                <CardTitle className="text-lg font-semibold text-gray-800">
-                  Purchase More Tokens
-                </CardTitle>
+                <CardTitle className="text-lg font-semibold text-gray-800">Purchase More Tokens</CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {tokendetails?.products?.plans?.map((plan: TokenPlan, index: Number) => {
+                  {tokendetails?.products?.plans?.map((plan: TokenPlan, index: number) => {
                     const perToken = (plan.amount / plan.token).toFixed(2);
                     const isPopular = index === 1; // mark second plan as "POPULAR" by default
 
@@ -1000,19 +1000,13 @@ export default function SettingsPage() {
                           </div>
                         )}
                         <div className="space-y-2">
-                          <h3 className="text-lg font-semibold text-gray-800">
-                            {plan.token} Tokens
-                          </h3>
-                          <p className="text-sm text-gray-500">
-                            {plan.shortDescription || "Ideal plan"}
-                          </p>
+                          <h3 className="text-lg font-semibold text-gray-800">{plan.token} Tokens</h3>
+                          <p className="text-sm text-gray-500">{plan.shortDescription || 'Ideal plan'}</p>
                           <p className="text-xl font-bold text-gray-900">
-                            {plan.currency?.currency_symbol || "$"}
+                            {plan.currency?.currency_symbol || '$'}
                             {plan.amount.toFixed(2)}
                           </p>
-                          <p className="text-xs text-gray-500">
-                            ${perToken} per token
-                          </p>
+                          <p className="text-xs text-gray-500">${perToken} per token</p>
                           <Button className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-white">
                             Select
                           </Button>
@@ -1035,28 +1029,40 @@ export default function SettingsPage() {
                   <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Invoice</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Period</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Date
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Invoice
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Period
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Amount
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Actions
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
                       {bookingHistory?.subscriptions && bookingHistory.subscriptions.length > 0 ? (
-                        bookingHistory.subscriptions.map((item: Subscription) => (
+                        bookingHistory.subscriptions.map((item: SubscriptionHistory) => (
                           <tr key={item.payment_id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {format(new Date(item.created_at), "MMM dd, yyyy")}
+                              {format(new Date(item.created_at), 'MMM dd, yyyy')}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {item.stripe_invoice_id}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {`${format(new Date(Number(item.period_start) * 1000), "MMM dd")} - ${format(
+                              {`${format(new Date(Number(item.period_start) * 1000), 'MMM dd, yyyy')} - ${format(
                                 new Date(Number(item.period_end) * 1000),
-                                "MMM dd, yyyy"
+                                'MMM dd, yyyy'
                               )}`}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
@@ -1064,10 +1070,11 @@ export default function SettingsPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${subscription?.subscription_status
-                                    ? "bg-green-50 text-green-700 border-green-200"
-                                    : "bg-red-50 text-red-600 border-red-200"
-                                  }`}
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
+                                  subscription?.subscription_status
+                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                    : 'bg-red-50 text-red-600 border-red-200'
+                                }`}
                               >
                                 {subscription?.subscription_status ? (
                                   <>
@@ -1098,36 +1105,33 @@ export default function SettingsPage() {
                         ))
                       ) : (
                         <tr>
-                          <td
-                            colSpan={6}
-                            className="px-6 py-4 text-center text-sm text-gray-500 bg-gray-50"
-                          >
+                          <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500 bg-gray-50">
                             No bills available
                           </td>
                         </tr>
                       )}
                     </tbody>
-
                   </table>
                 </div>
 
                 {/* Pagination Footer */}
                 <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 gap-4">
                   <div className="text-sm text-gray-500">
-                    Showing{" "}
+                    Showing{' '}
                     <span className="font-medium">
-                      {(bookingHistory?.meta?.current_page ? bookingHistory.meta.current_page - 1 : 0) * (bookingHistory?.meta?.limit ?? 0) + 1}
-                    </span>{" "}
-                    to{" "}
+                      {(bookingHistory?.meta?.current_page ? bookingHistory.meta.current_page - 1 : 0) *
+                        (bookingHistory?.meta?.limit ?? 0) +
+                        1}
+                    </span>{' '}
+                    to{' '}
                     <span className="font-medium">
                       {Math.min(
                         (bookingHistory?.meta?.current_page ?? 1) * (bookingHistory?.meta?.limit ?? 0),
                         bookingHistory?.meta?.total ?? 0
                       )}
-                    </span>{" "}
+                    </span>{' '}
                     of <span className="font-medium">{bookingHistory?.meta?.total ?? 0}</span> entries
                   </div>
-
 
                   <div className="flex gap-1">
                     <Button
@@ -1141,22 +1145,20 @@ export default function SettingsPage() {
                     </Button>
 
                     {Array.from({
-                      length: Math.ceil(
-                        (bookingHistory?.meta?.total ?? 0) / (bookingHistory?.meta?.limit ?? 1)
-                      )
-                    }).map(
-                      (_, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          size="sm"
-                          className={`border-gray-300 ${bookingHistory?.meta?.current_page === index + 1 ? "bg-gray-100" : ""}`}
-                          onClick={() => fetchPage(index + 1)}
-                        >
-                          {index + 1}
-                        </Button>
-                      )
-                    )}
+                      length: Math.ceil((bookingHistory?.meta?.total ?? 0) / (bookingHistory?.meta?.limit ?? 1)),
+                    }).map((_, index) => (
+                      <Button
+                        key={index}
+                        variant="outline"
+                        size="sm"
+                        className={`border-gray-300 ${
+                          bookingHistory?.meta?.current_page === index + 1 ? 'bg-gray-100' : ''
+                        }`}
+                        onClick={() => fetchPage(index + 1)}
+                      >
+                        {index + 1}
+                      </Button>
+                    ))}
 
                     <Button
                       variant="outline"
@@ -1170,8 +1172,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </CardContent>
-
-
             </Card>
           </TabsContent>
 
@@ -1179,9 +1179,7 @@ export default function SettingsPage() {
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle>Branding & Appearance</CardTitle>
-                <CardDescription>
-                  Customize the visual appearance of your AI agent interface
-                </CardDescription>
+                <CardDescription>Customize the visual appearance of your AI agent interface</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1261,7 +1259,6 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </CardContent>
-
             </Card>
           </TabsContent>
 
@@ -1269,9 +1266,7 @@ export default function SettingsPage() {
             <Card className="border-0 shadow-lg">
               <CardHeader>
                 <CardTitle>Account Information</CardTitle>
-                <CardDescription>
-                  Manage your account details and security settings
-                </CardDescription>
+                <CardDescription>Manage your account details and security settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Account Features */}
@@ -1317,7 +1312,10 @@ export default function SettingsPage() {
 
                     <form className="space-y-5" onSubmit={handlePasswordChange}>
                       <div className="space-y-3">
-                        <Label htmlFor="currentPassword" className="text-sm font-medium flex items-center justify-between">
+                        <Label
+                          htmlFor="currentPassword"
+                          className="text-sm font-medium flex items-center justify-between"
+                        >
                           Current Password
                           {currentPasswordError && (
                             <span className="text-red-500 text-xs">{currentPasswordError}</span>
@@ -1326,7 +1324,7 @@ export default function SettingsPage() {
                         <div className="relative">
                           <Input
                             id="currentPassword"
-                            type={showCurrent ? "text" : "password"}
+                            type={showCurrent ? 'text' : 'password'}
                             placeholder="Enter your current password"
                             className="pr-10"
                             value={currentPassword}
@@ -1339,7 +1337,7 @@ export default function SettingsPage() {
                             type="button"
                             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                             onClick={() => setShowCurrent(!showCurrent)}
-                            aria-label={showCurrent ? "Hide password" : "Show password"}
+                            aria-label={showCurrent ? 'Hide password' : 'Show password'}
                           >
                             {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
@@ -1353,7 +1351,7 @@ export default function SettingsPage() {
                         <div className="relative">
                           <Input
                             id="newPassword"
-                            type={showNew ? "text" : "password"}
+                            type={showNew ? 'text' : 'password'}
                             placeholder="Create a new password (min 8 characters)"
                             className="pr-10"
                             value={formData.newPassword}
@@ -1363,7 +1361,7 @@ export default function SettingsPage() {
                             type="button"
                             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                             onClick={() => setShowNew(!showNew)}
-                            aria-label={showNew ? "Hide password" : "Show password"}
+                            aria-label={showNew ? 'Hide password' : 'Show password'}
                           >
                             {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
@@ -1372,7 +1370,7 @@ export default function SettingsPage() {
                           {[1, 2, 3, 4].map((i) => (
                             <div
                               key={i}
-                              className={`h-1 rounded-full ${passwordStrength >= i ? "bg-green-500" : "bg-gray-200"}`}
+                              className={`h-1 rounded-full ${passwordStrength >= i ? 'bg-green-500' : 'bg-gray-200'}`}
                             ></div>
                           ))}
                         </div>
@@ -1413,7 +1411,10 @@ export default function SettingsPage() {
                       </div>
 
                       <div className="space-y-3">
-                        <Label htmlFor="confirmPassword" className="text-sm font-medium flex items-center justify-between">
+                        <Label
+                          htmlFor="confirmPassword"
+                          className="text-sm font-medium flex items-center justify-between"
+                        >
                           Confirm New Password
                           {confirmPasswordError && (
                             <span className="text-red-500 text-xs">{confirmPasswordError}</span>
@@ -1422,7 +1423,7 @@ export default function SettingsPage() {
                         <div className="relative">
                           <Input
                             id="confirmPassword"
-                            type={showConfirm ? "text" : "password"}
+                            type={showConfirm ? 'text' : 'password'}
                             placeholder="Re-enter your new password"
                             className="pr-10"
                             value={confirmPassword}
@@ -1435,7 +1436,7 @@ export default function SettingsPage() {
                             type="button"
                             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
                             onClick={() => setShowConfirm(!showConfirm)}
-                            aria-label={showConfirm ? "Hide password" : "Show password"}
+                            aria-label={showConfirm ? 'Hide password' : 'Show password'}
                           >
                             {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
@@ -1452,7 +1453,9 @@ export default function SettingsPage() {
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             Updating...
                           </div>
-                        ) : 'Update Password'}
+                        ) : (
+                          'Update Password'
+                        )}
                       </Button>
                     </form>
                   </div>
@@ -1509,7 +1512,8 @@ export default function SettingsPage() {
                       <div className="border-t pt-4">
                         <h4 className="font-medium text-gray-900 mb-2">Delete Account</h4>
                         <p className="text-sm text-gray-600 mb-3">
-                          Permanently remove your account and all associated data from our systems. This action is irreversible.
+                          Permanently remove your account and all associated data from our systems. This action is
+                          irreversible.
                         </p>
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
@@ -1525,7 +1529,8 @@ export default function SettingsPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete your account and remove all your data from our servers.
+                                This action cannot be undone. This will permanently delete your account and remove all
+                                your data from our servers.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
@@ -1540,7 +1545,9 @@ export default function SettingsPage() {
                                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                     Deleting...
                                   </div>
-                                ) : 'Delete Account'}
+                                ) : (
+                                  'Delete Account'
+                                )}
                               </AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
@@ -1555,5 +1562,5 @@ export default function SettingsPage() {
         </Tabs>
       </div>
     </DashboardLayout>
-  )
+  );
 }
