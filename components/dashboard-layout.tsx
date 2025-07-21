@@ -20,7 +20,7 @@ import {
 import { toast } from "sonner";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { Logout } from "@/services/authService";
-import logo from "@/public/Linklogo.png";
+import logo from "@/public/Linklogo.png"
 import logoDark from "@/public/logo2.png";
 
 interface DashboardLayoutProps {

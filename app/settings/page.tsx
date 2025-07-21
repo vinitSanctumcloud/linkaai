@@ -10,9 +10,100 @@ import { toast } from 'sonner'
 import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog'
-import { fetchBillingHistory, fetchPaymentDetails, fetchSubscriptionDetails, fetchTokenDetails } from '@/services/subscription'
+
 import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
 import { format } from "date-fns";
+import { API } from "@/config/api";
+
+// === API FUNCTIONS ===
+
+export const fetchSubscriptionDetails = async () => {
+  try {
+    const res = await fetch(API.SUBSCRIPTION_DETIALS, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
+
+    const data = await res.json();
+    if (data.data.subscription?.plan) {
+      return data.data.subscription;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Failed to fetch subscription details:", error);
+    return null;
+  }
+};
+
+export const fetchPaymentDetails = async () => {
+  try {
+    const res = await fetch(API.PAYMENT_METHOD, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
+
+    const data = await res.json();
+    if (data.message === "Success.") {
+      return data.data.payment_method.card;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Failed to fetch payment details:", error);
+    return null;
+  }
+};
+
+export const fetchTokenDetails = async () => {
+  try {
+    const res = await fetch(API.GET_TOKEN_PLAN, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
+
+    const data = await res.json();
+    if (data.message === "Success") {
+      return data.data;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Failed to fetch token details:", error);
+    return null;
+  }
+};
+
+export const fetchBillingHistory = async (page = 1) => {
+  try {
+    const res = await fetch(`${API.BILLING_HISTORY}?page=${page}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+      },
+    });
+
+    const data = await res.json();
+    if (data.message === "Success") {
+      return data.data;
+    } else {
+      return null;
+    }
+  } catch (error) {
+    console.error("Failed to fetch billing history:", error);
+    return null;
+  }
+};
 
 interface Settings {
   id: string
