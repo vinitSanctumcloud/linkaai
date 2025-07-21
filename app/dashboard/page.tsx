@@ -1,11 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { DashboardLayout } from '@/components/dashboard-layout';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
+import { useEffect, useState } from "react";
+import { DashboardLayout } from "@/components/dashboard-layout";
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import Link from "next/link";
 import {
   TrendingUp,
   Users,
@@ -21,9 +28,9 @@ import {
   ShoppingBag,
   Settings,
   LayoutTemplate,
-  CheckCircle
-} from 'lucide-react';
-import { motion } from 'framer-motion';
+  CheckCircle,
+} from "lucide-react";
+import { motion } from "framer-motion";
 
 interface AnalyticsSummary {
   totalClicks: number;
@@ -50,7 +57,10 @@ export default function DashboardPage() {
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <Button asChild className="bg-orange-600 hover:bg-orange-700 text-white mb-3">
+                <Button
+                  asChild
+                  className="bg-orange-600 hover:bg-orange-700 text-white mb-3"
+                >
                   <Link href="/pricing">Subscription</Link>
                 </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white select-text">
@@ -59,15 +69,25 @@ export default function DashboardPage() {
                   </span>
                   <motion.span
                     className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
-                    animate={{ backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'] }}
-                    transition={{ duration: 4, repeat: Infinity, ease: 'linear' }}
-                    style={{ backgroundSize: '200% 200%', marginLeft: '0.50rem' }}
+                    animate={{
+                      backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    style={{
+                      backgroundSize: "200% 200%",
+                      marginLeft: "0.50rem",
+                    }}
                   >
                     User!
                   </motion.span>
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-lg select-text">
-                  Here's what's happening with your AI agent today. Let's make some sales!
+                  Here's what's happening with your AI agent today. Let's make
+                  some sales!
                 </p>
               </div>
               <div className="hidden sm:block">
@@ -93,7 +113,9 @@ export default function DashboardPage() {
                 </div>
                 <div className="absolute -inset-2 rounded-full bg-orange-400/30 animate-ping opacity-75 pointer-events-none"></div>
               </div>
-              <p className="text-gray-500 dark:text-gray-400 font-medium select-text">Loading your dashboard...</p>
+              <p className="text-gray-500 dark:text-gray-400 font-medium select-text">
+                Loading your dashboard...
+              </p>
               <div className="w-48 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
                 <div className="h-full bg-gradient-to-r from-orange-400 to-amber-400 animate-progress pointer-events-none"></div>
               </div>
@@ -104,7 +126,7 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 md:gap-6">
               <StatCard
                 title="Total Chat"
-                value={analytics?.totalViews?.toLocaleString() || '0'}
+                value={analytics?.totalViews?.toLocaleString() || "0"}
                 icon={<Users className="h-5 w-5" />}
                 trend="up"
                 change="5.7%"
@@ -112,15 +134,15 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="Total Clicks"
-                value={analytics?.totalClicks?.toLocaleString() || '0'}
+                value={analytics?.totalClicks?.toLocaleString() || "0"}
                 icon={<MousePointer className="h-5 w-5" />}
                 trend="up"
                 change="8.2%"
                 period="Last 7 days"
               />
-              <StatCard
+              {/* <StatCard
                 title="Total Revenue"
-                value={`$${analytics?.totalRevenue?.toFixed(2) || '0.00'}`}
+                value={`$${analytics?.totalRevenue?.toFixed(2) || "0.00"}`}
                 icon={<DollarSign className="h-5 w-5" />}
                 trend="up"
                 change="12.5%"
@@ -130,13 +152,22 @@ export default function DashboardPage() {
               />
               <StatCard
                 title="Conversion Rate"
-                value={`${analytics?.conversionRate || '0'}%`}
+                value={`${analytics?.conversionRate || "0"}%`}
                 icon={<TrendingUp className="h-5 w-5" />}
                 trend="up"
                 change="2.3%"
                 period="Last 7 days"
                 comingSoon={true}
-              />
+              /> */}
+              <button className="w-full rounded-2xl shadow-md p-4 bg-white hover:shadow-lg transition flex items-center justify-between relative">
+                {/* Text */}
+                <span className="text-lg font-semibold text-gray-800 -mt-1 -ml-1">
+                  Conversation Log
+                </span>
+
+                {/* Arrow Icon */}
+                <span className="text-orange-500 text-xl -mt-1">➜</span>
+              </button>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -152,10 +183,11 @@ export default function DashboardPage() {
                       </div>
                       <div className="select-text">
                         <CardTitle className="text-xl font-bold text-gray-900 dark:text-white">
-                          {settings?.agentName || 'AI Shopping Assistant'}
+                          {settings?.agentName || "AI Shopping Assistant"}
                         </CardTitle>
                         <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
-                          Your personalized AI agent is ready to boost your sales
+                          Your personalized AI agent is ready to boost your
+                          sales
                         </CardDescription>
                       </div>
                     </div>
@@ -168,20 +200,28 @@ export default function DashboardPage() {
                             <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse pointer-events-none"></div>
                             <div className="absolute -inset-1 rounded-full bg-green-500/30 animate-ping opacity-75 pointer-events-none"></div>
                           </div>
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Live Status</span>
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                            Live Status
+                          </span>
                         </div>
-                        <Badge variant="outline" className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800">
+                        <Badge
+                          variant="outline"
+                          className="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 border-green-200 dark:border-green-800"
+                        >
                           Active & Online
                         </Badge>
                       </div>
                       <div className="flex items-center justify-between py-3 border-b border-gray-100 dark:border-gray-800 group-hover:bg-gray-50/50 dark:group-hover:bg-gray-800/50 px-2 -mx-2 rounded-lg transition-colors duration-300">
                         <div className="flex items-center space-x-3">
                           <div className="h-2 w-2 rounded-full bg-blue-500 pointer-events-none"></div>
-                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">Affiliate Links</span>
+                          <span className="text-sm font-medium text-gray-600 dark:text-gray-300">
+                            Monetization
+                          </span>
                         </div>
                         <div className="flex items-center">
                           <span className="text-sm font-medium text-gray-900 dark:text-white mr-2">
-                            {affiliateLinksCount} {affiliateLinksCount === 1 ? 'product' : 'products'}
+                            {affiliateLinksCount}{" "}
+                            {affiliateLinksCount === 1 ? "Link" : "Links"}
                           </span>
                           <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-300" />
                         </div>
@@ -203,15 +243,23 @@ export default function DashboardPage() {
                   <CardContent className="pt-0">
                     <div className="space-y-3">
                       <Link href="/agent" passHref legacyBehavior>
-                        <Button asChild variant="outline" className="w-full cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="w-full cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group"
+                        >
                           <div>
                             <div className="flex items-center">
                               <div className="mr-3 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
                                 <Plus className="h-5 w-5 text-orange-600" />
                               </div>
                               <div className="text-left">
-                                <div className="font-medium text-gray-900 dark:text-white select-text">Affiliate Links</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 select-text">Connect your products</div>
+                                <div className="font-medium text-gray-900 dark:text-white select-text">
+                                  Affiliate Links
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 select-text">
+                                  Connect your products
+                                </div>
                               </div>
                             </div>
                             <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-200" />
@@ -219,15 +267,23 @@ export default function DashboardPage() {
                         </Button>
                       </Link>
                       <Link href="/embed" passHref legacyBehavior>
-                        <Button asChild variant="outline" className="w-full cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="w-full cursor-pointer justify-between px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group"
+                        >
                           <div>
                             <div className="flex items-center">
                               <div className="mr-3 p-2bg-gray-100 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
                                 <Bot className="h-5 w-5 text-blue-600" />
                               </div>
                               <div className="text-left">
-                                <div className="font-medium text-gray-900 dark:text-white select-text">Share Agent & Grow</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 select-text">Share on social. Embed on Website</div>
+                                <div className="font-medium text-gray-900 dark:text-white select-text">
+                                  Share Agent & Grow
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 select-text">
+                                  Share on social. Embed on Website
+                                </div>
                               </div>
                             </div>
                             <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-200" />
@@ -235,15 +291,23 @@ export default function DashboardPage() {
                         </Button>
                       </Link>
                       <Link href="/analytics" passHref legacyBehavior>
-                        <Button asChild variant="outline" className="w-full justify-between cursor-pointer px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group">
+                        <Button
+                          asChild
+                          variant="outline"
+                          className="w-full justify-between cursor-pointer px-4 py-5 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors duration-200 group"
+                        >
                           <div>
                             <div className="flex items-center">
                               <div className="mr-3 p-2bg-gray-100 rounded-lg group-hover:bg-white dark:group-hover:bg-gray-700/70 transition-colors duration-200">
                                 <BarChart3 className="h-5 w-5 text-purple-600" />
                               </div>
                               <div className="text-left">
-                                <div className="font-medium text-gray-900 dark:text-white select-text">View Analytics</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400 select-text">Track performance</div>
+                                <div className="font-medium text-gray-900 dark:text-white select-text">
+                                  View Analytics
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 select-text">
+                                  Track performance
+                                </div>
                               </div>
                             </div>
                             <ChevronRight className="h-4 w-4 text-gray-400 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors duration-200" />
@@ -263,7 +327,8 @@ export default function DashboardPage() {
                     Let's Get You Started!
                   </CardTitle>
                   <CardDescription className="text-orange-800/90 dark:text-orange-300/90 select-text">
-                    Follow these simple steps to launch your AI monetization agent
+                    Follow these simple steps to launch your AI monetization
+                    agent
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="relative z-10">
@@ -341,22 +406,37 @@ export default function DashboardPage() {
 
       <style jsx global>{`
         @keyframes progress {
-          0% { width: 0%; }
-          100% { width: 100%; }
+          0% {
+            width: 0%;
+          }
+          100% {
+            width: 100%;
+          }
         }
         .animate-progress {
           animation: progress 1.5s ease-in-out forwards;
         }
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(10px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
         .animate-fade-in {
           animation: fadeIn 0.6s ease-out forwards;
         }
         @keyframes float-slow {
-          0%, 100% { transform: translateY(0); }
-          50% { transform: translateY(-8px); }
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
         }
         .animate-float-slow {
           animation: float-slow 8s ease-in-out infinite;
@@ -369,26 +449,37 @@ export default function DashboardPage() {
   );
 }
 
-function StatCard({ title, value, icon, trend, change, period, currency = false, comingSoon = false }: {
+function StatCard({
+  title,
+  value,
+  icon,
+  trend,
+  change,
+  period,
+  currency = false,
+  comingSoon = false,
+}: {
   title: string;
   value: string;
   icon: React.ReactNode;
-  trend: 'up' | 'down';
+  trend: "up" | "down";
   change: string;
   period: string;
   currency?: boolean;
   comingSoon?: boolean;
 }) {
   const trendColors = {
-    up: 'text-emerald-600 dark:text-emerald-400',
-    down: 'text-red-600 dark:text-red-400',
+    up: "text-emerald-600 dark:text-emerald-400",
+    down: "text-red-600 dark:text-red-400",
   };
   return (
     <Card className="border border-gray-200 dark:border-gray-700 rounded-xl shadow-md hover:shadow-lg transition-all duration-300 bg-white/70 dark:bg-gray-800/70 backdrop-blur-md overflow-hidden group relative">
       {comingSoon && (
         <div className="absolute -right-2 top-3 z-20 overflow-hidden">
-          <div className="relative bg-gradient-to-r from-amber-500 to-amber-600 h-6 flex items-center justify-center shadow-sm 
-                         transform transition-all duration-300 group-hover:translate-y-0.5 group-hover:shadow-md">
+          <div
+            className="relative bg-gradient-to-r from-amber-500 to-amber-600 h-6 flex items-center justify-center shadow-sm 
+                         transform transition-all duration-300 group-hover:translate-y-0.5 group-hover:shadow-md"
+          >
             <div className="text-white text-xs font-bold uppercase tracking-wider px-3 rounded-md">
               Coming Soon
             </div>
@@ -400,18 +491,26 @@ function StatCard({ title, value, icon, trend, change, period, currency = false,
       {comingSoon && (
         <div className="absolute inset-0 z-10 bg-white/30 dark:bg-black/20 transition-opacity duration-300 group-hover:opacity-70" />
       )}
-      <CardContent className={`p-4 md:p-6 relative ${comingSoon ? 'opacity-90 group-hover:opacity-100 transition-opacity duration-300' : ''}`}>
+      <CardContent
+        className={`p-4 md:p-6 relative ${comingSoon ? "opacity-90 group-hover:opacity-100 transition-opacity duration-300" : ""}`}
+      >
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">{title}</p>
-            <p className={`text-2xl font-bold text-gray-900 dark:text-white mt-1 ${currency ? 'font-mono' : ''}`}>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
+              {title}
+            </p>
+            <p
+              className={`text-2xl font-bold text-gray-900 dark:text-white mt-1 ${currency ? "font-mono" : ""}`}
+            >
               {value}
             </p>
             <div className="flex items-center mt-2">
               <span className={`text-xs font-medium ${trendColors[trend]}`}>
-                {trend === 'up' ? '↑' : '↓'} {change}
+                {trend === "up" ? "↑" : "↓"} {change}
               </span>
-              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">• {period}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                • {period}
+              </span>
             </div>
           </div>
           <div className="h-10 w-10 rounded-full bg-white/70 dark:bg-black/20 flex items-center justify-center backdrop-blur-sm shadow-inner group-hover:scale-110 transition-transform duration-300 pointer-events-none">
@@ -423,7 +522,14 @@ function StatCard({ title, value, icon, trend, change, period, currency = false,
   );
 }
 
-function OnboardingStep({ step, title, description, buttonText, href, icon }: {
+function OnboardingStep({
+  step,
+  title,
+  description,
+  buttonText,
+  href,
+  icon,
+}: {
   step: number;
   title: string;
   description: string;
@@ -461,23 +567,33 @@ function OnboardingStep({ step, title, description, buttonText, href, icon }: {
   );
 }
 
-function TipCard({ title, description, icon, color }: {
+function TipCard({
+  title,
+  description,
+  icon,
+  color,
+}: {
   title: string;
   description: string;
   icon: string;
   color: string;
 }) {
   const colorClasses = {
-    purple: 'bg-violet-100 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400',
-    blue: 'bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',
-    emerald: 'bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400',
-    orange: 'bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400',
+    purple:
+      "bg-violet-100 dark:bg-violet-900/20 text-violet-600 dark:text-violet-400",
+    blue: "bg-blue-100 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400",
+    emerald:
+      "bg-emerald-100 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400",
+    orange:
+      "bg-orange-100 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400",
   };
 
   return (
     <div className="bg-white/80 dark:bg-gray-800/80 p-4 rounded-xl border border-gray-200 dark:border-gray-700 backdrop-blur-sm hover:shadow-md transition-all duration-300 hover:- overflow-hidden group">
       <div className="relative z-10 select-text">
-        <div className={`h-10 w-10 ${colorClasses[color as keyof typeof colorClasses]} rounded-lg flex items-center justify-center mb-3 shadow-inner group-hover:scale-110 transition-transform duration-300 pointer-events-none`}>
+        <div
+          className={`h-10 w-10 ${colorClasses[color as keyof typeof colorClasses]} rounded-lg flex items-center justify-center mb-3 shadow-inner group-hover:scale-110 transition-transform duration-300 pointer-events-none`}
+        >
           <span className="text-xl">{icon}</span>
         </div>
         <h3 className="font-medium text-gray-900 dark:text-white mb-1 group-hover:text-gray-950 dark:group-hover:text-gray-100 transition-colors duration-300">
@@ -493,7 +609,7 @@ function TipCard({ title, description, icon, color }: {
 
 function getTimeOfDay() {
   const hour = new Date().getHours();
-  if (hour < 12) return 'morning';
-  if (hour < 18) return 'afternoon';
-  return 'evening';
+  if (hour < 12) return "morning";
+  if (hour < 18) return "afternoon";
+  return "evening";
 }

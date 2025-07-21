@@ -1,18 +1,24 @@
-'use client'
+"use client";
 
-import { useEffect, useState, useCallback } from 'react'
-import { DashboardLayout } from '@/components/dashboard-layout'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { useEffect, useState, useCallback } from "react";
+import { DashboardLayout } from "@/components/dashboard-layout";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 import {
   TrendingUp,
   Users,
@@ -34,59 +40,75 @@ import {
   TabletSmartphone,
   Landmark,
   ArrowRight,
-} from 'lucide-react'
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, BarChart, Bar, PieChart, Pie, Cell, Legend, AreaChart, Area } from 'recharts'
-import { Skeleton } from '@/components/ui/skeleton'
-import { motion, AnimatePresence } from 'framer-motion'
+} from "lucide-react";
+import {
+  ResponsiveContainer,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+  AreaChart,
+  Area,
+} from "recharts";
+import { Skeleton } from "@/components/ui/skeleton";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Enhanced interfaces with more realistic data types
 interface AnalyticsSummary {
-  totalClicks: number
-  totalViews: number
-  totalRevenue: number
-  conversionRate: string
-  avgSessionDuration: string
-  topReferrer: string
-  topCountry: string
-  topDevice: string
-  topBrowser: string
-  bounceRate: string
-  newVisitors: number
-  returningVisitors: number
-  totalConversions: number
+  totalClicks: number;
+  totalViews: number;
+  totalRevenue: number;
+  conversionRate: string;
+  avgSessionDuration: string;
+  topReferrer: string;
+  topCountry: string;
+  topDevice: string;
+  topBrowser: string;
+  bounceRate: string;
+  newVisitors: number;
+  returningVisitors: number;
+  totalConversions: number;
 }
 
 interface DailyStats {
-  date: string
-  clicks: number
-  views: number
-  revenue: number
-  conversions: number
-  avgOrderValue: number
-  sessions: number
+  date: string;
+  clicks: number;
+  views: number;
+  revenue: number;
+  conversions: number;
+  avgOrderValue: number;
+  sessions: number;
 }
 
 interface ActivityItem {
-  type: 'click' | 'view' | 'conversion'
-  createdAt: Date
-  value: number | null
-  userAgent?: string
-  location?: string
-  referrer?: string
-  browser?: string
-  ip?: string
+  type: "click" | "view" | "conversion";
+  createdAt: Date;
+  value: number | null;
+  userAgent?: string;
+  location?: string;
+  referrer?: string;
+  browser?: string;
+  ip?: string;
 }
 
 interface AnalyticsData {
-  summary: AnalyticsSummary
-  dailyStats: DailyStats[]
-  recentActivity: ActivityItem[]
-  hourlyActivity: { hour: string; activity: number }[]
-  referrers: { name: string; value: number; icon: React.ReactNode }[]
-  devices: { name: string; value: number; icon: React.ReactNode }[]
-  countries: { name: string; value: number; flag: string }[]
-  browsers: { name: string; value: number }[]
-  revenueSources: { name: string; value: number }[]
+  summary: AnalyticsSummary;
+  dailyStats: DailyStats[];
+  recentActivity: ActivityItem[];
+  hourlyActivity: { hour: string; activity: number }[];
+  referrers: { name: string; value: number; icon: React.ReactNode }[];
+  devices: { name: string; value: number; icon: React.ReactNode }[];
+  countries: { name: string; value: number; flag: string }[];
+  browsers: { name: string; value: number }[];
+  revenueSources: { name: string; value: number }[];
 }
 
 // Generate realistic mock data with business patterns
@@ -107,7 +129,7 @@ const generateMockHourlyActivity = () => {
 
     return {
       hour: `${i}:00`,
-      activity: Math.max(20, activity) // Ensure minimum activity
+      activity: Math.max(20, activity), // Ensure minimum activity
     };
   });
 
@@ -118,21 +140,21 @@ const generateMockHourlyActivity = () => {
     const next = baseHours[i + 1].activity;
     return {
       hour: hour.hour,
-      activity: Math.floor((prev + hour.activity + next) / 3)
+      activity: Math.floor((prev + hour.activity + next) / 3),
     };
   });
-}
+};
 
 const generateDailyStats = (period: string) => {
-  const days = period === '7d' ? 7 : period === '30d' ? 30 : 24;
+  const days = period === "7d" ? 7 : period === "30d" ? 30 : 24;
   const baseDate = new Date();
 
   // Generate realistic weekly patterns
   return Array.from({ length: days }, (_, i) => {
-    const dateOffset = period === '7d' ? (6 - i) : period === '30d' ? (29 - i) : i;
+    const dateOffset = period === "7d" ? 6 - i : period === "30d" ? 29 - i : i;
     const date = new Date(baseDate);
 
-    if (period === '1d') {
+    if (period === "1d") {
       date.setHours(date.getHours() - i);
     } else {
       date.setDate(date.getDate() - dateOffset);
@@ -150,7 +172,7 @@ const generateDailyStats = (period: string) => {
     if (isMonday) baseViews *= 1.15;
 
     // Add monthly trend if viewing 30 days
-    const monthlyTrend = period === '30d' ? 1 + (i / 30) * 0.3 : 1;
+    const monthlyTrend = period === "30d" ? 1 + (i / 30) * 0.3 : 1;
 
     // Add some randomness
     const randomFactor = 0.8 + Math.random() * 0.4;
@@ -163,75 +185,102 @@ const generateDailyStats = (period: string) => {
     const sessions = Math.floor(views * (0.7 + Math.random() * 0.2));
 
     return {
-      date: date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        hour: period === '1d' ? 'numeric' : undefined,
+      date: date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        hour: period === "1d" ? "numeric" : undefined,
       }),
       clicks,
       views,
       revenue,
       conversions,
       avgOrderValue,
-      sessions
+      sessions,
     };
   }).reverse();
-}
+};
 
 export default function AnalyticsPage() {
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
-  const [period, setPeriod] = useState('7d');
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(
+    null
+  );
+  const [period, setPeriod] = useState("7d");
   const [isLoading, setIsLoading] = useState(true);
-  const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>([]);
-  const [activeTab, setActiveTab] = useState('overview');
-  const [timeOfDay, setTimeOfDay] = useState('');
+  const [realtimeActivities, setRealtimeActivities] = useState<ActivityItem[]>(
+    []
+  );
+  const [activeTab, setActiveTab] = useState("overview");
+  const [timeOfDay, setTimeOfDay] = useState("");
 
   // Set current time of day for more realistic greeting
   useEffect(() => {
     const hour = new Date().getHours();
-    if (hour < 12) setTimeOfDay('morning');
-    else if (hour < 18) setTimeOfDay('afternoon');
-    else setTimeOfDay('evening');
+    if (hour < 12) setTimeOfDay("morning");
+    else if (hour < 18) setTimeOfDay("afternoon");
+    else setTimeOfDay("evening");
   }, []);
 
   const userAgents = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15',
-    'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1',
-    'Mozilla/5.0 (Linux; Android 13; SM-S901U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36',
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.1 Safari/605.1.15",
+    "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1",
+    "Mozilla/5.0 (Linux; Android 13; SM-S901U) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36",
   ];
 
-  const browsers = ['Chrome', 'Safari', 'Firefox', 'Edge', 'Other'];
-  const locations = ['US', 'UK', 'CA', 'AU', 'DE', 'FR', 'JP', 'BR'];
-  const referrers = ['google.com', 'facebook.com', 'twitter.com', 'instagram.com', 'direct', 'newsletter'];
-  const ips = Array.from({ length: 50 }, (_, i) => `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`);
+  const browsers = ["Chrome", "Safari", "Firefox", "Edge", "Other"];
+  const locations = ["US", "UK", "CA", "AU", "DE", "FR", "JP", "BR"];
+  const referrers = [
+    "google.com",
+    "facebook.com",
+    "twitter.com",
+    "instagram.com",
+    "direct",
+    "newsletter",
+  ];
+  const ips = Array.from(
+    { length: 50 },
+    (_, i) =>
+      `192.168.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`
+  );
 
   // Enhanced real-time activity simulation
   useEffect(() => {
     if (!analyticsData) return;
 
-    const activityTypes: ('click' | 'view' | 'conversion')[] = ['click', 'view', 'conversion'];
+    const activityTypes: ("click" | "view" | "conversion")[] = [
+      "click",
+      "view",
+      "conversion",
+    ];
 
-    const interval = setInterval(() => {
-      const now = new Date();
-      const type = activityTypes[Math.floor(Math.random() * activityTypes.length)];
-      const isConversion = type === 'conversion';
-      const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
-      const isMobile = userAgent.includes('Mobile') || userAgent.includes('Android');
+    const interval = setInterval(
+      () => {
+        const now = new Date();
+        const type =
+          activityTypes[Math.floor(Math.random() * activityTypes.length)];
+        const isConversion = type === "conversion";
+        const userAgent =
+          userAgents[Math.floor(Math.random() * userAgents.length)];
+        const isMobile =
+          userAgent.includes("Mobile") || userAgent.includes("Android");
 
-      const newActivity: ActivityItem = {
-        type,
-        createdAt: now,
-        value: isConversion ? parseFloat((Math.random() * 50 + 15).toFixed(2)) : null,
-        userAgent,
-        location: locations[Math.floor(Math.random() * locations.length)],
-        referrer: referrers[Math.floor(Math.random() * referrers.length)],
-        browser: browsers[Math.floor(Math.random() * browsers.length)],
-        ip: ips[Math.floor(Math.random() * ips.length)]
-      };
+        const newActivity: ActivityItem = {
+          type,
+          createdAt: now,
+          value: isConversion
+            ? parseFloat((Math.random() * 50 + 15).toFixed(2))
+            : null,
+          userAgent,
+          location: locations[Math.floor(Math.random() * locations.length)],
+          referrer: referrers[Math.floor(Math.random() * referrers.length)],
+          browser: browsers[Math.floor(Math.random() * browsers.length)],
+          ip: ips[Math.floor(Math.random() * ips.length)],
+        };
 
-      setRealtimeActivities((prev) => [newActivity, ...prev.slice(0, 7)]);
-    }, Math.random() * 4000 + 1000); // More realistic timing
+        setRealtimeActivities((prev) => [newActivity, ...prev.slice(0, 7)]);
+      },
+      Math.random() * 4000 + 1000
+    ); // More realistic timing
 
     return () => clearInterval(interval);
   }, [analyticsData]);
@@ -240,80 +289,122 @@ export default function AnalyticsPage() {
     setIsLoading(true);
     try {
       // Simulate network delay with realistic timing
-      await new Promise((resolve) => setTimeout(resolve, 800 + Math.random() * 800));
+      await new Promise((resolve) =>
+        setTimeout(resolve, 800 + Math.random() * 800)
+      );
 
       const mockData: AnalyticsData = {
         summary: {
           totalClicks: 2487,
           totalViews: 10245,
           totalRevenue: 8568.42,
-          conversionRate: '24.3',
-          avgSessionDuration: '3m 42s',
-          topReferrer: 'instagram.com',
-          topCountry: 'United States',
-          topDevice: 'Mobile',
-          topBrowser: 'Chrome',
-          bounceRate: '32.5',
+          conversionRate: "24.3",
+          avgSessionDuration: "3m 42s",
+          topReferrer: "instagram.com",
+          topCountry: "United States",
+          topDevice: "Mobile",
+          topBrowser: "Chrome",
+          bounceRate: "32.5",
           newVisitors: 6842,
           returningVisitors: 3403,
-          totalConversions: 50
+          totalConversions: 50,
         },
         dailyStats: generateDailyStats(period),
         recentActivity: Array.from({ length: 8 }, (_, i) => {
-          const types: ('click' | 'view' | 'conversion')[] = ['click', 'view', 'conversion'];
+          const types: ("click" | "view" | "conversion")[] = [
+            "click",
+            "view",
+            "conversion",
+          ];
           const type = types[Math.floor(Math.random() * types.length)];
-          const userAgent = userAgents[Math.floor(Math.random() * userAgents.length)];
+          const userAgent =
+            userAgents[Math.floor(Math.random() * userAgents.length)];
 
           return {
             type,
             createdAt: new Date(Date.now() - i * 45 * 60 * 1000), // More realistic time distribution
-            value: type === 'conversion' ? parseFloat((Math.random() * 50 + 15).toFixed(2)) : null,
+            value:
+              type === "conversion"
+                ? parseFloat((Math.random() * 50 + 15).toFixed(2))
+                : null,
             userAgent,
             location: locations[Math.floor(Math.random() * locations.length)],
             referrer: referrers[Math.floor(Math.random() * referrers.length)],
             browser: browsers[Math.floor(Math.random() * browsers.length)],
-            ip: ips[Math.floor(Math.random() * ips.length)]
+            ip: ips[Math.floor(Math.random() * ips.length)],
           };
         }),
         hourlyActivity: generateMockHourlyActivity(),
         referrers: [
-          { name: 'Instagram', value: 45, icon: <ExternalLink className="w-4 h-4 text-pink-500" /> },
-          { name: 'Facebook', value: 30, icon: <ExternalLink className="w-4 h-4 text-blue-500" /> },
-          { name: 'Twitter', value: 15, icon: <ExternalLink className="w-4 h-4 text-sky-500" /> },
-          { name: 'Direct', value: 7, icon: <MousePointerClick className="w-4 h-4 text-gray-500" /> },
-          { name: 'Newsletter', value: 3, icon: <ExternalLink className="w-4 h-4 text-purple-500" /> },
+          {
+            name: "Instagram",
+            value: 45,
+            icon: <ExternalLink className="w-4 h-4 text-pink-500" />,
+          },
+          {
+            name: "Facebook",
+            value: 30,
+            icon: <ExternalLink className="w-4 h-4 text-blue-500" />,
+          },
+          {
+            name: "Twitter",
+            value: 15,
+            icon: <ExternalLink className="w-4 h-4 text-sky-500" />,
+          },
+          {
+            name: "Direct",
+            value: 7,
+            icon: <MousePointerClick className="w-4 h-4 text-gray-500" />,
+          },
+          {
+            name: "Newsletter",
+            value: 3,
+            icon: <ExternalLink className="w-4 h-4 text-purple-500" />,
+          },
         ],
         devices: [
-          { name: 'Mobile', value: 62, icon: <Smartphone className="w-4 h-4 text-indigo-500" /> },
-          { name: 'Desktop', value: 35, icon: <Laptop className="w-4 h-4 text-blue-500" /> },
-          { name: 'Tablet', value: 3, icon: <TabletSmartphone className="w-4 h-4 text-green-500" /> },
+          {
+            name: "Mobile",
+            value: 62,
+            icon: <Smartphone className="w-4 h-4 text-indigo-500" />,
+          },
+          {
+            name: "Desktop",
+            value: 35,
+            icon: <Laptop className="w-4 h-4 text-blue-500" />,
+          },
+          {
+            name: "Tablet",
+            value: 3,
+            icon: <TabletSmartphone className="w-4 h-4 text-green-500" />,
+          },
         ],
         countries: [
-          { name: 'United States', value: 58, flag: '🇺🇸' },
-          { name: 'United Kingdom', value: 15, flag: '🇬🇧' },
-          { name: 'Canada', value: 10, flag: '🇨🇦' },
-          { name: 'Australia', value: 8, flag: '🇦🇺' },
-          { name: 'Germany', value: 6, flag: '🇩🇪' },
-          { name: 'Other', value: 3, flag: '🌐' },
+          { name: "United States", value: 58, flag: "🇺🇸" },
+          { name: "United Kingdom", value: 15, flag: "🇬🇧" },
+          { name: "Canada", value: 10, flag: "🇨🇦" },
+          { name: "Australia", value: 8, flag: "🇦🇺" },
+          { name: "Germany", value: 6, flag: "🇩🇪" },
+          { name: "Other", value: 3, flag: "🌐" },
         ],
         browsers: [
-          { name: 'Chrome', value: 68 },
-          { name: 'Safari', value: 22 },
-          { name: 'Firefox', value: 5 },
-          { name: 'Edge', value: 3 },
-          { name: 'Other', value: 2 },
+          { name: "Chrome", value: 68 },
+          { name: "Safari", value: 22 },
+          { name: "Firefox", value: 5 },
+          { name: "Edge", value: 3 },
+          { name: "Other", value: 2 },
         ],
         revenueSources: [
-          { name: 'Subscriptions', value: 65 },
-          { name: 'One-time', value: 25 },
-          { name: 'Upsells', value: 10 },
-        ]
+          { name: "Subscriptions", value: 65 },
+          { name: "One-time", value: 25 },
+          { name: "Upsells", value: 10 },
+        ],
       };
 
       setAnalyticsData(mockData);
       setRealtimeActivities([]);
     } catch (error) {
-      console.error('Error fetching analytics:', error);
+      console.error("Error fetching analytics:", error);
     } finally {
       setIsLoading(false);
     }
@@ -325,14 +416,14 @@ export default function AnalyticsPage() {
 
   // Enhanced color palette with better contrast
   const chartColors = [
-    '#6366F1', // Indigo-500
-    '#3B82F6', // Blue-500
-    '#F59E0B', // Amber-500
-    '#EC4899', // Pink-500
-    '#22C55E', // Green-500
-    '#EF4444', // Red-500
-    '#FBBF24', // Yellow-500
-    '#8B5CF6', // Violet-500
+    "#6366F1", // Indigo-500
+    "#3B82F6", // Blue-500
+    "#F59E0B", // Amber-500
+    "#EC4899", // Pink-500
+    "#22C55E", // Green-500
+    "#EF4444", // Red-500
+    "#FBBF24", // Yellow-500
+    "#8B5CF6", // Violet-500
   ];
 
   // Gradient generator for charts
@@ -348,7 +439,9 @@ export default function AnalyticsPage() {
     if (active && payload && payload.length) {
       return (
         <div className="bg-white dark:bg-gray-900 p-4 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
-          <p className="font-semibold text-gray-900 dark:text-white mb-2">{label}</p>
+          <p className="font-semibold text-gray-900 dark:text-white mb-2">
+            {label}
+          </p>
           <div className="space-y-1">
             {payload.map((entry: any, index: number) => (
               <div key={index} className="flex items-center justify-between">
@@ -362,9 +455,11 @@ export default function AnalyticsPage() {
                   </span>
                 </div>
                 <span className="text-sm font-medium text-gray-900 dark:text-white">
-                  {entry.name === 'Revenue' ? `$${entry.value.toFixed(2)}` :
-                    entry.name === 'Rate' ? `${entry.value}%` :
-                      entry.value.toLocaleString()}
+                  {entry.name === "Revenue"
+                    ? `$${entry.value.toFixed(2)}`
+                    : entry.name === "Rate"
+                      ? `${entry.value}%`
+                      : entry.value.toLocaleString()}
                 </span>
               </div>
             ))}
@@ -378,7 +473,7 @@ export default function AnalyticsPage() {
   // Render the appropriate tab content
   const renderTabContent = () => {
     switch (activeTab) {
-      case 'overview':
+      case "overview":
         return (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartCard
@@ -392,20 +487,35 @@ export default function AnalyticsPage() {
                     <SelectValue placeholder="Last 7 days" />
                   </SelectTrigger>
                   <SelectContent className="border-gray-200/80 bg-white/90 backdrop-blur-md dark:bg-gray-800/90 dark:border-gray-700/50">
-                    <SelectItem value="7" className="text-xs hover:bg-gray-50/80 dark:hover:bg-gray-700/50">Last 7 days</SelectItem>
-                    <SelectItem value="30" className="text-xs hover:bg-gray-50/80 dark:hover:bg-gray-700/50">Last 30 days</SelectItem>
+                    <SelectItem
+                      value="7"
+                      className="text-xs hover:bg-gray-50/80 dark:hover:bg-gray-700/50"
+                    >
+                      Last 7 days
+                    </SelectItem>
+                    <SelectItem
+                      value="30"
+                      className="text-xs hover:bg-gray-50/80 dark:hover:bg-gray-700/50"
+                    >
+                      Last 30 days
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               }
               footerContent={
                 <div className="flex items-center justify-center gap-4 text-xs">
                   {[
-                    { color: 'bg-indigo-500', label: 'Views' },
-                    { color: 'bg-sky-500', label: 'Clicks' },
-                    { color: 'bg-rose-500', label: 'Conversions' }
+                    { color: "bg-indigo-500", label: "Views" },
+                    { color: "bg-sky-500", label: "Clicks" },
+                    { color: "bg-rose-500", label: "Conversions" },
                   ].map((item, index) => (
-                    <span key={index} className="flex items-center text-gray-600 dark:text-gray-300">
-                      <span className={`w-2 h-2 rounded-full ${item.color} mr-1.5`}></span>
+                    <span
+                      key={index}
+                      className="flex items-center text-gray-600 dark:text-gray-300"
+                    >
+                      <span
+                        className={`w-2 h-2 rounded-full ${item.color} mr-1.5`}
+                      ></span>
                       {item.label}
                     </span>
                   ))}
@@ -418,13 +528,33 @@ export default function AnalyticsPage() {
                   margin={{ top: 12, right: 16, left: 8, bottom: 8 }}
                 >
                   <defs>
-                    <linearGradient id="viewGradient" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="viewGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="0%" stopColor="#6366F1" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#6366F1" stopOpacity={0.05} />
+                      <stop
+                        offset="100%"
+                        stopColor="#6366F1"
+                        stopOpacity={0.05}
+                      />
                     </linearGradient>
-                    <linearGradient id="clickGradient" x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient
+                      id="clickGradient"
+                      x1="0"
+                      y1="0"
+                      x2="0"
+                      y2="1"
+                    >
                       <stop offset="0%" stopColor="#0EA5E9" stopOpacity={0.4} />
-                      <stop offset="100%" stopColor="#0EA5E9" stopOpacity={0.05} />
+                      <stop
+                        offset="100%"
+                        stopColor="#0EA5E9"
+                        stopOpacity={0.05}
+                      />
                     </linearGradient>
                   </defs>
                   <CartesianGrid
@@ -435,14 +565,14 @@ export default function AnalyticsPage() {
                   />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    tick={{ fontSize: 11, fill: "#6b7280" }}
                     tickMargin={8}
                     axisLine={false}
                     tickLine={false}
-                    tickFormatter={(value) => value.split(' ')[0]} // Show only day/month
+                    tickFormatter={(value) => value.split(" ")[0]} // Show only day/month
                   />
                   <YAxis
-                    tick={{ fontSize: 11, fill: '#6b7280' }}
+                    tick={{ fontSize: 11, fill: "#6b7280" }}
                     tickMargin={8}
                     axisLine={false}
                     tickLine={false}
@@ -451,16 +581,16 @@ export default function AnalyticsPage() {
                   <Tooltip
                     content={<CustomTooltip />}
                     contentStyle={{
-                      borderRadius: '8px',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      background: 'rgba(255,255,255,0.96)',
-                      backdropFilter: 'blur(4px)',
-                      boxShadow: '0 6px 20px -6px rgba(0,0,0,0.1)',
-                      padding: '12px',
+                      borderRadius: "8px",
+                      border: "1px solid rgba(0,0,0,0.05)",
+                      background: "rgba(255,255,255,0.96)",
+                      backdropFilter: "blur(4px)",
+                      boxShadow: "0 6px 20px -6px rgba(0,0,0,0.1)",
+                      padding: "12px",
                     }}
                     itemStyle={{
-                      fontSize: '13px',
-                      padding: '2px 0',
+                      fontSize: "13px",
+                      padding: "2px 0",
                     }}
                   />
                   <Area
@@ -473,8 +603,8 @@ export default function AnalyticsPage() {
                     activeDot={{
                       r: 5,
                       strokeWidth: 2,
-                      stroke: '#fff',
-                      fill: '#6366F1',
+                      stroke: "#fff",
+                      fill: "#6366F1",
                     }}
                   />
                   <Area
@@ -487,8 +617,8 @@ export default function AnalyticsPage() {
                     activeDot={{
                       r: 5,
                       strokeWidth: 2,
-                      stroke: '#fff',
-                      fill: '#0EA5E9',
+                      stroke: "#fff",
+                      fill: "#0EA5E9",
                     }}
                   />
                   <Line
@@ -498,22 +628,21 @@ export default function AnalyticsPage() {
                     strokeWidth={1.8}
                     dot={{
                       r: 3,
-                      stroke: '#F43F5E',
+                      stroke: "#F43F5E",
                       strokeWidth: 1.5,
-                      fill: '#fff'
+                      fill: "#fff",
                     }}
                     activeDot={{
                       r: 5,
                       strokeWidth: 2,
-                      stroke: '#fff',
-                      fill: '#F43F5E',
+                      stroke: "#fff",
+                      fill: "#F43F5E",
                     }}
                     name="Conversions"
                   />
                 </AreaChart>
               </ResponsiveContainer>
             </ChartCard>
-
 
             <ChartCard
               title="Traffic Sources"
@@ -524,7 +653,9 @@ export default function AnalyticsPage() {
                 {/* Chart Container - Now with better proportional sizing */}
                 <div className="w-full md:w-[45%] h-64 md:h-auto">
                   <ResponsiveContainer width="100%" height="100%">
-                    <PieChart margin={{ top: 10, right: 10, left: 10, bottom: 10 }}>
+                    <PieChart
+                      margin={{ top: 10, right: 10, left: 10, bottom: 10 }}
+                    >
                       <Pie
                         data={analyticsData?.referrers || []}
                         cx="50%"
@@ -550,15 +681,16 @@ export default function AnalyticsPage() {
                         layout="horizontal"
                         verticalAlign="bottom"
                         align="center"
-                        wrapperStyle={{ paddingTop: '10px' }}
+                        wrapperStyle={{ paddingTop: "10px" }}
                       />
                       <Tooltip
                         formatter={(value, name) => [`${value}%`, name]}
                         contentStyle={{
-                          borderRadius: '0.5rem',
-                          border: 'none',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
-                          fontSize: '14px',
+                          borderRadius: "0.5rem",
+                          border: "none",
+                          boxShadow:
+                            "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+                          fontSize: "14px",
                         }}
                       />
                     </PieChart>
@@ -573,27 +705,34 @@ export default function AnalyticsPage() {
                       Top Locations
                     </h3>
                     <div className="space-y-3">
-                      {analyticsData?.countries.slice(0, 4).map((country, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            <span className="mr-2 text-lg">{country.flag}</span>
-                            <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
-                              {country.name}
-                            </span>
-                          </div>
-                          <div className="flex items-center">
-                            <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 mr-2">
-                              {country.value}%
-                            </span>
-                            <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                              <div
-                                className="bg-blue-500 h-2 rounded-full"
-                                style={{ width: `${country.value}%` }}
-                              />
+                      {analyticsData?.countries
+                        .slice(0, 4)
+                        .map((country, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center">
+                              <span className="mr-2 text-lg">
+                                {country.flag}
+                              </span>
+                              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                {country.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 mr-2">
+                                {country.value}%
+                              </span>
+                              <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div
+                                  className="bg-blue-500 h-2 rounded-full"
+                                  style={{ width: `${country.value}%` }}
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
 
@@ -604,7 +743,10 @@ export default function AnalyticsPage() {
                     </h3>
                     <div className="space-y-3">
                       {analyticsData?.devices.map((device, index) => (
-                        <div key={index} className="flex items-center justify-between">
+                        <div
+                          key={index}
+                          className="flex items-center justify-between"
+                        >
                           <div className="flex items-center">
                             {device.icon}
                             <span className="ml-2 text-sm font-medium text-gray-800 dark:text-gray-200">
@@ -620,7 +762,8 @@ export default function AnalyticsPage() {
                                 className="h-2 rounded-full"
                                 style={{
                                   width: `${device.value}%`,
-                                  backgroundColor: chartColors[index % chartColors.length]
+                                  backgroundColor:
+                                    chartColors[index % chartColors.length],
                                 }}
                               />
                             </div>
@@ -634,7 +777,7 @@ export default function AnalyticsPage() {
             </ChartCard>
           </div>
         );
-      case 'engagement':
+      case "engagement":
         return (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <ChartCard
@@ -655,13 +798,13 @@ export default function AnalyticsPage() {
                   />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
                     tickMargin={10}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
                     tickMargin={10}
                     axisLine={false}
                     tickLine={false}
@@ -704,19 +847,19 @@ export default function AnalyticsPage() {
                   />
                   <XAxis
                     dataKey="hour"
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
                     tickMargin={10}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
                     tickMargin={10}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
-                    formatter={(value) => [`${value} interactions`, 'Activity']}
+                    formatter={(value) => [`${value} interactions`, "Activity"]}
                   />
                   <Bar
                     dataKey="activity"
@@ -742,7 +885,7 @@ export default function AnalyticsPage() {
             </ChartCard>
           </div>
         );
-      case 'revenue':
+      case "revenue":
         return (
           <div className="grid grid-cols-1 gap-6">
             <ChartCard
@@ -767,20 +910,18 @@ export default function AnalyticsPage() {
                   />
                   <XAxis
                     dataKey="date"
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
                     tickMargin={10}
                     axisLine={false}
                     tickLine={false}
                   />
                   <YAxis
-                    tick={{ fontSize: 12, fill: '#6b7280' }}
+                    tick={{ fontSize: 12, fill: "#6b7280" }}
                     tickMargin={10}
                     axisLine={false}
                     tickLine={false}
                   />
-                  <Tooltip
-                    formatter={(value) => [`$${value}`, 'Revenue']}
-                  />
+                  <Tooltip formatter={(value) => [`$${value}`, "Revenue"]} />
                   <Legend />
                   <Line
                     type="monotone"
@@ -808,14 +949,23 @@ export default function AnalyticsPage() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <StatCard
                 title="Avg. Revenue per Conversion"
-                value={`$${analyticsData
-                  ? (
-                    analyticsData.dailyStats.reduce((sum, day) => sum + day.revenue, 0) /
-                    (analyticsData.dailyStats.reduce((sum, day) => sum + day.conversions, 0) || 1)
-                  ).toFixed(2)
-                  : '0.00'
-                  }`}
-                icon={<CreditCard className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />}
+                value={`$${
+                  analyticsData
+                    ? (
+                        analyticsData.dailyStats.reduce(
+                          (sum, day) => sum + day.revenue,
+                          0
+                        ) /
+                        (analyticsData.dailyStats.reduce(
+                          (sum, day) => sum + day.conversions,
+                          0
+                        ) || 1)
+                      ).toFixed(2)
+                    : "0.00"
+                }`}
+                icon={
+                  <CreditCard className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                }
                 color="indigo"
                 change="+5.2%"
                 period="from last period"
@@ -823,8 +973,10 @@ export default function AnalyticsPage() {
               />
               <StatCard
                 title="Projected Monthly Revenue"
-                value={`$${analyticsData ? (analyticsData.summary.totalRevenue * 4.3).toLocaleString('en-US') : '0'}`}
-                icon={<TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />}
+                value={`$${analyticsData ? (analyticsData.summary.totalRevenue * 4.3).toLocaleString("en-US") : "0"}`}
+                icon={
+                  <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                }
                 color="green"
                 change="+12.8%"
                 period="from last month"
@@ -832,14 +984,24 @@ export default function AnalyticsPage() {
               />
               <StatCard
                 title="Top Conversion Day"
-                value={analyticsData?.dailyStats.reduce((max, day) =>
-                  day.revenue > max.revenue ? day : max, analyticsData?.dailyStats[0])?.date || 'N/A'}
-                icon={<Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
+                value={
+                  analyticsData?.dailyStats.reduce(
+                    (max, day) => (day.revenue > max.revenue ? day : max),
+                    analyticsData?.dailyStats[0]
+                  )?.date || "N/A"
+                }
+                icon={
+                  <Calendar className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                }
                 color="blue"
                 change="+18%"
                 period="higher than average"
-                secondaryText={`$${analyticsData?.dailyStats.reduce((max, day) =>
-                  day.revenue > max.revenue ? day : max, analyticsData?.dailyStats[0])?.revenue.toFixed(2)} revenue`}
+                secondaryText={`$${analyticsData?.dailyStats
+                  .reduce(
+                    (max, day) => (day.revenue > max.revenue ? day : max),
+                    analyticsData?.dailyStats[0]
+                  )
+                  ?.revenue.toFixed(2)} revenue`}
               />
             </div>
           </div>
@@ -861,14 +1023,21 @@ export default function AnalyticsPage() {
         >
           <div>
             <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-transparent bg-clip-text text-black">
-              Good {timeOfDay}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
-                Team
+              Good {timeOfDay},{" "}
+              {/* <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">
+                Teams
+              </span> */}
+              {/* <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700 text-left block">
+                Hi, User!
+              </span> */}
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-red-700 text-left block -mt-4">
+                Hi, User!
               </span>
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm sm:text-base max-w-md">
               Here's what's happening with your AI agent today.{" "}
               <span className="font-semibold text-indigo-500 dark:text-indigo-400">
-                {analyticsData?.summary?.totalConversions || '0'} conversions
+                {analyticsData?.summary?.totalConversions || "0"} conversions
               </span>{" "}
               in the last 24 hours.
             </p>
@@ -912,50 +1081,66 @@ export default function AnalyticsPage() {
               transition={{ duration: 0.5, delay: 0.2 }}
               className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
             >
-              <StatCard
+              {/* <StatCard
                 title="Total Revenue"
-                value={`$${analyticsData?.summary.totalRevenue?.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0.00'}`}
-                icon={<DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
+                value={`$${analyticsData?.summary.totalRevenue?.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}`}
+                icon={
+                  <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                }
                 color="emerald"
                 change="+12.4%"
                 period="from last period"
                 secondaryText={`${analyticsData?.dailyStats.reduce((sum, day) => sum + day.conversions, 0)} conversions`}
-              />
+              /> */}
               <StatCard
                 title="Total Clicks"
-                value={analyticsData?.summary.totalClicks?.toLocaleString() || '0'}
-                icon={<MousePointerClick className="h-5 w-5 text-blue-600 dark:text-blue-400" />}
+                value={
+                  analyticsData?.summary.totalClicks?.toLocaleString() || "0"
+                }
+                icon={
+                  <MousePointerClick className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                }
                 color="blue"
                 change="+8.2%"
                 period="from last period"
-                secondaryText={`${((analyticsData?.summary.totalClicks || 0) / (analyticsData?.summary.totalViews || 1) * 100).toFixed(1)}% CTR`}
+                secondaryText={`${(((analyticsData?.summary.totalClicks || 0) / (analyticsData?.summary.totalViews || 1)) * 100).toFixed(1)}% CTR`}
               />
               <StatCard
-                title="Chat Views"
-                value={analyticsData?.summary.totalViews?.toLocaleString() || '0'}
-                icon={<Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />}
+                title="Total Chats"
+                value={
+                  analyticsData?.summary.totalViews?.toLocaleString() || "0"
+                }
+                icon={
+                  <Users className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                }
                 color="purple"
                 change="+15.7%"
                 period="from last period"
                 secondaryText={`${analyticsData?.summary.avgSessionDuration} avg. session`}
               />
-              <StatCard
+              {/* <StatCard
                 title="Conversion Rate"
-                value={`${analyticsData?.summary.conversionRate || '0'}%`}
-                icon={<TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />}
+                value={`${analyticsData?.summary.conversionRate || "0"}%`}
+                icon={
+                  <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                }
                 color="orange"
                 change="+3.1%"
                 period="from last period"
                 secondaryText={`${analyticsData?.summary.bounceRate}% bounce rate`}
-              />
+              /> */}
             </motion.div>
 
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="space-y-8"
+            >
               <TabsList className="grid w-full grid-cols-3 bg-gray-100/50 dark:bg-gray-800/50 backdrop-blur-md p-1.5 rounded-xl h-auto relative">
                 <motion.div
                   className="absolute inset-0 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   layout
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                 />
                 <TabsTrigger
                   value="overview"
@@ -1003,7 +1188,10 @@ export default function AnalyticsPage() {
                   <CardTitle className="flex items-center text-lg font-semibold text-gray-900 dark:text-white">
                     <Activity className="mr-3 h-5 w-5 text-orange-500" />
                     Recent Activity
-                    <Badge variant="outline" className="ml-2 bg-gray-100/50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700">
+                    <Badge
+                      variant="outline"
+                      className="ml-2 bg-gray-100/50 dark:bg-gray-800/50 text-gray-800 dark:text-gray-200 border-gray-200 dark:border-gray-700"
+                    >
                       {analyticsData?.recentActivity.length} events
                     </Badge>
                   </CardTitle>
@@ -1020,18 +1208,24 @@ export default function AnalyticsPage() {
                     />
                   ) : (
                     <div className="divide-y divide-gray-200/50 dark:divide-gray-700/50">
-                      {analyticsData?.recentActivity?.slice(0, 8).map((activity, index) => (
-                        <ActivityItem
-                          key={`history-${index}`}
-                          type={activity.type}
-                          date={activity.createdAt}
-                          value={activity.value}
-                          userAgent={activity.userAgent}
-                          location={activity.location}
-                        />
-                      ))}
+                      {analyticsData?.recentActivity
+                        ?.slice(0, 8)
+                        .map((activity, index) => (
+                          <ActivityItem
+                            key={`history-${index}`}
+                            type={activity.type}
+                            date={activity.createdAt}
+                            value={activity.value}
+                            userAgent={activity.userAgent}
+                            location={activity.location}
+                          />
+                        ))}
                       <div className="pt-3 flex justify-end">
-                        <Button variant="ghost" size="sm" className="text-indigo-600 dark:text-indigo-400">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-indigo-600 dark:text-indigo-400"
+                        >
                           View all
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
@@ -1050,7 +1244,10 @@ export default function AnalyticsPage() {
                         Real-time Activity
                       </CardTitle>
                     </div>
-                    <Badge variant="outline" className="flex items-center bg-green-100/80 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-700">
+                    <Badge
+                      variant="outline"
+                      className="flex items-center bg-green-100/80 dark:bg-green-900/20 text-green-800 dark:text-green-400 border-green-200 dark:border-green-700"
+                    >
                       <span className="w-2 h-2 rounded-full bg-green-500 mr-2 animate-pulse" />
                       Live
                     </Badge>
@@ -1091,55 +1288,63 @@ export default function AnalyticsPage() {
 }
 
 // Enhanced StatCard component
-function StatCard({ title, value, icon, color, change, period, secondaryText }: {
+function StatCard({
+  title,
+  value,
+  icon,
+  color,
+  change,
+  period,
+  secondaryText,
+}: {
   title: string;
   value: string;
   icon: React.ReactNode;
-  color: 'emerald' | 'blue' | 'purple' | 'orange' | 'indigo' | 'green';
+  color: "emerald" | "blue" | "purple" | "orange" | "indigo" | "green";
   change: string;
   period: string;
   secondaryText?: string;
 }) {
   const colorClasses = {
     emerald: {
-      bg: 'bg-emerald-100/80 dark:bg-emerald-900/20',
-      text: 'text-emerald-600 dark:text-emerald-400',
-      iconBg: 'bg-emerald-500/10',
+      bg: "bg-emerald-100/80 dark:bg-emerald-900/20",
+      text: "text-emerald-600 dark:text-emerald-400",
+      iconBg: "bg-emerald-500/10",
     },
     blue: {
-      bg: 'bg-blue-100/80 dark:bg-blue-900/20',
-      text: 'text-blue-600 dark:text-blue-400',
-      iconBg: 'bg-blue-500/10',
+      bg: "bg-blue-100/80 dark:bg-blue-900/20",
+      text: "text-blue-600 dark:text-blue-400",
+      iconBg: "bg-blue-500/10",
     },
     purple: {
-      bg: 'bg-purple-100/80 dark:bg-purple-900/20',
-      text: 'text-purple-600 dark:text-purple-400',
-      iconBg: 'bg-purple-500/10',
+      bg: "bg-purple-100/80 dark:bg-purple-900/20",
+      text: "text-purple-600 dark:text-purple-400",
+      iconBg: "bg-purple-500/10",
     },
     orange: {
-      bg: 'bg-orange-100/80 dark:bg-orange-900/20',
-      text: 'text-orange-600 dark:text-orange-400',
-      iconBg: 'bg-orange-500/10',
+      bg: "bg-orange-100/80 dark:bg-orange-900/20",
+      text: "text-orange-600 dark:text-orange-400",
+      iconBg: "bg-orange-500/10",
     },
     indigo: {
-      bg: 'bg-indigo-100/80 dark:bg-indigo-900/20',
-      text: 'text-indigo-600 dark:text-indigo-400',
-      iconBg: 'bg-indigo-500/10',
+      bg: "bg-indigo-100/80 dark:bg-indigo-900/20",
+      text: "text-indigo-600 dark:text-indigo-400",
+      iconBg: "bg-indigo-500/10",
     },
     green: {
-      bg: 'bg-green-100/80 dark:bg-green-900/20',
-      text: 'text-green-600 dark:text-green-400',
-      iconBg: 'bg-green-500/10',
+      bg: "bg-green-100/80 dark:bg-green-900/20",
+      text: "text-green-600 dark:text-green-400",
+      iconBg: "bg-green-500/10",
     },
   };
 
-  const isPositive = change.startsWith('+');
+  const isPositive = change.startsWith("+");
 
   return (
     <motion.div
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 10 }}
+      transition={{ type: "spring", stiffness: 400, damping: 10 }}
     >
       <Card className="rounded-xl border border-gray-200/50 dark:border-gray-700/50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md shadow-sm hover:shadow-md transition-all">
         <CardContent className="p-5">
@@ -1160,10 +1365,14 @@ function StatCard({ title, value, icon, color, change, period, secondaryText }: 
                 {isPositive ? (
                   <ArrowUp className={`h-4 w-4 ${colorClasses[color].text}`} />
                 ) : (
-                  <ArrowDown className={`h-4 w-4 ${colorClasses[color].text}`} />
+                  <ArrowDown
+                    className={`h-4 w-4 ${colorClasses[color].text}`}
+                  />
                 )}
-                <span className={`text-xs font-medium ml-2 ${colorClasses[color].text}`}>
-                  {change}{' '}
+                <span
+                  className={`text-xs font-medium ml-2 ${colorClasses[color].text}`}
+                >
+                  {change}{" "}
                   <span className="text-gray-500 dark:text-gray-400 text-xs">
                     {period}
                   </span>
@@ -1197,20 +1406,21 @@ function ChartCard({
   title,
   description,
   children,
-  className = '',
+  className = "",
   headerActions,
   footerContent,
   isLoading = false,
-  chartHeight = '320px'
+  chartHeight = "320px",
 }: ChartCardProps) {
   return (
     <motion.div
       whileHover={{ y: -3 }}
       whileTap={{ scale: 0.98 }}
-      transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
       className="h-full"
     >
-      <Card className={`
+      <Card
+        className={`
         rounded-xl border border-transparent
         bg-gradient-to-br from-white/95 to-white/90 dark:from-gray-900/95 dark:to-gray-900/90
         shadow-[0_8px_24px_-8px_rgba(0,0,0,0.04)] hover:shadow-[0_12px_28px_-10px_rgba(0,0,0,0.08)]
@@ -1222,7 +1432,8 @@ function ChartCard({
         dark:before:from-gray-800/50 dark:before:to-gray-700/30
         before:-z-10
         ${className}
-      `}>
+      `}
+      >
         <CardHeader className="pb-2 px-5 pt-4">
           <div className="flex items-start justify-between gap-3">
             <div>
@@ -1234,9 +1445,7 @@ function ChartCard({
               </CardDescription>
             </div>
             {headerActions && (
-              <div className="flex-shrink-0 -mt-1 -mr-1">
-                {headerActions}
-              </div>
+              <div className="flex-shrink-0 -mt-1 -mr-1">{headerActions}</div>
             )}
           </div>
         </CardHeader>
@@ -1246,7 +1455,9 @@ function ChartCard({
             <div className="absolute inset-0 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-[4px] rounded-b-xl">
               <div className="flex flex-col items-center gap-2">
                 <Loader2 className="h-6 w-6 text-indigo-500/80 animate-spin" />
-                <span className="text-xs text-gray-500 dark:text-gray-400">Loading data...</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Loading data...
+                </span>
               </div>
             </div>
           ) : null}
@@ -1267,8 +1478,14 @@ function ChartCard({
 }
 
 // Enhanced ActivityItem component
-function ActivityItem({ type, date, value, userAgent, location }: {
-  type: 'click' | 'view' | 'conversion';
+function ActivityItem({
+  type,
+  date,
+  value,
+  userAgent,
+  location,
+}: {
+  type: "click" | "view" | "conversion";
   date: Date;
   value: number | null;
   userAgent?: string;
@@ -1276,23 +1493,23 @@ function ActivityItem({ type, date, value, userAgent, location }: {
 }) {
   const typeConfig = {
     click: {
-      label: 'Link clicked',
+      label: "Link clicked",
       icon: (
         <MousePointerClick className="w-4 h-4 text-blue-500" strokeWidth={2} />
       ),
-      color: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400',
+      color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
     },
     view: {
-      label: 'Chat viewed',
+      label: "Chat viewed",
       icon: <Users className="w-4 h-4 text-purple-500" strokeWidth={2} />,
-      color: 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400',
+      color:
+        "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
     },
     conversion: {
-      label: 'Conversion',
-      icon: (
-        <DollarSign className="w-4 h-4 text-green-500" strokeWidth={2} />
-      ),
-      color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+      label: "Conversion",
+      icon: <DollarSign className="w-4 h-4 text-green-500" strokeWidth={2} />,
+      color:
+        "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
     },
   };
 
@@ -1304,19 +1521,17 @@ function ActivityItem({ type, date, value, userAgent, location }: {
       className="flex items-center justify-between py-3 group hover:bg-gray-50/50 dark:hover:bg-gray-800/50 px-3 -mx-3 rounded-lg transition-colors"
     >
       <div className="flex items-start gap-3">
-        <div className="mt-0.5 flex-shrink-0">
-          {typeConfig[type].icon}
-        </div>
+        <div className="mt-0.5 flex-shrink-0">{typeConfig[type].icon}</div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
             {typeConfig[type].label}
           </p>
           <p className="text-xs text-gray-500 dark:text-gray-400">
-            {date.toLocaleString('en-US', {
-              month: 'short',
-              day: 'numeric',
-              hour: 'numeric',
-              minute: 'numeric',
+            {date.toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
+              hour: "numeric",
+              minute: "numeric",
             })}
           </p>
           {(userAgent || location) && (
@@ -1334,7 +1549,7 @@ function ActivityItem({ type, date, value, userAgent, location }: {
                   variant="outline"
                   className="text-xs py-1 px-2 bg-gray-100/80 dark:bg-gray-800/80 border-gray-200/50 dark:border-gray-700/50 rounded-lg font-normal"
                 >
-                  {userAgent.includes('Mobile') ? 'Mobile' : 'Desktop'}
+                  {userAgent.includes("Mobile") ? "Mobile" : "Desktop"}
                 </Badge>
               )}
             </div>
@@ -1360,7 +1575,11 @@ function ActivityItem({ type, date, value, userAgent, location }: {
 }
 
 // Enhanced EmptyState component
-function EmptyState({ icon, title, description }: {
+function EmptyState({
+  icon,
+  title,
+  description,
+}: {
   icon: React.ReactNode;
   title: string;
   description: string;
