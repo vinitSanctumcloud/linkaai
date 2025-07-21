@@ -116,10 +116,14 @@ export default function LoginPage() {
           }
 
           // Fetch AI agent data
-          await fetchAiAgentData(accessToken)
+          const aiAgent = await fetchAiAgentData(accessToken)
 
-          toast.success('Welcome back!')
-          router.push('/dashboard')
+          if(!aiAgent.has_subscription) {
+            router.push('/pricing')
+          } else {
+            toast.success('Welcome back!')
+            router.push('/dashboard')
+          }
           router.refresh()
         }
       } catch (error) {
