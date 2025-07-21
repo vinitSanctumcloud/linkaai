@@ -49,7 +49,7 @@ export default function LoginPage() {
       const aiAgentData = await response.json()
       localStorage.setItem('aiAgentData', JSON.stringify(aiAgentData))
       console.log('AI Agent Data:', aiAgentData)
-      return aiAgentData
+      return aiAgentData.data;
     } catch (apiError) {
       console.error('Error fetching AI agent data:', apiError)
       toast.error('Failed to fetch AI agent data. Some features may be limited.')

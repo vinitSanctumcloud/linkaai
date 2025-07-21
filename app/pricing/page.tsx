@@ -63,7 +63,8 @@ const PaymentForm: React.FC<{
   trialWithoutCC: boolean;
   accountId: string;
   onClose: () => void;
-}> = ({ productId, freeTrial, trialWithoutCC, accountId, onClose }) => {
+  setFreeSubscriptionStatus: (status: boolean) => void;
+}> = ({ productId, freeTrial, trialWithoutCC, accountId, onClose, setFreeSubscriptionStatus }) => {
   const stripe = useStripe();
   const elements = useElements();
   const [cardDetails, setCardDetails] = useState({ fullName: '' });
@@ -83,7 +84,9 @@ const PaymentForm: React.FC<{
         setLoading(true);
         const accessToken = localStorage.getItem('accessToken');
         if (!accessToken) throw new Error('No access token found');
-        const response = await fetch(
+
+        // Fetch product data
+        const productResponse = await fetch(
           `https://api.tagwell.co/api/v4/ai-agent/billing/products/${productId}/plans`,
           {
             method: 'GET',
@@ -93,18 +96,34 @@ const PaymentForm: React.FC<{
             },
           }
         );
-        if (!response.ok) throw new Error('Network response was not ok');
-        const data: ApiResponse = await response.json();
+        if (!productResponse.ok) throw new Error('Network response was not ok');
+        const data: ApiResponse = await productResponse.json();
         setApiData(data);
         setSelectedPlan(data.data.plans.find(plan => plan.interval === 'year') || data.data.plans[0]);
+
+        // Fetch free subscription status
+        const freeTrialResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/freetrial', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        if (!freeTrialResponse.ok) {
+          const errorData = await freeTrialResponse.json();
+          throw new Error(errorData.message || 'Failed to fetch free trial status');
+        }
+        const freeTrialData = await freeTrialResponse.json();
+        setFreeSubscriptionStatus(freeTrialData.data.allow_platform_free_trial);
+        console.log('checkIfFreeSubscripation :: ', freeTrialData);
       } catch (err) {
-        setError('Failed to fetch product details. Please try again later.');
+        setError('Failed to fetch product details or free trial status. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
     fetchProductData();
-  }, [productId]);
+  }, [productId, setFreeSubscriptionStatus]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -200,10 +219,10 @@ const PaymentForm: React.FC<{
     const accessToken = localStorage.getItem('accessToken');
     if (!accessToken) throw new Error('No access token found');
 
-    const payload = { 
-      payment_method: paymentMethodId, 
-      plan_id: selectedPlan.id, 
-      is_free_trial_enable: appliedCoupon?.discountType === 'free_trial' || trialWithoutCC 
+    const payload = {
+      payment_method: paymentMethodId,
+      plan_id: selectedPlan.id,
+      is_free_trial_enable: appliedCoupon?.discountType === 'free_trial' || trialWithoutCC
     };
 
     try {
@@ -440,6 +459,7 @@ const PaymentForm: React.FC<{
   );
 };
 
+// The rest of the PricingPage component remains unchanged
 export default function PricingPage() {
   const [billingInterval, setBillingInterval] = useState('month');
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -448,6 +468,8 @@ export default function PricingPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [stripePromise, setStripePromise] = useState<any>(null);
+  const [freeSubscriptionStatus, setFreeSubscriptionStatus] = useState<boolean | null>(null);
+  const [subscriptionMessage, setSubscriptionMessage] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -507,9 +529,47 @@ export default function PricingPage() {
     }
   }, [selectedPlan, isModalOpen]);
 
-  const handlePlanSelect = (plan: Plan) => {
-    setSelectedPlan(plan);
-    setIsModalOpen(true);
+  const handlePlanSelect = async (plan: Plan) => {
+    try {
+      setLoading(true); // Set loading state
+      setSubscriptionMessage(null); // Clear any previous messages
+
+      const accessToken = localStorage.getItem('accessToken');
+      if (!accessToken) {
+        setSubscriptionMessage('No access token found. Please log in and try again.');
+        return;
+      }
+
+      const freeTrialResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/freetrial', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!freeTrialResponse.ok) {
+        const errorData = await freeTrialResponse.json();
+        throw new Error(errorData.message || 'Failed to fetch free trial status');
+      }
+
+      const freeTrialData = await freeTrialResponse.json();
+      const allowFreeTrial = freeTrialData.data.allow_platform_free_trial;
+
+      setFreeSubscriptionStatus(allowFreeTrial);
+
+      if (!allowFreeTrial) {
+        setSubscriptionMessage('You already have an active free subscription. Please cancel it or contact support to proceed.');
+        return;
+      }
+
+      setSelectedPlan(plan);
+      setIsModalOpen(true);
+    } catch (err: any) {
+      setSubscriptionMessage(err.message || 'Failed to check free trial status. Please try again later.');
+    } finally {
+      setLoading(false); // Reset loading state
+    }
   };
 
   const closeModal = () => {
@@ -587,6 +647,20 @@ export default function PricingPage() {
               </motion.p>
             </div>
 
+            {subscriptionMessage && (
+              <div className="p-8 text-center">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-6">
+                  <p className="text-xl text-red-600 dark:text-red-400 font-medium">{subscriptionMessage}</p>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    <Link href="/contact" className="text-orange-600 hover:underline font-medium">
+                      Contact support
+                    </Link>{' '}
+                    for assistance.
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="grid md:grid-cols-3 gap-8">
               {plans.map((plan, index) => (
                 <motion.div
@@ -640,8 +714,9 @@ export default function PricingPage() {
                           : 'bg-gray-900 dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white'
                           }`}
                         onClick={() => handlePlanSelect(plan)}
+                        disabled={loading} // Disable button while loading
                       >
-                        {plan.freeTrial && billingInterval === 'month' ? `${plan.freeTrialDays} Day Trial` : 'Subscribe'}
+                        {loading ? 'Checking...' : plan.freeTrial && billingInterval === 'month' ? `${plan.freeTrialDays} Day Trial` : 'Subscribe'}
                       </Button>
                     </CardContent>
                   </Card>
@@ -695,6 +770,7 @@ export default function PricingPage() {
                   trialWithoutCC={selectedPlan.trialWithoutCC}
                   accountId={selectedPlan.accountId}
                   onClose={closeModal}
+                  setFreeSubscriptionStatus={setFreeSubscriptionStatus}
                 />
               </Elements>
             </motion.div>
