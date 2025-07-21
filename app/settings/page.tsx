@@ -12,7 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { jsPDF } from 'jspdf'
 import { Progress } from '@radix-ui/react-progress'
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog'
-import { fetchBillingHistory, fetchpaymentDetials, fetchSubscriptionDetails, fetchTokenDetails } from './../../services/subscription.js'
+import { fetchBillingHistory, fetchpaymentDetials, fetchSubscriptionDetails, fetchTokenDetails } from '@/services/subscription'
 import { FaCcVisa, FaCcMastercard, FaCcAmex, FaCreditCard } from 'react-icons/fa';
 import { format } from "date-fns";
 
