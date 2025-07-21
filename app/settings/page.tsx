@@ -7,13 +7,11 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { toast } from 'sonner'
-import { Save, Palette, User, Download, Badge, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X } from 'lucide-react'
+import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { jsPDF } from 'jspdf'
-import { Progress } from '@radix-ui/react-progress'
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog'
 import { fetchBillingHistory, fetchpaymentDetials, fetchSubscriptionDetails, fetchTokenDetails } from '@/services/subscription'
-import { FaCcVisa, FaCcMastercard, FaCcAmex, FaCreditCard } from 'react-icons/fa';
+import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
 import { format } from "date-fns";
 
 interface Settings {
@@ -26,15 +24,6 @@ interface Settings {
   instructions?: string
   avatarUrl?: string
   chatLimit?: number
-}
-
-interface BillingItem {
-  date: string
-  invoice: string
-  period: string
-  amount: string
-  status: string
-  download: boolean
 }
 
 interface subscription {
@@ -130,7 +119,6 @@ export default function SettingsPage() {
     newPassword: '',
     chatLimit: 0
   })
-  const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string>('')
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false)
   const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false)
@@ -402,8 +390,6 @@ export default function SettingsPage() {
     }
   }
 
-
-
   const handleResetTraining = async () => {
     setIsLoading(true)
     try {
@@ -542,8 +528,6 @@ export default function SettingsPage() {
               <span className="ml-2 hidden md:inline">Phone & Email</span>
             </TabsTrigger>
           </TabsList>
-
-
 
           <TabsContent value="verification" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
