@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog'
-import { fetchBillingHistory, fetchpaymentDetials, fetchSubscriptionDetails, fetchTokenDetails } from '@/services/subscription'
+import { fetchBillingHistory, fetchPaymentDetails, fetchSubscriptionDetails, fetchTokenDetails } from '@/services/subscription'
 import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
 import { format } from "date-fns";
 
@@ -168,7 +168,7 @@ export default function SettingsPage() {
     };
 
     const getCardDetails = async () => {
-      const data = await fetchpaymentDetials();
+      const data = await fetchPaymentDetails();
       setPaymentCardDetails(data)
       setLoading(false)
     }
