@@ -24,7 +24,7 @@ export function Header() {
       setIsLoggedIn(!!token)
       setUserImage(localStorage.getItem('userImage') || '/default-profile.png')
       setUserName(localStorage.getItem('userName') || 'User')
-      console.log(token, 'token')
+      // console.log(token, 'token')
     }
   }, [])
 

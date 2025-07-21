@@ -6,15 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { Save, Bot, Palette, Globe, User, Upload, Camera, Download, Badge, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2 } from 'lucide-react'
-import Image from 'next/image'
+import { Save, Palette, User, Download, Badge, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X } from 'lucide-react'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
 import { jsPDF } from 'jspdf'
 import { Progress } from '@radix-ui/react-progress'
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog'
+import { fetchBillingHistory, fetchpaymentDetials, fetchSubscriptionDetails, fetchTokenDetails } from './../../services/subscription.js'
+import { FaCcVisa, FaCcMastercard, FaCcAmex, FaCreditCard } from 'react-icons/fa';
+import { format } from "date-fns";
 
 interface Settings {
   id: string
@@ -25,6 +25,7 @@ interface Settings {
   welcomeMessage?: string
   instructions?: string
   avatarUrl?: string
+  chatLimit?: number
 }
 
 interface BillingItem {
@@ -34,6 +35,84 @@ interface BillingItem {
   amount: string
   status: string
   download: boolean
+}
+
+interface subscription {
+  subscription_status: string;
+  subscription_type: string;
+  start_date: number;
+  current_period_end: number;
+  subscription_platform: string;
+  hosted_invoice_url: string;
+  currency: {
+    currency_symbol: string;
+  };
+  plan: {
+    amount: number;
+    interval: string;
+  };
+  product: {
+    product_name: string;
+  };
+};
+
+interface PaymentMethodResponse {
+  brand: string;
+  last_4: string;
+  expiry_month: number;
+  expiry_year: number;
+};
+
+interface TokenInfo {
+  products: any;
+  totalTokenPurchase: number;
+  tokenBalance: number;
+  isActiveMember: boolean;
+};
+
+interface Currency {
+  id: number;
+  currency_code: string;
+  currency_name: string;
+  currency_symbol: string;
+  smallest_unit: number;
+};
+
+interface TokenPlan {
+  id: number;
+  stripePriceId: string | null;
+  amount: number;
+  token: number;
+  tokenText: string;
+  shortDescription: string | null;
+  longDescription: string | null;
+  isDefault: boolean;
+  currency: Currency;
+};
+
+interface Subscription {
+  payment_id: number;
+  created_at: string;
+  period_start: string;  // If needed, you can cast it to number
+  period_end: string;
+  stripe_invoice_id: string;
+  amount_paid: number;
+  pdf_url: string;
+  type: string;
+};
+
+interface Meta {
+  total: number;
+  limit: number;
+  has_next: boolean;
+  current_page: number;
+  next_page_url: string | null;
+  previous_page_url: string | null;
+}
+
+interface BookingHistoryResponse {
+  subscriptions: Subscription[];
+  meta: Meta;
 }
 
 export default function SettingsPage() {
@@ -48,7 +127,8 @@ export default function SettingsPage() {
     welcomeMessage: '',
     instructions: '',
     avatarUrl: '',
-    newPassword: ''
+    newPassword: '',
+    chatLimit: 0
   })
   const [avatarFile, setAvatarFile] = useState<File | null>(null)
   const [avatarPreview, setAvatarPreview] = useState<string>('')
@@ -68,6 +148,12 @@ export default function SettingsPage() {
   const [passwordStrength, setPasswordStrength] = useState(0)
   const [currentPasswordError, setCurrentPasswordError] = useState('') // Added for error handling
   const [confirmPasswordError, setConfirmPasswordError] = useState('') // Added for error handling
+  const [subscription, setSubscription] = useState<subscription | null>(null)
+  const [paymentCardDetails, setPaymentCardDetails] = useState<PaymentMethodResponse | null>(null)
+  const [tokendetails, setTokenDetails] = useState<TokenInfo | null>(null)
+  const [bookingHistory, setBookingHistory] = useState<BookingHistoryResponse | null>(null)
+  const [loading, setLoading] = useState(true);
+
 
   useEffect(() => {
     fetchSettings()
@@ -86,6 +172,36 @@ export default function SettingsPage() {
     calculatePasswordStrength()
   }, [formData.newPassword])
 
+  useEffect(() => {
+    const getSubscription = async () => {
+      const data = await fetchSubscriptionDetails();
+      setSubscription(data);
+      setLoading(false);
+    };
+
+    const getCardDetails = async () => {
+      const data = await fetchpaymentDetials();
+      setPaymentCardDetails(data)
+      setLoading(false)
+    }
+
+    const getTokenDetails = async () => {
+      const data = await fetchTokenDetails()
+      setTokenDetails(data)
+      setLoading(false)
+    }
+
+    const getBookingDetails = async () => {
+      const data = await fetchBillingHistory()
+      setBookingHistory(data)
+      setLoading(false)
+    }
+    getSubscription();
+    getCardDetails();
+    getTokenDetails();
+    getBookingDetails();
+  }, []);
+
   const fetchSettings = async () => {
     try {
       const response = await fetch('/api/settings')
@@ -100,27 +216,14 @@ export default function SettingsPage() {
           welcomeMessage: data.welcomeMessage || '',
           instructions: data.instructions || '',
           avatarUrl: data.avatarUrl || '',
-          newPassword: ''
+          newPassword: '',
+          chatLimit: 0
         })
         setAvatarPreview(data.avatarUrl || '')
       }
     } catch (error) {
       console.error('Error fetching settings:', error)
       toast.error('Failed to load settings. Please try again.')
-    }
-  }
-
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      setAvatarFile(file)
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        const result = e.target?.result as string
-        setAvatarPreview(result)
-        setFormData({ ...formData, avatarUrl: result })
-      }
-      reader.readAsDataURL(file)
     }
   }
 
@@ -299,46 +402,7 @@ export default function SettingsPage() {
     }
   }
 
-  const handleRevokeSession = async (sessionId: string) => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/sessions/revoke', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId })
-      })
-      if (response.ok) {
-        toast.success('Session revoked successfully!')
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to revoke session')
-      }
-    } catch (error) {
-      toast.error('An error occurred while revoking the session.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
-  const handleDataExport = async () => {
-    setIsLoading(true)
-    try {
-      const response = await fetch('/api/data-export', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      })
-      if (response.ok) {
-        toast.success('Data export request sent! You will receive an email with your data.')
-      } else {
-        const error = await response.json()
-        toast.error(error.error || 'Failed to request data export')
-      }
-    } catch (error) {
-      toast.error('An error occurred while requesting data export.')
-    } finally {
-      setIsLoading(false)
-    }
-  }
 
   const handleResetTraining = async () => {
     setIsLoading(true)
@@ -403,105 +467,35 @@ export default function SettingsPage() {
     }
   }
 
-  const generatePDF = (item: BillingItem) => {
-    const doc = new jsPDF();
 
-    // Header
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(20);
-    doc.text(`California Hispanic Invoice - ${formData.agentName || 'AI Assistant'}`, 105, 20, { align: 'center' });
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(12);
-
-    // Invoice Details
-    const currentDate = new Date().toLocaleDateString('en-US', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-
-    doc.setFont('helvetica', 'bold');
-    doc.text('Invoice Details', 20, 40);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Item: Tokens', 20, 50);
-    doc.text('Purchase Amount: 25 Tokens', 20, 60);
-    doc.text('Number of Tokens: 25', 20, 70);
-    doc.text(`Purchase Date: ${currentDate}`, 20, 80);
-    doc.text(`Transaction ID: ${item.invoice}`, 20, 90);
-    doc.text('Customer ID: [Stripe Customer ID]', 20, 100);
-
-    // Billing Details
-    doc.setFont('helvetica', 'bold');
-    doc.text('Billing Information', 20, 120);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Billing Period: ${item.period}`, 20, 130);
-    doc.text('Card: xxx-xxxx-xxxx-4242', 20, 140);
-    doc.text('Expires: 4/2024', 20, 150);
-    doc.text('Card Holder: Card Holder Name', 20, 160);
-
-    // Billing History Table
-    doc.setFont('helvetica', 'bold');
-    doc.text('Billing History', 20, 180);
-    doc.setFont('helvetica', 'normal');
-
-    // Table configuration
-    const startY = 190;
-    const rowHeight = 10;
-    const colWidths = [25, 50, 60, 30];
-    const totalWidth = colWidths.reduce((a, b) => a + b, 0);
-    const headers = ['Date', 'Invoice Number', 'Billing Period', 'Amount'];
-    const data = [[item.date, item.invoice, item.period, item.amount]];
-
-    // Draw table header
-    doc.setFillColor(200, 200, 200);
-    doc.rect(20, startY, totalWidth, rowHeight, 'F');
-    doc.setFontSize(10);
-    doc.setFont('helvetica', 'bold');
-    let x = 20;
-    headers.forEach((header, i) => {
-      doc.text(header, x + 2, startY + 7);
-      x += colWidths[i];
-    });
-
-    // Draw table borders (header)
-    x = 20;
-    doc.setLineWidth(0.5);
-    for (let i = 0; i <= headers.length; i++) {
-      doc.line(x, startY, x, startY + rowHeight);
-      x += colWidths[i] || 0;
+  const fetchPage = async (page: number) => {
+    setLoading(true);
+    const data = await fetchBillingHistory(page);
+    if (data) {
+      setBookingHistory(data);
     }
-    doc.line(20, startY, 20 + totalWidth, startY);
-    doc.line(20, startY + rowHeight, 20 + totalWidth, startY + rowHeight);
+    setLoading(false);
+  };
 
-    // Draw table rows
-    doc.setFont('helvetica', 'normal');
-    data.forEach((row, rowIndex) => {
-      x = 20;
-      const y = startY + (rowIndex + 1) * rowHeight;
-      row.forEach((cell, colIndex) => {
-        doc.text(cell, x + 2, y + 7);
-        x += colWidths[colIndex];
-      });
-      x = 20;
-      for (let i = 0; i <= headers.length; i++) {
-        doc.line(x, y, x, y + rowHeight);
-        x += colWidths[i] || 0;
-      }
-      doc.line(20, y, 20 + totalWidth, y);
-    });
+  // Go to previous page
+  const fetchPreviousPage = () => {
+    const prevPage = bookingHistory?.meta?.current_page
+      ? bookingHistory.meta.current_page - 1
+      : 1;
 
-    // Draw bottom line of the last row
-    const finalY = startY + (data.length + 1) * rowHeight;
-    doc.line(20, finalY, 20 + totalWidth, finalY);
+    if (prevPage >= 1) {
+      fetchPage(prevPage);
+    }
+  };
 
-    // Footer
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text('California Hispanic LLC', 20, 280);
-    doc.text('Contact: support@californiahispanic.com | Phone: (555) 123-4567', 20, 285);
+  // Go to next page
+  const fetchNextPage = () => {
+    const nextPage = bookingHistory?.meta?.current_page
+      ? bookingHistory.meta.current_page + 1
+      : 2;
 
-    doc.save(`invoice_${item.invoice}.pdf`);
-  }
+    fetchPage(nextPage);
+  };
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://earnlinks.ai'
   const chatUrl = formData.customUrl ? `${baseUrl}/chat/${formData.customUrl}` : ''
@@ -527,24 +521,29 @@ export default function SettingsPage() {
         </div>
 
         <Tabs defaultValue="agent" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="agent">
-              <Palette className="w-4 h-4 mr-2" />
-              Agent
+          <TabsList className="xl:w-fit w-full flex gap-2">
+            <TabsTrigger value="agent" className="flex-1 flex items-center justify-center">
+              <Palette className="w-5 h-5" />
+              <span className="ml-2 hidden md:inline">Agent</span>
             </TabsTrigger>
-            <TabsTrigger value="account">
-              <User className="w-4 h-4 mr-2" />
-              Account
+
+            <TabsTrigger value="account" className="flex-1 flex items-center justify-center">
+              <UserCircle className="w-5 h-5" />
+              <span className="ml-2 hidden md:inline">Account</span>
             </TabsTrigger>
-            <TabsTrigger value="subscription">
-              <User className="w-4 h-4 mr-2" />
-              Subscription
+
+            <TabsTrigger value="subscription" className="flex-1 flex items-center justify-center">
+              <CreditCard className="w-5 h-5" />
+              <span className="ml-2 hidden md:inline">Subscription</span>
             </TabsTrigger>
-            <TabsTrigger value="verification">
-              <User className="w-4 h-4 mr-2" />
-              Phone & Email Settings
+
+            <TabsTrigger value="verification" className="flex-1 flex items-center justify-center">
+              <Phone className="w-5 h-5" />
+              <span className="ml-2 hidden md:inline">Phone & Email</span>
             </TabsTrigger>
           </TabsList>
+
+
 
           <TabsContent value="verification" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -700,47 +699,150 @@ export default function SettingsPage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     Subscription
-                    <Badge fontVariant="outline" className="border-green-200 bg-green-50 text-green-600 text-xs">Active</Badge>
+                    <div
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${subscription?.subscription_status
+                        ? "bg-green-50 text-green-700 border-green-200"
+                        : "bg-red-50 text-red-600 border-red-200"
+                        }`}
+                    >
+                      {subscription?.subscription_status ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Active
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4" />
+                          Inactive
+                        </>
+                      )}
+                    </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500">Current Plan</p>
-                    <p className="text-base font-medium text-gray-800">Premium Monthly</p>
+
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* First Column */}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Plan Name</p>
+                        <p className="text-base font-medium text-gray-800">
+                          {subscription?.product.product_name || "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Subscription Type</p>
+                        <p className="text-base font-medium text-gray-800 capitalize">
+                          {subscription?.subscription_type || "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Plan Billing</p>
+                        <p className="text-base font-medium text-gray-800">
+                          {(subscription?.currency?.currency_symbol || "$") +
+                            (subscription?.plan?.amount != null
+                              ? (subscription.plan.amount / 100).toFixed(2)
+                              : "0.00")}{" "}
+                          / {subscription?.plan?.interval || "N/A"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Second Column */}
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Start Date</p>
+                        <p className="text-base font-medium text-gray-800">
+                          {subscription?.start_date
+                            ? new Date(subscription.start_date * 1000).toLocaleDateString()
+                            : "N/A"}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Next Billing</p>
+                        <p className="text-base font-medium text-gray-800">
+                          {subscription?.current_period_end
+                            ? new Date(subscription.current_period_end * 1000).toLocaleDateString()
+                            : 'N/A'}
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Platform</p>
+                        <p className="text-base font-medium text-gray-800">
+                          {subscription?.subscription_platform || "N/A"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm text-gray-500">Next Billing</p>
-                    <p className="text-base font-medium text-gray-800">Dec 10, 2023</p>
-                  </div>
-                  <div className="pt-2">
-                    <Button variant="outline" size="sm" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50">
-                      Manage Plan
-                    </Button>
+
+                  <div className="pt-4">
+                    <a
+                      href={subscription?.hosted_invoice_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block text-center w-full border text-sm border-gray-300 text-gray-700 py-2 rounded-md hover:bg-gray-50 transition-colors"
+                    >
+                      View Invoice
+                    </a>
                   </div>
                 </CardContent>
               </Card>
-
               {/* Token Balance Box */}
-              <Card className="border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg font-semibold text-gray-800">Token Balance</CardTitle>
+              <Card className="border-0 shadow-lg rounded-2xl p-4">
+                <CardHeader>
+                  <CardTitle className="text-xl font-bold text-gray-800">Tokens Balance</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="text-sm text-gray-500">Available Tokens</p>
-                    <div className="flex items-baseline gap-1">
-                      <span className="text-2xl font-bold text-blue-600">20</span>
-                      <span className="text-sm text-gray-500">/ 150</span>
-                    </div>
+                <CardContent className="space-y-4">
+                  <div className="flex items-end gap-2">
+                    <p className="text-4xl font-bold text-green-600">
+                      {tokendetails?.tokenBalance}
+                    </p>
+                    <p className="text-lg text-gray-800 font-semibold">
+                      / {tokendetails?.totalTokenPurchase}
+                    </p>
                   </div>
-                  <div className="pt-1">
-                    <Progress value={(20 / 150) * 100} className="h-2 bg-gray-100" />
+
+                  {/* Progress Bar */}
+                  <div className="w-full bg-gray-200 rounded-full h-3">
+                    <div
+                      className="bg-green-500 h-3 rounded-full transition-all duration-300"
+                      style={{
+                        width: `${tokendetails?.tokenBalance !== undefined &&
+                          tokendetails?.totalTokenPurchase !== undefined &&
+                          tokendetails?.totalTokenPurchase > 0
+                          ? (tokendetails.tokenBalance / tokendetails.totalTokenPurchase) * 100
+                          : 0
+                          }%`,
+                      }}
+                    ></div>
                   </div>
-                  <div className="pt-8">
-                    <Button variant="outline" size="sm" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50">
-                      View Usage
-                    </Button>
-                  </div>
+
+
+                  <p className="text-sm text-gray-500">
+                    Tokens are used to access brand contact information. 1 token = 1 contact unlock.
+                  </p>
+
+                  {/* Explanation */}
+                  {/* <div className="bg-gray-50 rounded-xl p-3 text-sm text-gray-700 border border-gray-200">
+                    <p><strong>How tokens work:</strong></p>
+                    <ul className="list-disc list-inside mt-1 space-y-1">
+                      <li>You start with {tokendetails?.totalTokenPurchase} tokens.</li>
+                      <li>
+                        You have used{" "}
+                        {tokendetails?.totalTokenPurchase !== undefined &&
+                          tokendetails?.tokenBalance !== undefined
+                          ? tokendetails.totalTokenPurchase - tokendetails.tokenBalance
+                          : 0}{" "}
+                        tokens.
+                      </li>
+
+                      <li>Each token lets you access 1 brand's contact details.</li>
+                    </ul>
+                  </div> */}
                 </CardContent>
               </Card>
 
@@ -749,20 +851,50 @@ export default function SettingsPage() {
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-semibold text-gray-800">Payment Method</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   <div>
-                    <p className="text-sm text-gray-500">Card Ending</p>
+                    <p className="text-sm text-gray-500 mb-1">Card Brand</p>
                     <div className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4 text-gray-400" />
-                      <p className="text-base font-medium text-gray-800">•••• 4242</p>
+                      {paymentCardDetails?.brand === "visa" ? (
+                        <FaCcVisa className="h-5 w-5 text-blue-600" />
+                      ) : paymentCardDetails?.brand === "mastercard" ? (
+                        <FaCcMastercard className="h-5 w-5 text-red-600" />
+                      ) : paymentCardDetails?.brand === "amex" ? (
+                        <FaCcAmex className="h-5 w-5 text-blue-500" />
+                      ) : (
+                        <CreditCard className="h-4 w-4 text-gray-400" />
+                      )}
+                      <p className="text-base font-medium text-gray-800 capitalize">
+                        {paymentCardDetails?.brand ? `${paymentCardDetails.brand.charAt(0).toUpperCase() + paymentCardDetails.brand.slice(1)}` : "N/A"}
+                      </p>
                     </div>
                   </div>
+
                   <div>
-                    <p className="text-sm text-gray-500">Expires</p>
-                    <p className="text-base font-medium text-gray-800">04/2024</p>
+                    <p className="text-sm text-gray-500 mb-1">Card Ending</p>
+                    <div className="flex items-center gap-2">
+                      <CreditCard className="h-4 w-4 text-gray-400" />
+                      <p className="text-base font-medium text-gray-800">
+                        {paymentCardDetails?.last_4 ? `•••• ${paymentCardDetails.last_4}` : "•••• ••••"}
+                      </p>
+                    </div>
                   </div>
+
+                  <div>
+                    <p className="text-sm text-gray-500 mb-1">Expires</p>
+                    <p className="text-base font-medium text-gray-800">
+                      {paymentCardDetails?.expiry_month && paymentCardDetails?.expiry_year
+                        ? `${String(paymentCardDetails.expiry_month).padStart(2, '0')}/${String(paymentCardDetails.expiry_year).slice(-2)}`
+                        : "MM/YY"}
+                    </p>
+                  </div>
+
                   <div className="pt-2">
-                    <Button variant="outline" size="sm" className="w-full border-gray-300 text-gray-700 hover:bg-gray-50">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full border-gray-300 text-gray-700 hover:bg-gray-50"
+                    >
                       Update Payment
                     </Button>
                   </div>
@@ -773,48 +905,47 @@ export default function SettingsPage() {
             {/* Token Purchase Section */}
             <Card className="border border-gray-200 rounded-lg shadow-sm">
               <CardHeader className="border-b border-gray-200">
-                <CardTitle className="text-lg font-semibold text-gray-800">Purchase More Tokens</CardTitle>
+                <CardTitle className="text-lg font-semibold text-gray-800">
+                  Purchase More Tokens
+                </CardTitle>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="border border-gray-200 rounded-lg p-4 hover:border-yellow-400 transition-colors">
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-gray-800">25 Tokens</h3>
-                      <p className="text-sm text-gray-500">Perfect for light users</p>
-                      <p className="text-xl font-bold text-gray-900">$20.00</p>
-                      <p className="text-xs text-gray-500">$0.80 per token</p>
-                      <Button className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-white">
-                        Select
-                      </Button>
-                    </div>
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {tokendetails?.products?.plans?.map((plan: TokenPlan, index: Number) => {
+                    const perToken = (plan.amount / plan.token).toFixed(2);
+                    const isPopular = index === 1; // mark second plan as "POPULAR" by default
 
-                  <div className="border border-gray-200 rounded-lg p-4 hover:border-yellow-400 transition-colors relative">
-                    <div className="absolute top-0 right-0 bg-yellow-400 text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">
-                      POPULAR
-                    </div>
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-gray-800">50 Tokens</h3>
-                      <p className="text-sm text-gray-500">Best value for most users</p>
-                      <p className="text-xl font-bold text-gray-900">$35.00</p>
-                      <p className="text-xs text-gray-500">$0.70 per token</p>
-                      <Button className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-white">
-                        Select
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="border border-gray-200 rounded-lg p-4 hover:border-yellow-400 transition-colors">
-                    <div className="space-y-2">
-                      <h3 className="text-lg font-semibold text-gray-800">100 Tokens</h3>
-                      <p className="text-sm text-gray-500">For power users</p>
-                      <p className="text-xl font-bold text-gray-900">$60.00</p>
-                      <p className="text-xs text-gray-500">$0.60 per token</p>
-                      <Button className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-white">
-                        Select
-                      </Button>
-                    </div>
-                  </div>
+                    return (
+                      <div
+                        key={plan.id}
+                        className="border border-gray-200 rounded-lg p-4 hover:border-yellow-400 transition-colors relative"
+                      >
+                        {isPopular && (
+                          <div className="absolute top-0 right-0 bg-yellow-400 text-white text-xs font-bold px-2 py-1 rounded-bl-lg rounded-tr-lg">
+                            POPULAR
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <h3 className="text-lg font-semibold text-gray-800">
+                            {plan.token} Tokens
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {plan.shortDescription || "Ideal plan"}
+                          </p>
+                          <p className="text-xl font-bold text-gray-900">
+                            {plan.currency?.currency_symbol || "$"}
+                            {plan.amount.toFixed(2)}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            ${perToken} per token
+                          </p>
+                          <Button className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-white">
+                            Select
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>
@@ -824,6 +955,7 @@ export default function SettingsPage() {
               <CardHeader className="border-b border-gray-100">
                 <CardTitle className="text-lg font-semibold text-gray-800">Billing History</CardTitle>
               </CardHeader>
+
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -838,82 +970,134 @@ export default function SettingsPage() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {[
-                        {
-                          date: 'Nov 10, 2023',
-                          invoice: 'INV-2023-11-001',
-                          period: 'Oct 10 - Nov 10, 2023',
-                          amount: '$5.00 USD',
-                          status: 'Paid',
-                          download: true
-                        },
-                        {
-                          date: 'Oct 10, 2023',
-                          invoice: 'INV-2023-10-001',
-                          period: 'Sep 10 - Oct 10, 2023',
-                          amount: '$5.00 USD',
-                          status: 'Paid',
-                          download: true
-                        },
-                        {
-                          date: 'Sep 10, 2023',
-                          invoice: 'INV-2023-09-001',
-                          period: 'Aug 10 - Sep 10, 2023',
-                          amount: '$5.00 USD',
-                          status: 'Paid',
-                          download: true
-                        }
-                      ].map((item, idx) => (
-                        <tr key={idx} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{item.date}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.invoice}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{item.period}</td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">{item.amount}</td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge fontVariant="outline" className="border-green-200 bg-green-50 text-green-600">
-                              {item.status}
-                            </Badge>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-gray-300 text-gray-700 hover:bg-gray-50"
-                              onClick={() => generatePDF(item)}
-                            >
-                              <Download className="w-4 h-4 mr-2" />
-                              Download
-                            </Button>
+                      {bookingHistory?.subscriptions && bookingHistory.subscriptions.length > 0 ? (
+                        bookingHistory.subscriptions.map((item: Subscription) => (
+                          <tr key={item.payment_id} className="hover:bg-gray-50">
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {format(new Date(item.created_at), "MMM dd, yyyy")}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {item.stripe_invoice_id}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              {`${format(new Date(Number(item.period_start) * 1000), "MMM dd")} - ${format(
+                                new Date(Number(item.period_end) * 1000),
+                                "MMM dd, yyyy"
+                              )}`}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
+                              ${(item.amount_paid / 100).toFixed(2)}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap">
+                              <div
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${subscription?.subscription_status
+                                    ? "bg-green-50 text-green-700 border-green-200"
+                                    : "bg-red-50 text-red-600 border-red-200"
+                                  }`}
+                              >
+                                {subscription?.subscription_status ? (
+                                  <>
+                                    <Check className="w-4 h-4" />
+                                    Active
+                                  </>
+                                ) : (
+                                  <>
+                                    <X className="w-4 h-4" />
+                                    Inactive
+                                  </>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <a href={item.pdf_url} target="_blank" rel="noopener noreferrer">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-gray-300 text-gray-700 hover:bg-gray-50"
+                                >
+                                  <Download className="w-4 h-4 mr-2" />
+                                  Download
+                                </Button>
+                              </a>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td
+                            colSpan={6}
+                            className="px-6 py-4 text-center text-sm text-gray-500 bg-gray-50"
+                          >
+                            No bills available
                           </td>
                         </tr>
-                      ))}
+                      )}
                     </tbody>
+
                   </table>
                 </div>
 
+                {/* Pagination Footer */}
                 <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 gap-4">
                   <div className="text-sm text-gray-500">
-                    Showing <span className="font-medium">1</span> to <span className="font-medium">3</span> of <span className="font-medium">24</span> entries
+                    Showing{" "}
+                    <span className="font-medium">
+                      {(bookingHistory?.meta?.current_page ? bookingHistory.meta.current_page - 1 : 0) * (bookingHistory?.meta?.limit ?? 0) + 1}
+                    </span>{" "}
+                    to{" "}
+                    <span className="font-medium">
+                      {Math.min(
+                        (bookingHistory?.meta?.current_page ?? 1) * (bookingHistory?.meta?.limit ?? 0),
+                        bookingHistory?.meta?.total ?? 0
+                      )}
+                    </span>{" "}
+                    of <span className="font-medium">{bookingHistory?.meta?.total ?? 0}</span> entries
                   </div>
+
+
                   <div className="flex gap-1">
-                    <Button variant="outline" size="sm" className="border-gray-300">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300"
+                      disabled={!bookingHistory?.meta?.previous_page_url}
+                      onClick={() => fetchPreviousPage()}
+                    >
                       Previous
                     </Button>
-                    <Button variant="outline" size="sm" className="border-gray-300 bg-gray-100">
-                      1
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-gray-300">
-                      2
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-gray-300">
-                      3
-                    </Button>
-                    <Button variant="outline" size="sm" className="border-gray-300">
+
+                    {Array.from({
+                      length: Math.ceil(
+                        (bookingHistory?.meta?.total ?? 0) / (bookingHistory?.meta?.limit ?? 1)
+                      )
+                    }).map(
+                      (_, index) => (
+                        <Button
+                          key={index}
+                          variant="outline"
+                          size="sm"
+                          className={`border-gray-300 ${bookingHistory?.meta?.current_page === index + 1 ? "bg-gray-100" : ""}`}
+                          onClick={() => fetchPage(index + 1)}
+                        >
+                          {index + 1}
+                        </Button>
+                      )
+                    )}
+
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="border-gray-300"
+                      disabled={!bookingHistory?.meta?.has_next}
+                      onClick={() => fetchNextPage()}
+                    >
                       Next
                     </Button>
                   </div>
                 </div>
               </CardContent>
+
+
             </Card>
           </TabsContent>
 
@@ -960,25 +1144,50 @@ export default function SettingsPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="customUrl">Custom URL</Label>
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm text-gray-600">{baseUrl}/chat/</span>
-                    <Input
-                      id="customUrl"
-                      value={formData.customUrl}
-                      onChange={(e) => setFormData({ ...formData, customUrl: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '') })}
-                      placeholder="yourname"
-                      className="flex-1"
-                    />
+                {/* Custom URL + Limit Session Field Side by Side */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="customUrl">Custom URL</Label>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm text-gray-600">{baseUrl}/chat/</span>
+                      <Input
+                        id="customUrl"
+                        value={formData.customUrl}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            customUrl: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                          })
+                        }
+                        placeholder="yourname"
+                        className="flex-1"
+                      />
+                    </div>
+                    {chatUrl && (
+                      <p className="text-sm text-gray-600">
+                        Your chat will be available at: <span className="font-mono text-orange-600">{chatUrl}</span>
+                      </p>
+                    )}
                   </div>
-                  {chatUrl && (
-                    <p className="text-sm text-gray-600">
-                      Your chat will be available at: <span className="font-mono text-orange-600">{chatUrl}</span>
-                    </p>
-                  )}
+
+                  <div className="space-y-2">
+                    <Label htmlFor="chatLimit">Limit Visitor Chat Session</Label>
+                    <Input
+                      id="chatLimit"
+                      type="number"
+                      value={formData.chatLimit}
+                      onChange={(e) =>
+                        setFormData({ ...formData, chatLimit: parseInt(e.target.value) || 0 })
+                      }
+                      placeholder="e.g. 5"
+                      className="w-full"
+                      min={0}
+                    />
+                    <p className="text-sm text-gray-600">Set the max number of chats a visitor can initiate.</p>
+                  </div>
                 </div>
               </CardContent>
+
             </Card>
           </TabsContent>
 

@@ -30,6 +30,7 @@ interface DashboardLayoutProps {
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isOpen1, setIsOpen1] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 

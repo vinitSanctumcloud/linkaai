@@ -8,5 +8,9 @@ export const API = {
   RESET_PASSWORD: `${BASE_URL}/password/reset`,
   FORGOT_PASSWORD: `${BASE_URL}/v4/ai-agent/password/forgot`,
   LOGOUT : `${BASE_URL}/v4/ai-agent/logout`,
-  NEXT_PUBLIC_EXCHANGERATES_API_KEY: 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A'
+  NEXT_PUBLIC_EXCHANGERATES_API_KEY: 'pk_test_51OGwtdGoz9TIRExtLl3aG7GMO2hiaYjeWLZRudSWvMvL1I1TUWjoe42CqE4RNecJ87ULtVph7hdkaRj4UX2Js4vA00J14Srf5A',
+  SUBSCRIPTION_DETIALS : `${BASE_URL}/v4/ai-agent/subscription/details`,
+  PAYMENT_METHOD : `${BASE_URL}/v4/ai-agent/credit/payment-method`,
+  GET_TOKEN_PLAN : `${BASE_URL}/v4/ai-agent/credit/product`,
+  BILLING_HISTORY : `${BASE_URL}/v4/ai-agent/billing/history`
 };
