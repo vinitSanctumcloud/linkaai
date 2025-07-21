@@ -122,7 +122,7 @@ export default function AgentBuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [activeTab, setActiveTab] = useState<"partner" | "aipro">("partner");
+  const [activeTab, setActiveTab] = useState<"partner" | "aipro" | "paywall">("partner");
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: "",
     trainingInstructions: "",
@@ -2311,7 +2311,8 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                 <Input
                                   id={`partner-knowledge-${link.id}`}
                                   placeholder="Provide your AI agent with more context"
-                                  value={link.addKnowledge || ""}
+                                  // value={link?.addKnowledge || ""}
+                                  value={""}
                                   onChange={(e) =>
                                     updatePartnerLink(
                                       link.id,
