@@ -257,31 +257,40 @@ export default function SettingsPage() {
     }
   };
 
+  // const changePassword = async () => {
+  //   try {
+  //     const res  = 
+  //   } catch (error) {
+  //     console.error('Failed to fetch billing history:', error);
+  //     return null;
+  //   }
+  // }
+
   useEffect(() => {
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [subscriptionData, paymentData, tokenData, billingData] = await Promise.all([
-        fetchSubscriptionDetails(),
-        fetchPaymentDetails(),
-        fetchTokenDetails(),
-        fetchBillingHistory(),
-      ]);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [subscriptionData, paymentData, tokenData, billingData] = await Promise.all([
+          fetchSubscriptionDetails(),
+          fetchPaymentDetails(),
+          fetchTokenDetails(),
+          fetchBillingHistory(),
+        ]);
 
-      setSubscription(subscriptionData);
-      setPaymentCardDetails(paymentData);
-      setTokenDetails(tokenData);
-      setBookingHistory(billingData);
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      toast.error('An error occurred while fetching data.');
-    } finally {
-      setLoading(false);
-    }
-  };
+        setSubscription(subscriptionData);
+        setPaymentCardDetails(paymentData);
+        setTokenDetails(tokenData);
+        setBookingHistory(billingData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        toast.error('An error occurred while fetching data.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  fetchData();
-}, []);
+    fetchData();
+  }, []);
 
 
   const handleSave = async () => {
@@ -832,11 +841,10 @@ export default function SettingsPage() {
                   <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
                     Subscription
                     <div
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                        subscription?.subscription_status
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${subscription?.subscription_status
                           ? 'bg-green-50 text-green-700 border-green-200'
                           : 'bg-red-50 text-red-600 border-red-200'
-                      }`}
+                        }`}
                     >
                       {subscription?.subscription_status ? (
                         <>
@@ -940,13 +948,12 @@ export default function SettingsPage() {
                     <div
                       className="bg-green-500 h-3 rounded-full transition-all duration-300"
                       style={{
-                        width: `${
-                          tokendetails?.tokenBalance !== undefined &&
-                          tokendetails?.totalTokenPurchase !== undefined &&
-                          tokendetails?.totalTokenPurchase > 0
+                        width: `${tokendetails?.tokenBalance !== undefined &&
+                            tokendetails?.totalTokenPurchase !== undefined &&
+                            tokendetails?.totalTokenPurchase > 0
                             ? (tokendetails.tokenBalance / tokendetails.totalTokenPurchase) * 100
                             : 0
-                        }%`,
+                          }%`,
                       }}
                     ></div>
                   </div>
@@ -998,8 +1005,8 @@ export default function SettingsPage() {
                     <p className="text-base font-medium text-gray-800">
                       {paymentCardDetails?.expiry_month && paymentCardDetails?.expiry_year
                         ? `${String(paymentCardDetails.expiry_month).padStart(2, '0')}/${String(
-                            paymentCardDetails.expiry_year
-                          ).slice(-2)}`
+                          paymentCardDetails.expiry_year
+                        ).slice(-2)}`
                         : 'MM/YY'}
                     </p>
                   </div>
@@ -1119,11 +1126,10 @@ export default function SettingsPage() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div
-                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                                  subscription?.subscription_status
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${subscription?.subscription_status
                                     ? 'bg-green-50 text-green-700 border-green-200'
                                     : 'bg-red-50 text-red-600 border-red-200'
-                                }`}
+                                  }`}
                               >
                                 {subscription?.subscription_status ? (
                                   <>
@@ -1200,9 +1206,8 @@ export default function SettingsPage() {
                         key={index}
                         variant="outline"
                         size="sm"
-                        className={`border-gray-300 ${
-                          bookingHistory?.meta?.current_page === index + 1 ? 'bg-gray-100' : ''
-                        }`}
+                        className={`border-gray-300 ${bookingHistory?.meta?.current_page === index + 1 ? 'bg-gray-100' : ''
+                          }`}
                         onClick={() => fetchPage(index + 1)}
                       >
                         {index + 1}

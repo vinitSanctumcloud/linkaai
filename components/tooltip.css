@@ -106,3 +106,14 @@
     transform: translateX(0);
   }
 }
+/* Hide scrollbar for all browsers while allowing scrolling */
+.hide-scrollbar {
+  overflow-x: auto;
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Hide scrollbar */
+}

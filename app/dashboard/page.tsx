@@ -52,7 +52,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 md:space-y-8 px-4 sm:px-6 lg:px-8 py-6 max-w-[90%] mx-auto">
+      <div className="space-y-6 md:space-y-8 sm:px-6 lg:px-8 py-6 max-w-[90%] mx-auto">
         <div className="mb-6 animate-fade-in relative">
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">

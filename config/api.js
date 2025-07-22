@@ -12,5 +12,6 @@ export const API = {
   SUBSCRIPTION_DETIALS : `${BASE_URL}/v4/ai-agent/subscription/details`,
   PAYMENT_METHOD : `${BASE_URL}/v4/ai-agent/credit/payment-method`,
   GET_TOKEN_PLAN : `${BASE_URL}/v4/ai-agent/credit/product`,
-  BILLING_HISTORY : `${BASE_URL}/v4/ai-agent/billing/history`
+  BILLING_HISTORY : `${BASE_URL}/v4/ai-agent/billing/history`,
+  CHANGE_PASSWORD : `${BASE_URL}/v4/ai-agent/settings/change/password`
 };

@@ -208,9 +208,9 @@ export const Logout = async () => {
     localStorage.removeItem('user')
     localStorage.removeItem('aiAgentData')
 
-    if (!!response.ok) {
-      throw new Error(data.message || 'Logout failed');
-    }
+    // if (!!response.ok) {
+    //   throw new Error(data.message || 'Logout failed');
+    // }
 
     return {
       success: true,
