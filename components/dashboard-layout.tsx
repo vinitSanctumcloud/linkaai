@@ -374,8 +374,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
           <div
             className={cn(
-              "mt-3 w-[350px] max-w-[90vw] h-[70vh] rounded-lg shadow-lg overflow-hidden",
-              "bg-white border border-gray-200",
+              "mt-3 w-[350px] max-w-[90vw] h-[70vh] rounded-lg overflow-hidden",
               "dark:bg-gray-800 dark:border-gray-700",
               "chat-box",
               isOpen1 ? "open" : ""
