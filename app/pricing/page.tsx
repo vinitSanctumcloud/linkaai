@@ -219,7 +219,7 @@ const PaymentForm: React.FC<{
     return `$${amountInDollars.toFixed(2)}`;
   };
 
-const handleUseExistingCard = () => {
+  const handleUseExistingCard = () => {
     if (paymentMethod && !useExistingCard) {
       setUseExistingCard(true);
       setCardDetails({ fullName: paymentMethod.billing_details.name || '' });
@@ -317,7 +317,7 @@ const handleUseExistingCard = () => {
       let paymentMethodId = null;
       if (!trialWithoutCC) {
         paymentMethodId = await createPaymentMethod();
-      } 
+      }
       await createSubscription(paymentMethodId || null);
       onClose();
     } catch (err: any) {
@@ -403,7 +403,7 @@ const handleUseExistingCard = () => {
             {appliedCoupon && <p className="success-text">Coupon applied: {appliedCoupon.description || calculateDiscountedAmount(selectedPlan?.amount || 0).discountDescription}</p>}
           </div>
 
-{!trialWithoutCC && (
+          {!trialWithoutCC && (
             <>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Details</h3>
               {paymentMethod && (
@@ -472,7 +472,7 @@ const handleUseExistingCard = () => {
             </>
           )}
 
-<button
+          <button
             type="submit"
             disabled={loading || couponLoading || (!trialWithoutCC && (!stripe || !elements && !useExistingCard))}
             className="w-full bg-[#f97316] text-white font-medium rounded-lg px-5 py-3.5 text-sm hover:bg-[#ea580c] focus:outline-none focus:ring-4 focus:ring-[#f97316]/50 dark:bg-[#f97316] dark:hover:bg-[#ea580c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -559,7 +559,7 @@ export default function PricingPage() {
   const [stripePromise, setStripePromise] = useState<any>(null);
   const [freeSubscriptionStatus, setFreeSubscriptionStatus] = useState<boolean | null>(null);
   const [subscriptionMessage, setSubscriptionMessage] = useState<string | null>(null);
-    const [subscribedProductId, setSubscribedProductId] = useState<string | null>(null);
+  const [subscribedProductId, setSubscribedProductId] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -597,7 +597,7 @@ export default function PricingPage() {
         } else {
           console.log('No subscribed product or free trial is allowed');
         }
-        
+
         const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/billing/products', {
           method: 'GET',
           headers: {
@@ -652,8 +652,8 @@ export default function PricingPage() {
     }
   }, [selectedPlan, isModalOpen]);
 
-const handlePlanSelect = async (plan: Plan) => {
-  // Prevent subscription if the plan is already subscribed
+  const handlePlanSelect = async (plan: Plan) => {
+    // Prevent subscription if the plan is already subscribed
     // if (plan.isSubscribed) {
     //   setSubscriptionMessage('You are already subscribed to this plan. Please contact support to make changes.');
     //   return;
@@ -796,7 +796,7 @@ const handlePlanSelect = async (plan: Plan) => {
                         </span>
                       </div>
                     )}
-                                        {/* {plan.isSubscribed && (
+                    {/* {plan.isSubscribed && (
                       <div className="absolute -top-3 right-2">
     <span className="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide shadow-md">
       SUBSCRIBED

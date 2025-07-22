@@ -10,8 +10,22 @@ import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Ci
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
-import { format } from 'date-fns';
+import { parse,format, isValid } from 'date-fns';
 import { API } from '@/config/api';
+
+function safeFormatDate(dateInput: string | number | Date, formatString = 'PP') {
+  const date = new Date(dateInput);
+  if (!isValid(date)) {
+    console.error('Invalid date provided:', dateInput);
+    return '';
+  }
+  try {
+    return format(date, formatString);
+  } catch (e) {
+    console.error(`Error formatting date: ${e}`);
+    return '';
+  }
+}
 
 // === INTERFACES ===
 interface Settings {
@@ -46,6 +60,7 @@ interface Subscription {
 }
 
 interface PaymentMethodResponse {
+  payment_method_id: string; // Added payment_method_id
   brand: string;
   last_4: string;
   expiry_month: number;
@@ -102,6 +117,11 @@ interface Meta {
 interface BookingHistoryResponse {
   subscriptions: SubscriptionHistory[];
   meta: Meta;
+}
+
+interface PaymentData {
+  price_id: number;
+  payment_method_id?: string; // Optional property
 }
 
 export default function SettingsPage() {
@@ -177,7 +197,13 @@ export default function SettingsPage() {
 
       const data = await res.json();
       if (data.message === 'Success.') {
-        return data.data.payment_method.card;
+        return {
+          payment_method_id: data.data.payment_method.payment_method_id,
+          brand: data.data.payment_method.card.brand,
+          last_4: data.data.payment_method.card.last_4,
+          expiry_month: data.data.payment_method.card.expiry_month,
+          expiry_year: data.data.payment_method.card.expiry_year,
+        };
       } else {
         return null;
       }
@@ -564,6 +590,45 @@ export default function SettingsPage() {
       : 2;
 
     fetchPage(nextPage);
+  };
+
+  // Add this function inside the SettingsPage component, before the return statement
+  const handlePurchaseTokens = async (priceId: number) => {
+    setIsLoading(true);
+    let payload: PaymentData = { price_id: priceId };
+    // if(paymentCardDetails) {
+    //   payload = { ...payload, payment_method_id: paymentCardDetails?.payment_method_id };
+    // }
+
+    try {
+      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/credit/payment', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('Tokens purchased successfully!');
+        // Optionally, refresh token details to update the UI
+        const tokenData = await fetchTokenDetails();
+        if (tokenData) {
+          setTokenDetails(tokenData);
+          fetchPage(1);
+        }
+      } else {
+        toast.error(data.error || 'Failed to purchase tokens');
+      }
+    } catch (error) {
+      console.error('Error purchasing tokens:', error);
+      toast.error('An error occurred while purchasing tokens. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://earnlinks.ai';
@@ -981,8 +1046,21 @@ export default function SettingsPage() {
                             {plan.amount.toFixed(2)}
                           </p>
                           <p className="text-xs text-gray-500">${perToken} per token</p>
-                          <Button className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-white">
-                            Select
+                          <Button
+                            className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-white"
+                            onClick={() =>
+                              handlePurchaseTokens(plan.id) // Replace with dynamic payment_method_id if available
+                            }
+                            disabled={isLoading}
+                          >
+                            {isLoading ? (
+                              <div className="flex items-center">
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Processing...
+                              </div>
+                            ) : (
+                              'Select'
+                            )}
                           </Button>
                         </div>
                       </div>
@@ -1028,16 +1106,13 @@ export default function SettingsPage() {
                         bookingHistory.subscriptions.map((item: SubscriptionHistory) => (
                           <tr key={item.payment_id} className="hover:bg-gray-50">
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {format(new Date(item.created_at), 'MMM dd, yyyy')}
+                              {safeFormatDate(item.created_at)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {item.stripe_invoice_id}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {`${format(new Date(Number(item.period_start) * 1000), 'MMM dd, yyyy')} - ${format(
-                                new Date(Number(item.period_end) * 1000),
-                                'MMM dd, yyyy'
-                              )}`}
+                              {`${safeFormatDate(item.period_start)}`}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                               ${(item.amount_paid / 100).toFixed(2)}
