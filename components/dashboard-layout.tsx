@@ -16,11 +16,12 @@ import {
   BarChart3,
   Settings,
   Store,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { Logout } from "@/services/authService";
-import logo from "@/public/Linklogo.png"
+import logo from "@/public/Linklogo.png";
 import logoDark from "@/public/logo2.png";
 
 interface DashboardLayoutProps {
@@ -33,11 +34,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [isOpen1, setIsOpen1] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
-
-  const [isSidebarHovered, setIsSidebarHovered] = useState(false); // New state for hover
+  const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const router = useRouter();
 
-  const MOBILE_BREAKPOINT = 1024; // lg
+  const MOBILE_BREAKPOINT = 1024;
 
   const toggleDarkMode = () => {
     const newMode = !darkMode;
@@ -71,6 +71,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     }
   };
 
+  const toggleChatBox = () => {
+    setIsOpen1((prev) => !prev);
+  };
+
   useEffect(() => {
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
@@ -92,9 +96,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
       setDarkMode(isDark);
       document.documentElement.classList.toggle("dark", isDark);
     } else {
-      const prefersDark = window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      ).matches;
+      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       setDarkMode(prefersDark);
       document.documentElement.classList.toggle("dark", prefersDark);
     }
@@ -122,14 +124,19 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && isOpen) {
-        setIsOpen(false);
+      if (e.key === "Escape") {
+        if (isOpen) {
+          setIsOpen(false);
+        }
+        if (isOpen1) {
+          setIsOpen1(false);
+        }
       }
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen]);
+  }, [isOpen, isOpen1]);
 
   return (
     <ProtectedRoute>
@@ -145,6 +152,15 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             transition: opacity 0.3s ease-in-out;
           }
           .sidebar:hover .sidebar-nav-item-text {
+            opacity: 1;
+          }
+          .chat-box {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            transform: translateY(20px);
+            opacity: 0;
+          }
+          .chat-box.open {
+            transform: translateY(0);
             opacity: 1;
           }
         `}</style>
@@ -179,16 +195,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 "text-gray-600 hover:text-gray-800 hover:bg-gray-200",
                 "dark:text-gray-300 dark:hover:text-white dark:hover:bg-gray-700"
               )}
-              aria-label={
-                isOpen ? "Close navigation menu" : "Open navigation menu"
-              }
+              aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
               aria-expanded={isOpen}
               aria-controls="sidebar-navigation"
             >
-              <Menu
-                className="h-6 w-6 transition-opacity duration-200"
-                aria-hidden="true"
-              />
+              <Menu className="h-6 w-6 transition-opacity duration-200" aria-hidden="true" />
             </Button>
           </header>
         )}
@@ -200,11 +211,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             "fixed inset-y-0 left-0 z-50 w-16 lg:hover:w-64 sidebar group transition-all duration-300 ease-in-out border-r",
             "bg-white border-gray-200",
             "dark:bg-gray-800 dark:border-gray-700",
-            isMobile
-              ? isOpen
-                ? "w-64 translate-x-0"
-                : "-translate-x-full"
-              : "translate-x-0"
+            isMobile ? (isOpen ? "w-64 translate-x-0" : "-translate-x-full") : "translate-x-0"
           )}
           onMouseEnter={() => !isMobile && setIsSidebarHovered(true)}
           onMouseLeave={() => !isMobile && setIsSidebarHovered(false)}
@@ -212,11 +219,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         >
           <div className="flex flex-col h-full overflow-y-auto">
             <div
-              className={cn(
-                "flex items-center h-16 px-4 border-b",
-                "border-gray-200",
-                "dark:border-gray-700"
-              )}
+              className={cn("flex items-center h-16 px-4 border-b", "border-gray-200", "dark:border-gray-700")}
             >
               <Link
                 href="/"
@@ -241,10 +244,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   )}
                   aria-label="Close navigation menu"
                 >
-                  <X
-                    className="h-6 w-6 transition-opacity duration-200"
-                    aria-hidden="true"
-                  />
+                  <X className="h-6 w-6 transition-opacity duration-200" aria-hidden="true" />
                 </Button>
               )}
             </div>
@@ -266,14 +266,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                           : "text-gray-600 hover:text-gray-800 hover:bg-gray-200 dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-700"
                       )}
                       aria-current={isActive ? "page" : undefined}
-                      onClick={
-                        isComingSoon ? (e) => e.preventDefault() : undefined
-                      }
+                      onClick={isComingSoon ? (e) => e.preventDefault() : undefined}
                     >
-                      <item.icon
-                        className="mr-3 h-5 w-5 flex-shrink-0"
-                        aria-hidden="true"
-                      />
+                      <item.icon className="mr-3 h-5 w-5 flex-shrink-0" aria-hidden="true" />
                       <div className="flex flex-col w-full overflow-hidden">
                         <span
                           className={cn(
@@ -301,13 +296,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               })}
             </nav>
 
-            <div
-              className={cn(
-                "border-t p-4",
-                "border-gray-200",
-                "dark:border-gray-700"
-              )}
-            >
+            <div className={cn("border-t p-4", "border-gray-200", "dark:border-gray-700")}>
               <div className="flex items-center justify-between">
                 <Button
                   onClick={() => handleLogout()}
@@ -318,10 +307,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     "dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-700"
                   )}
                 >
-                  <LogOut
-                    className="mr-3 h-4 w-4 flex-shrink-0"
-                    aria-hidden="true"
-                  />
+                  <LogOut className="mr-3 h-4 w-4 flex-shrink-0" aria-hidden="true" />
                   <span
                     className={cn(
                       "sidebar-nav-item-text truncate",
@@ -341,15 +327,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                     "text-gray-600 hover:text-gray-800 hover:bg-gray-200",
                     "dark:text-gray-300 dark:hover:text-gray-100 dark:hover:bg-gray-700"
                   )}
-                  aria-label={
-                    darkMode ? "Switch to light mode" : "Switch to dark mode"
-                  }
+                  aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
                 >
-                  {darkMode ? (
-                    <Sun className="h-5 w-5" />
-                  ) : (
-                    <Moon className="h-5 w-5" />
-                  )}
+                  {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
                 </Button>
               </div>
             </div>
@@ -361,9 +341,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <div
             className={cn(
               "fixed inset-0 z-40 bg-black/40 dark:bg-black/60 transition-opacity duration-300",
-              isMobile
-                ? "lg:hidden"
-                : "lg:block opacity-0 group-hover:opacity-100"
+              isMobile ? "lg:hidden" : "lg:block opacity-0 group-hover:opacity-100"
             )}
             onClick={() => isMobile && setIsOpen(false)}
             role="presentation"
@@ -377,11 +355,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             "min-h-screen transition-all duration-300",
             "bg-gray-50",
             "dark:bg-gray-900",
-            isMobile
-              ? isOpen
-                ? "ml-64"
-                : "ml-0"
-              : "lg:ml-16 lg:group-hover:ml-64"
+            isMobile ? (isOpen ? "ml-64" : "ml-0") : "lg:ml-16 lg:group-hover:ml-64"
           )}
         >
           <main
@@ -398,25 +372,45 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
         {/* Chat iframe */}
         <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end">
-          {/* Toggle Button */}
-
-          {/* Chat Box */}
-          {isOpen && (
-            <div className="mt-3 w-[350px] max-w-[90vw] h-[70vh]">
+          <div
+            className={cn(
+              "mt-3 w-[350px] max-w-[90vw] h-[70vh] rounded-lg shadow-lg overflow-hidden",
+              "bg-white border border-gray-200",
+              "dark:bg-gray-800 dark:border-gray-700",
+              "chat-box",
+              isOpen1 ? "open" : ""
+            )}
+            role="dialog"
+            aria-hidden={!isOpen1}
+            aria-label="Chat window"
+          >
+            {isOpen1 && (
               <iframe
                 src="https://demo-liard-omega.vercel.app"
                 title="Chat"
                 className="w-full h-full border-0"
                 allow="clipboard-write"
               />
-            </div>
-          )}
-          <button
-            onClick={() => setIsOpen(!isOpen)}
-            className="w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md flex items-center justify-center"
+            )}
+          </div>
+          <Button
+            onClick={toggleChatBox}
+            variant="default"
+            size="icon"
+            className={cn(
+              "w-12 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-md flex items-center justify-center transition-transform duration-200",
+              isOpen1 ? "rotate-45" : "rotate-0"
+            )}
+            aria-label={isOpen1 ? "Close chat window" : "Open chat window"}
+            aria-expanded={isOpen1}
+            aria-controls="chat-window"
           >
-            💬
-          </button>
+            {isOpen1 ? (
+              <X className="h-6 w-6" aria-hidden="true" />
+            ) : (
+              <MessageCircle className="h-6 w-6" aria-hidden="true" />
+            )}
+          </Button>
         </div>
       </div>
     </ProtectedRoute>
