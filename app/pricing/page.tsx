@@ -22,6 +22,7 @@ interface Plan {
   trialWithoutCC: boolean;
   product_id: string;
   accountId: string;
+  isSubscribed: boolean;
 }
 
 interface PlanDetails {
@@ -57,6 +58,19 @@ interface Coupon {
   message?: string;
 }
 
+interface PaymentMethod {
+  payment_method_id: string;
+  billing_details: {
+    name: string | null;
+  };
+  card: {
+    brand: string;
+    last_4: string;
+    expiry_month: number;
+    expiry_year: number;
+  };
+}
+
 const PaymentForm: React.FC<{
   productId: string;
   freeTrial: boolean;
@@ -77,6 +91,8 @@ const PaymentForm: React.FC<{
   const [formErrors, setFormErrors] = useState<Partial<Record<'fullName' | 'cardNumber' | 'cardExpiry' | 'cardCvc', string>>>({});
   const [couponError, setCouponError] = useState<string | null>(null);
   const [couponLoading, setCouponLoading] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
+  const [useExistingCard, setUseExistingCard] = useState(false);
 
   useEffect(() => {
     const fetchProductData = async () => {
@@ -116,6 +132,25 @@ const PaymentForm: React.FC<{
         const freeTrialData = await freeTrialResponse.json();
         setFreeSubscriptionStatus(freeTrialData.data.allow_platform_free_trial);
         console.log('checkIfFreeSubscripation :: ', freeTrialData);
+
+        // Fetch payment method
+        const paymentMethodResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/paymentmethod', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+        if (!paymentMethodResponse.ok) {
+          const errorData = await paymentMethodResponse.json();
+          throw new Error(errorData.message || 'Failed to fetch payment method');
+        }
+        const paymentMethodData = await paymentMethodResponse.json();
+        if (paymentMethodData.message === 'Success.' && paymentMethodData.data.payment_method) {
+          setPaymentMethod(paymentMethodData.data.payment_method);
+          setUseExistingCard(true);
+          setCardDetails({ fullName: paymentMethodData.data.payment_method.billing_details.name || '' });
+        }
       } catch (err) {
         setError('Failed to fetch product details or free trial status. Please try again later.');
       } finally {
@@ -184,7 +219,35 @@ const PaymentForm: React.FC<{
     return `$${amountInDollars.toFixed(2)}`;
   };
 
+const handleUseExistingCard = () => {
+    if (paymentMethod && !useExistingCard) {
+      setUseExistingCard(true);
+      setCardDetails({ fullName: paymentMethod.billing_details.name || '' });
+      // Pre-fill card number with last 4 digits (for display only, actual card number isn't stored)
+      // Note: Stripe Elements don't allow pre-filling card numbers, so we clear them
+      // const cardNumberElement = elements?.getElement(CardNumberElement);
+      // const cardExpiryElement = elements?.getElement(CardExpiryElement);
+      // const cardCvcElement = elements?.getElement(CardCvcElement);
+      // cardNumberElement?.clear();
+      // cardExpiryElement?.clear();
+      // cardCvcElement?.clear();
+    } else {
+      setUseExistingCard(false);
+      setCardDetails({ fullName: '' });
+      // Clear card elements if switching to new card
+      const cardNumberElement = elements?.getElement(CardNumberElement);
+      const cardExpiryElement = elements?.getElement(CardExpiryElement);
+      const cardCvcElement = elements?.getElement(CardCvcElement);
+      cardNumberElement?.clear();
+      cardExpiryElement?.clear();
+      cardCvcElement?.clear();
+    }
+  };
+
   const createPaymentMethod = async () => {
+    if (useExistingCard && paymentMethod) {
+      return paymentMethod.payment_method_id;
+    }
     if (!stripe || !elements) {
       setError('Stripe.js has not loaded yet. Please try again.');
       throw new Error('Stripe.js has not loaded yet.');
@@ -197,7 +260,7 @@ const PaymentForm: React.FC<{
       throw new Error('Card elements not found');
     }
 
-    const { error, paymentMethod } = await stripe.createPaymentMethod({
+    const { error, paymentMethod: newPaymentMethod } = await stripe.createPaymentMethod({
       type: 'card',
       card: cardNumberElement,
       billing_details: { name: cardDetails.fullName || 'Unknown' }
@@ -207,7 +270,7 @@ const PaymentForm: React.FC<{
       setError(error.message || 'Invalid card details');
       throw new Error(error.message);
     }
-    return paymentMethod;
+    return newPaymentMethod.id;
   };
 
   const createSubscription = async (paymentMethodId: string | null) => {
@@ -251,11 +314,11 @@ const PaymentForm: React.FC<{
     try {
       setLoading(true);
       setError(null);
-      let paymentMethod = null;
+      let paymentMethodId = null;
       if (!trialWithoutCC) {
-        paymentMethod = await createPaymentMethod();
-      }
-      await createSubscription(paymentMethod?.id || null);
+        paymentMethodId = await createPaymentMethod();
+      } 
+      await createSubscription(paymentMethodId || null);
       onClose();
     } catch (err: any) {
       setError(err.message || 'Payment processing failed. Please try again.');
@@ -340,55 +403,81 @@ const PaymentForm: React.FC<{
             {appliedCoupon && <p className="success-text">Coupon applied: {appliedCoupon.description || calculateDiscountedAmount(selectedPlan?.amount || 0).discountDescription}</p>}
           </div>
 
-          {!trialWithoutCC && (
+{!trialWithoutCC && (
             <>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Payment Details</h3>
-              <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <div>
-                  <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name (as on card)*</label>
-                  <input
-                    type="text"
-                    id="full_name"
-                    name="fullName"
-                    value={cardDetails.fullName}
-                    onChange={handleInputChange}
-                    className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.fullName ? 'error-input' : ''}`}
-                    placeholder="Bonnie Green"
-                    required
-                  />
-                  {formErrors.fullName && <p className="error-text">{formErrors.fullName}</p>}
+              {paymentMethod && (
+                <div className="mb-6">
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <input
+                      type="radio"
+                      name="paymentOption"
+                      checked={useExistingCard}
+                      onChange={handleUseExistingCard}
+                      className="form-radio text-[#f97316]"
+                    />
+                    Use existing card ({paymentMethod.card.brand.toUpperCase()} ending in {paymentMethod.card.last_4})
+                  </label>
+                  <label className="flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-300 mt-2">
+                    <input
+                      type="radio"
+                      name="paymentOption"
+                      checked={!useExistingCard}
+                      onChange={() => setUseExistingCard(false)}
+                      className="form-radio text-[#f97316]"
+                    />
+                    Add new card
+                  </label>
                 </div>
-                <div>
-                  <label htmlFor="card-number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Number*</label>
-                  <div className="stripe-card">
-                    <CardNumberElement id="card-number" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardNumber: '' }))} />
+              )}
+              {!useExistingCard && (
+                <div className="mb-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                  <div>
+                    <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Full Name (as on card)*</label>
+                    <input
+                      type="text"
+                      id="full_name"
+                      name="fullName"
+                      value={cardDetails.fullName}
+                      onChange={handleInputChange}
+                      className={`block w-full rounded-lg border border-gray-300 bg-white p-3 text-sm text-gray-900 focus:border-[#f97316] focus:ring-[#f97316] dark:bg-gray-700 dark:border-gray-600 dark:text-white transition-all duration-300 ${formErrors.fullName ? 'error-input' : ''}`}
+                      placeholder="Bonnie Green"
+                      required
+                    />
+                    {formErrors.fullName && <p className="error-text">{formErrors.fullName}</p>}
                   </div>
-                  {formErrors.cardNumber && <p className="error-text">{formErrors.cardNumber}</p>}
-                </div>
-                <div>
-                  <label htmlFor="card-expiry" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiration Date*</label>
-                  <div className="stripe-card">
-                    <CardExpiryElement id="card-expiry" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardExpiry: '' }))} />
+                  <div>
+                    <label htmlFor="card-number" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Number*</label>
+                    <div className="stripe-card">
+                      <CardNumberElement id="card-number" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardNumber: '' }))} />
+                    </div>
+                    {formErrors.cardNumber && <p className="error-text">{formErrors.cardNumber}</p>}
                   </div>
-                  {formErrors.cardExpiry && <p className="error-text">{formErrors.cardExpiry}</p>}
-                </div>
-                <div>
-                  <label htmlFor="card-cvc" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CVC*</label>
-                  <div className="stripe-card">
-                    <CardCvcElement id="card-cvc" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardCvc: '' }))} />
+                  <div>
+                    <label htmlFor="card-expiry" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Expiration Date*</label>
+                    <div className="stripe-card">
+                      <CardExpiryElement id="card-expiry" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardExpiry: '' }))} />
+                    </div>
+                    {formErrors.cardExpiry && <p className="error-text">{formErrors.cardExpiry}</p>}
                   </div>
-                  {formErrors.cardCvc && <p className="error-text">{formErrors.cardCvc}</p>}
+                  <div>
+                    <label htmlFor="card-cvc" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">CVC*</label>
+                    <div className="stripe-card">
+                      <CardCvcElement id="card-cvc" options={cardElementOptions} onChange={() => setFormErrors(prev => ({ ...prev, cardCvc: '' }))} />
+                    </div>
+                    {formErrors.cardCvc && <p className="error-text">{formErrors.cardCvc}</p>}
+                  </div>
                 </div>
-              </div>
+              )}
             </>
           )}
 
-          <button
+<button
             type="submit"
-            disabled={loading || couponLoading || (!trialWithoutCC && (!stripe || !elements))}
+            disabled={loading || couponLoading || (!trialWithoutCC && (!stripe || !elements && !useExistingCard))}
             className="w-full bg-[#f97316] text-white font-medium rounded-lg px-5 py-3.5 text-sm hover:bg-[#ea580c] focus:outline-none focus:ring-4 focus:ring-[#f97316]/50 dark:bg-[#f97316] dark:hover:bg-[#ea580c] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {loading ? 'Processing...' : trialWithoutCC ? 'Start Free Trial' : 'Pay Now'}
+            {loading ? 'Processing...' : trialWithoutCC ? 'Start Free Trial' : useExistingCard ? 'Subscribe with Existing Card' : 'Pay Now'}
           </button>
         </form>
 
@@ -470,6 +559,7 @@ export default function PricingPage() {
   const [stripePromise, setStripePromise] = useState<any>(null);
   const [freeSubscriptionStatus, setFreeSubscriptionStatus] = useState<boolean | null>(null);
   const [subscriptionMessage, setSubscriptionMessage] = useState<string | null>(null);
+    const [subscribedProductId, setSubscribedProductId] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -477,6 +567,37 @@ export default function PricingPage() {
     const fetchPricingData = async () => {
       try {
         setLoading(true);
+        // Fetch free trial status
+        const accessToken = localStorage.getItem('accessToken');
+        if (!accessToken) {
+          throw new Error('No access token found');
+        }
+
+        const freeTrialResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/freetrial', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${accessToken}`,
+          },
+        });
+
+        if (!freeTrialResponse.ok) {
+          const errorData = await freeTrialResponse.json();
+          throw new Error(errorData.message || 'Failed to fetch free trial status');
+        }
+
+        const freeTrialData = await freeTrialResponse.json();
+        console.log('Free Trial Data:', freeTrialData);
+        setFreeSubscriptionStatus(freeTrialData.data.allow_platform_free_trial);
+
+        // If allow_platform_free_trial is false, store the product_id from free_trial_details
+        if (!freeTrialData.data.allow_platform_free_trial && freeTrialData.data.free_trial_details) {
+          setSubscribedProductId(freeTrialData.data.free_trial_details.product_id);
+          console.log('Subscribed Product ID:', freeTrialData.data.free_trial_details.product_id);
+        } else {
+          console.log('No subscribed product or free trial is allowed');
+        }
+        
         const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/billing/products', {
           method: 'GET',
           headers: {
@@ -502,9 +623,11 @@ export default function PricingPage() {
           isPopular: product.product_name === 'AI Pro',
           trialWithoutCC: product.trial_without_cc || false,
           product_id: product.product_id,
-          accountId: responseData.data.connected_account_id
+          accountId: responseData.data.connected_account_id,
+          isSubscribed: freeTrialData.data.allow_platform_free_trial == false && freeTrialData.data.free_trial_details?.product_id === product.stripe_id,
         }));
 
+        console.log(processedPlans);
         setPlans(processedPlans);
         setLoading(false);
       } catch (err) {
@@ -529,10 +652,15 @@ export default function PricingPage() {
     }
   }, [selectedPlan, isModalOpen]);
 
-  const handlePlanSelect = async (plan: Plan) => {
+const handlePlanSelect = async (plan: Plan) => {
+  // Prevent subscription if the plan is already subscribed
+    // if (plan.isSubscribed) {
+    //   setSubscriptionMessage('You are already subscribed to this plan. Please contact support to make changes.');
+    //   return;
+    // }
     try {
-      setLoading(true); // Set loading state
-      setSubscriptionMessage(null); // Clear any previous messages
+      setLoading(true);
+      setSubscriptionMessage(null);
 
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) {
@@ -540,35 +668,20 @@ export default function PricingPage() {
         return;
       }
 
-      const freeTrialResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/freetrial', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-      });
-
-      if (!freeTrialResponse.ok) {
-        const errorData = await freeTrialResponse.json();
-        throw new Error(errorData.message || 'Failed to fetch free trial status');
-      }
-
-      const freeTrialData = await freeTrialResponse.json();
-      const allowFreeTrial = freeTrialData.data.allow_platform_free_trial;
-
-      setFreeSubscriptionStatus(allowFreeTrial);
-
-      if (!allowFreeTrial) {
-        setSubscriptionMessage('You already have an active free subscription. Please cancel it or contact support to proceed.');
-        return;
-      }
+      // // Free trial status is already fetched on page load, so we can use freeSubscriptionStatus
+      // if (freeSubscriptionStatus === true) {
+      //   setSubscriptionMessage('You are eligible for a free trial.');
+      // } else if (freeSubscriptionStatus === false) {
+      //   setSubscriptionMessage('You already have an active free subscription or are not eligible. Please cancel it or contact support to proceed.');
+      //   return;
+      // }
 
       setSelectedPlan(plan);
       setIsModalOpen(true);
     } catch (err: any) {
       setSubscriptionMessage(err.message || 'Failed to check free trial status. Please try again later.');
     } finally {
-      setLoading(false); // Reset loading state
+      setLoading(false);
     }
   };
 
@@ -683,6 +796,13 @@ export default function PricingPage() {
                         </span>
                       </div>
                     )}
+                                        {/* {plan.isSubscribed && (
+                      <div className="absolute -top-3 right-2">
+    <span className="bg-green-600 text-white px-4 py-1.5 rounded-full text-sm font-semibold tracking-wide shadow-md">
+      SUBSCRIBED
+    </span>
+                      </div>
+                    )} */}
                     <CardContent className="pt-0 flex flex-col flex-grow">
                       <div className="text-center mb-6">
                         <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">{plan.name}</h3>
@@ -701,13 +821,32 @@ export default function PricingPage() {
                         )}
                       </div>
                       <ul className="space-y-3 mb-6 flex-grow">
-                        {[...plan.standardPerks, ...plan.extra_perks].map((perk, idx) => (
+                        {[...plan.extra_perks].map((perk, idx) => (
                           <li key={idx} className="flex items-start">
                             <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
                             <span className="text-gray-700 dark:text-gray-300">{perk}</span>
                           </li>
                         ))}
                       </ul>
+                      {/* {plan.isSubscribed ? (
+                        <Button
+                          className="w-full py-5 text-base font-medium bg-gray-400 dark:bg-gray-600 text-white cursor-not-allowed"
+                          disabled
+                        >
+                          Already Subscribed
+                        </Button>
+                      ) : (
+                        <Button
+                          className={`w-full py-5 text-base font-medium ${plan.isPopular
+                            ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-200 dark:shadow-orange-800/50'
+                            : 'bg-gray-900 dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white'
+                            }`}
+                          onClick={() => handlePlanSelect(plan)}
+                          disabled={loading}
+                        >
+                          {loading ? 'Checking...' : plan.freeTrial && billingInterval === 'month' ? `${plan.freeTrialDays} Day Trial` : 'Subscribe'}
+                        </Button>
+                      )} */}
                       <Button
                         className={`w-full py-5 text-base font-medium ${plan.isPopular
                           ? 'bg-orange-600 hover:bg-orange-700 text-white shadow-lg shadow-orange-200 dark:shadow-orange-800/50'
@@ -716,7 +855,7 @@ export default function PricingPage() {
                         onClick={() => handlePlanSelect(plan)}
                         disabled={loading} // Disable button while loading
                       >
-                        {loading ? 'Checking...' : plan.freeTrial && billingInterval === 'month' ? `${plan.freeTrialDays} Day Trial` : 'Subscribe'}
+                        {loading ? 'Checking...' : plan.freeTrial && billingInterval === 'month' && plan.isSubscribed === false ? `${plan.freeTrialDays} Day Trial` : 'Subscribe'}
                       </Button>
                     </CardContent>
                   </Card>
