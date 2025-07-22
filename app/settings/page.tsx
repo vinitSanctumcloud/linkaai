@@ -605,9 +605,9 @@ export default function SettingsPage() {
   const handlePurchaseTokens = async (priceId: number) => {
     setIsLoading(true);
     let payload: PaymentData = { price_id: priceId };
-    // if(paymentCardDetails) {
-    //   payload = { ...payload, payment_method_id: paymentCardDetails?.payment_method_id };
-    // }
+    if(paymentCardDetails) {
+      payload = { ...payload, payment_method_id: paymentCardDetails?.payment_method_id };
+    }
 
     try {
       const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/credit/payment', {
