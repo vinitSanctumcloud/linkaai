@@ -10,7 +10,7 @@ import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Ci
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
-import { parse,format, isValid } from 'date-fns';
+import { parse, format, isValid } from 'date-fns';
 import { API } from '@/config/api';
 
 function safeFormatDate(dateInput: string | number | Date, formatString = 'PP') {
@@ -160,6 +160,7 @@ export default function SettingsPage() {
   const [paymentCardDetails, setPaymentCardDetails] = useState<PaymentMethodResponse | null>(null);
   const [tokendetails, setTokenDetails] = useState<TokenInfo | null>(null);
   const [bookingHistory, setBookingHistory] = useState<BookingHistoryResponse | null>(null);
+  const [password_confirmation , setPassword_confirmation] = useState("")
   const [loading, setLoading] = useState(true);
 
   // === API FUNCTIONS ===
@@ -257,15 +258,6 @@ export default function SettingsPage() {
     }
   };
 
-  // const changePassword = async () => {
-  //   try {
-  //     const res  = 
-  //   } catch (error) {
-  //     console.error('Failed to fetch billing history:', error);
-  //     return null;
-  //   }
-  // }
-
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -292,6 +284,14 @@ export default function SettingsPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+  let strength = 0;
+  if (formData.newPassword.length >= 8) strength++;
+  if (/[A-Z]/.test(formData.newPassword)) strength++;
+  if (/[0-9]/.test(formData.newPassword)) strength++;
+  if (/[^A-Za-z0-9]/.test(formData.newPassword)) strength++;
+  setPasswordStrength(strength);
+}, [formData.newPassword]);
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -460,15 +460,19 @@ export default function SettingsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('/api/change-password', {
+      const response = await fetch(API.CHANGE_PASSWORD, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
         body: JSON.stringify({
-          currentPassword,
-          newPassword: formData.newPassword,
+          old_password: currentPassword,
+          password: formData.newPassword,
+          password_confirmation,
         }),
       });
-
+      console.log(response,"password")
       if (response.ok) {
         toast.success('Password updated successfully!');
         setCurrentPassword('');
@@ -842,8 +846,8 @@ export default function SettingsPage() {
                     Subscription
                     <div
                       className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${subscription?.subscription_status
-                          ? 'bg-green-50 text-green-700 border-green-200'
-                          : 'bg-red-50 text-red-600 border-red-200'
+                        ? 'bg-green-50 text-green-700 border-green-200'
+                        : 'bg-red-50 text-red-600 border-red-200'
                         }`}
                     >
                       {subscription?.subscription_status ? (
@@ -949,10 +953,10 @@ export default function SettingsPage() {
                       className="bg-green-500 h-3 rounded-full transition-all duration-300"
                       style={{
                         width: `${tokendetails?.tokenBalance !== undefined &&
-                            tokendetails?.totalTokenPurchase !== undefined &&
-                            tokendetails?.totalTokenPurchase > 0
-                            ? (tokendetails.tokenBalance / tokendetails.totalTokenPurchase) * 100
-                            : 0
+                          tokendetails?.totalTokenPurchase !== undefined &&
+                          tokendetails?.totalTokenPurchase > 0
+                          ? (tokendetails.tokenBalance / tokendetails.totalTokenPurchase) * 100
+                          : 0
                           }%`,
                       }}
                     ></div>
@@ -1127,8 +1131,8 @@ export default function SettingsPage() {
                             <td className="px-6 py-4 whitespace-nowrap">
                               <div
                                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border ${subscription?.subscription_status
-                                    ? 'bg-green-50 text-green-700 border-green-200'
-                                    : 'bg-red-50 text-red-600 border-red-200'
+                                  ? 'bg-green-50 text-green-700 border-green-200'
+                                  : 'bg-red-50 text-red-600 border-red-200'
                                   }`}
                               >
                                 {subscription?.subscription_status ? (
@@ -1353,34 +1357,34 @@ export default function SettingsPage() {
                 {/* Side by side sections */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   {/* Enhanced Password Change Section */}
-                  <div className="border border-gray-200 rounded-lg p-6 bg-white">
-                    <div className="flex items-center gap-4 mb-6">
-                      <div className="p-3 rounded-full bg-blue-50">
-                        <Key className="h-5 w-5 text-blue-600" />
+                  <div className="border border-gray-200 rounded-2xl p-8 bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <div className="flex items-center gap-4 mb-8">
+                      <div className="p-3 rounded-full bg-blue-100 transition-colors duration-200">
+                        <Key className="h-6 w-6 text-blue-600" />
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900 text-lg">Password & Security</h3>
-                        <p className="text-sm text-gray-500">Protect your account with a strong password</p>
+                        <h3 className="font-semibold text-gray-900 text-xl tracking-tight">Password & Security</h3>
+                        <p className="text-sm text-gray-600 mt-1">Keep your account secure with a strong password</p>
                       </div>
                     </div>
 
-                    <form className="space-y-5" onSubmit={handlePasswordChange}>
+                    <form className="space-y-6" onSubmit={handlePasswordChange}>
                       <div className="space-y-3">
                         <Label
                           htmlFor="currentPassword"
-                          className="text-sm font-medium flex items-center justify-between"
+                          className="text-sm font-medium text-gray-900 flex items-center justify-between"
                         >
                           Current Password
                           {currentPasswordError && (
-                            <span className="text-red-500 text-xs">{currentPasswordError}</span>
+                            <span className="text-red-500 text-xs font-medium">{currentPasswordError}</span>
                           )}
                         </Label>
                         <div className="relative">
                           <Input
                             id="currentPassword"
                             type={showCurrent ? 'text' : 'password'}
-                            placeholder="Enter your current password"
-                            className="pr-10"
+                            placeholder="Enter current password"
+                            className="pr-10 h-12 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                             value={currentPassword}
                             onChange={(e) => {
                               setCurrentPassword(e.target.value);
@@ -1389,75 +1393,76 @@ export default function SettingsPage() {
                           />
                           <button
                             type="button"
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                             onClick={() => setShowCurrent(!showCurrent)}
                             aria-label={showCurrent ? 'Hide password' : 'Show password'}
                           >
-                            {showCurrent ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showCurrent ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                           </button>
                         </div>
                       </div>
 
                       <div className="space-y-3">
-                        <Label htmlFor="newPassword" className="text-sm font-medium">
+                        <Label htmlFor="newPassword" className="text-sm font-medium text-gray-900">
                           New Password
                         </Label>
                         <div className="relative">
                           <Input
                             id="newPassword"
                             type={showNew ? 'text' : 'password'}
-                            placeholder="Create a new password (min 8 characters)"
-                            className="pr-10"
+                            placeholder="Create new password (min 8 characters)"
+                            className="pr-10 h-12 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                             value={formData.newPassword}
                             onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                           />
                           <button
                             type="button"
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                             onClick={() => setShowNew(!showNew)}
                             aria-label={showNew ? 'Hide password' : 'Show password'}
                           >
-                            {showNew ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showNew ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                           </button>
                         </div>
-                        <div className="grid grid-cols-4 gap-2 mt-2">
+                        <div className="grid grid-cols-4 gap-2 mt-3">
                           {[1, 2, 3, 4].map((i) => (
                             <div
                               key={i}
-                              className={`h-1 rounded-full ${passwordStrength >= i ? 'bg-green-500' : 'bg-gray-200'}`}
+                              className={`h-1.5 rounded-full transition-colors duration-200 ${passwordStrength >= i ? 'bg-green-500' : 'bg-gray-200'
+                                }`}
                             ></div>
                           ))}
                         </div>
-                        <ul className="text-xs text-gray-500 space-y-1 mt-2">
+                        <ul className="text-xs text-gray-600 space-y-2 mt-3">
                           <li className="flex items-center">
                             {formData.newPassword.length >= 8 ? (
-                              <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" />
+                              <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
                             ) : (
-                              <Circle className="h-3 w-3 mr-1 text-gray-300" />
+                              <Circle className="h-4 w-4 mr-2 text-gray-300" />
                             )}
                             At least 8 characters
                           </li>
                           <li className="flex items-center">
                             {/[A-Z]/.test(formData.newPassword) ? (
-                              <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" />
+                              <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
                             ) : (
-                              <Circle className="h-3 w-3 mr-1 text-gray-300" />
+                              <Circle className="h-4 w-4 mr-2 text-gray-300" />
                             )}
                             Contains uppercase letter
                           </li>
                           <li className="flex items-center">
                             {/[0-9]/.test(formData.newPassword) ? (
-                              <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" />
+                              <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
                             ) : (
-                              <Circle className="h-3 w-3 mr-1 text-gray-300" />
+                              <Circle className="h-4 w-4 mr-2 text-gray-300" />
                             )}
                             Contains number
                           </li>
                           <li className="flex items-center">
                             {/[^A-Za-z0-9]/.test(formData.newPassword) ? (
-                              <CheckCircle2 className="h-3 w-3 mr-1 text-green-500" />
+                              <CheckCircle2 className="h-4 w-4 mr-2 text-green-500" />
                             ) : (
-                              <Circle className="h-3 w-3 mr-1 text-gray-300" />
+                              <Circle className="h-4 w-4 mr-2 text-gray-300" />
                             )}
                             Contains special character
                           </li>
@@ -1467,44 +1472,45 @@ export default function SettingsPage() {
                       <div className="space-y-3">
                         <Label
                           htmlFor="confirmPassword"
-                          className="text-sm font-medium flex items-center justify-between"
+                          className="text-sm font-medium text-gray-900 flex items-center justify-between"
                         >
                           Confirm New Password
                           {confirmPasswordError && (
-                            <span className="text-red-500 text-xs">{confirmPasswordError}</span>
+                            <span className="text-red-500 text-xs font-medium">{confirmPasswordError}</span>
                           )}
                         </Label>
                         <div className="relative">
                           <Input
                             id="confirmPassword"
                             type={showConfirm ? 'text' : 'password'}
-                            placeholder="Re-enter your new password"
-                            className="pr-10"
+                            placeholder="Confirm new password"
+                            className="pr-10 h-12 rounded-lg border-gray-300 focus:ring-2 focus:ring-blue-500 transition-all duration-200"
                             value={confirmPassword}
                             onChange={(e) => {
                               setConfirmPassword(e.target.value);
                               setConfirmPasswordError('');
+                              setPassword_confirmation(e.target.value)
                             }}
                           />
                           <button
                             type="button"
-                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors duration-200"
                             onClick={() => setShowConfirm(!showConfirm)}
                             aria-label={showConfirm ? 'Hide password' : 'Show password'}
                           >
-                            {showConfirm ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                            {showConfirm ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                           </button>
                         </div>
                       </div>
 
                       <Button
                         type="submit"
-                        className="w-full bg-blue-600 hover:bg-blue-700"
-                        disabled={isLoading || passwordStrength < 3 || !currentPassword || !confirmPassword}
+                        className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                        disabled={ passwordStrength < 3 || !currentPassword || !confirmPassword}
                       >
                         {isLoading ? (
-                          <div className="flex items-center">
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          <div className="flex items-center justify-center">
+                            <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                             Updating...
                           </div>
                         ) : (
