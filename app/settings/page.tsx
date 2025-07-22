@@ -232,57 +232,31 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        // Fetch settings
-        const settingsResponse = await fetch('/api/settings', {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        });
-        if (settingsResponse.ok) {
-          const data = await settingsResponse.json();
-          setSettings(data);
-          setFormData({
-            agentName: data.agentName || '',
-            brandColor: data.brandColor || '#FF6B35',
-            voiceEnabled: data.voiceEnabled ?? true,
-            customUrl: data.customUrl || '',
-            welcomeMessage: data.welcomeMessage || '',
-            instructions: data.instructions || '',
-            avatarUrl: data.avatarUrl || '',
-            newPassword: '',
-            chatLimit: data.chatLimit || 0,
-          });
-          setAvatarPreview(data.avatarUrl || '');
-        } else {
-          toast.error('Failed to load settings. Please try again.');
-        }
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const [subscriptionData, paymentData, tokenData, billingData] = await Promise.all([
+        fetchSubscriptionDetails(),
+        fetchPaymentDetails(),
+        fetchTokenDetails(),
+        fetchBillingHistory(),
+      ]);
 
-        // Fetch subscription, payment, token, and billing details
-        const [subscriptionData, paymentData, tokenData, billingData] = await Promise.all([
-          fetchSubscriptionDetails(),
-          fetchPaymentDetails(),
-          fetchTokenDetails(),
-          fetchBillingHistory(),
-        ]);
+      setSubscription(subscriptionData);
+      setPaymentCardDetails(paymentData);
+      setTokenDetails(tokenData);
+      setBookingHistory(billingData);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      toast.error('An error occurred while fetching data.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        setSubscription(subscriptionData);
-        setPaymentCardDetails(paymentData);
-        setTokenDetails(tokenData);
-        setBookingHistory(billingData);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('An error occurred while fetching data.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  fetchData();
+}, []);
 
-    fetchData();
-  }, []);
 
   const handleSave = async () => {
     setIsLoading(true);
