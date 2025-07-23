@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 
 import {
@@ -14,12 +14,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import {
-  TrendingUp,
   Users,
-  DollarSign,
   MousePointer,
   Plus,
-  ExternalLink,
   Bot,
   BarChart3,
   ChevronRight,
@@ -28,7 +25,6 @@ import {
   ShoppingBag,
   Settings,
   LayoutTemplate,
-  CheckCircle,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -123,9 +119,9 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-4 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 md:gap-6">
               <StatCard
-                title="Total Chat"
+                title="Total Chats"
                 value={analytics?.totalViews?.toLocaleString() || "0"}
                 icon={<Users className="h-5 w-5" />}
                 trend="up"
@@ -159,14 +155,24 @@ export default function DashboardPage() {
                 period="Last 7 days"
                 comingSoon={true}
               /> */}
-              <button className="w-full rounded-2xl shadow-md p-4 bg-white hover:shadow-lg transition flex items-center justify-between relative">
-                {/* Text */}
-                <span className="text-lg font-semibold text-gray-800 -mt-1 -ml-1">
-                  Conversation Log
-                </span>
+              <button className="w-full rounded-2xl shadow-sm hover:shadow-md p-4 bg-gradient-to-br from-white to-gray-50 hover:from-white hover:to-gray-100 transition-all duration-200 flex items-center justify-between group border border-gray-100">
+                {/* Text with premium badge */}
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-semibold text-gray-800 group-hover:text-gray-900 transition-colors">
+                    Conversation Log
+                  </span>
+                  <span className="px-2 py-0.5 text-xs font-semibold bg-gradient-to-r from-orange-100 to-amber-100 text-amber-800 rounded-full border border-amber-200 shadow-inner">
+                    PRO ONLY
+                  </span>
+                </div>
 
-                {/* Arrow Icon */}
-                <span className="text-orange-500 text-xl -mt-1">➜</span>
+                {/* Icons with animation */}
+                <div className="flex items-center">
+                  <span className="text-gray-300 group-hover:text-gray-400 text-lg mr-2 transition-colors">🔒</span>
+                  <span className="text-orange-500 group-hover:text-orange-600 text-xl transition-transform group-hover:translate-x-1">
+                    →
+                  </span>
+                </div>
               </button>
             </div>
 

@@ -46,11 +46,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: Home },
     { name: "AI Agent", href: "/agent", icon: Bot },
-    { name: "Embed Code", href: "/embed", icon: Code },
+    { name: "Share My Agent", href: "/embed", icon: Code },
     { name: "Analytics", href: "/analytics", icon: BarChart3 },
     { name: "Settings", href: "/settings", icon: Settings },
     {
-      name: "The Creator Marketplace",
+      name: "The Creators Marketplace",
       href: "/affiliatemarketplace",
       icon: Store,
       comingSoon: true,

@@ -165,15 +165,7 @@ select:focus-visible {
   outline-offset: 2px;
 }
 
-/* Radix tooltip styles */
-[data-radix-tooltip-content] {
-  opacity: 0;
-  transition: opacity 200ms ease;
-}
 
-[data-radix-tooltip-content][data-state='delayed-open'] {
-  opacity: 1;
-}
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;

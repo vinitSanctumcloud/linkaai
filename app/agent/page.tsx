@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+
 import {
   Dialog,
   DialogContent,
@@ -24,16 +25,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Switch } from "@/components/ui/switch";
 import {
   Upload,
   Bot,
   Plus,
-  X,
   Save,
   Send,
   Mic,
-  Eye,
   ArrowLeft,
   ArrowRight,
   Edit,
@@ -43,10 +41,12 @@ import {
   InfoIcon,
   LinkIcon,
   Link2,
-  ImageIcon,
-  Share2,
+  TrashIcon,
+  RefreshCwIcon,
+  EyeIcon
 } from "lucide-react";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface PartnerLink {
   addKnowledge: string;
@@ -69,8 +69,8 @@ interface PartnerLink {
   affiliateLink: string;
   affiliateBrandName?: string;
   socialMediaLink?: string;
-  productReview?: string;
-  status?: "active" | "inactive";
+  // affiliateimage: string | undefined;
+  status?: "Submitted" | "Hold" | "Processing" | "Complete";
 }
 
 interface LinkaProMonetization {
@@ -125,36 +125,36 @@ export default function AgentBuilderPage() {
     name: "",
     trainingInstructions: "",
     prompts: ["", "", "", ""],
-    partnerLinks: [],
-    linkaProMonetizations: [],
-    // partnerLinks: [
-    //   {
-    //     id: "",
-    //     category: "",
-    //     affiliateLink: "",
-    //     affiliateBrandName: "",
-    //     socialMediaLink: "",
-    //     productReview: "",
-    //     status: "active",
-    //     addKnowledge: "",
-    //     name: "",
-    //     url: ""
-    //   },
-    // ],
-    // linkaProMonetizations: [
-    //   {
-    //     id: "1",
-    //     category: "Tech",
-    //     affiliateBrandName: "Apple",
-    //     mainUrl: "https://apple.com",
-    //     mainimage: { name: "tech.jpg" },
-    //     name: "test 1",
-    //     url: "",
-    //     status: "inactive",
-    //     blogUrl: "", // added
-    //     websiteUrl: "", // added
-    //   },
-    // ],
+    // partnerLinks: [],
+    // linkaProMonetizations: [],
+    partnerLinks: [
+      {
+        id: "1",
+        category: "Travel",
+        affiliateBrandName: "TripAdvisor",
+        affiliateLink: "Social Media",
+        productReview: "Great travel reviews",
+        socialMediaLink: "https://twitter.com/tripadvisor",
+        // affiliateimage: "travel.jpg",
+        name: "test",
+        url: "active",
+        status: "Hold",
+      },
+    ],
+    linkaProMonetizations: [
+      {
+        id: "1",
+        category: "Tech",
+        affiliateBrandName: "Apple",
+        mainUrl: "https://apple.com",
+        mainimage: { name: "tech.jpg" },
+        name: "test 1",
+        url: "",
+        status: "inactive",
+        blogUrl: "", // added
+        websiteUrl: "", // added
+      },
+    ],
 
     conditionalPrompts: [],
     useConditionalPrompts: false,
@@ -366,8 +366,8 @@ const handleDeleteLink = (index: number, type: "partner" | "aipro") => {
     setAgentConfig((prev) => {
       const newConditionalPrompts = editingConditionalPrompt
         ? prev.conditionalPrompts.map((p) =>
-            p.id === editingConditionalPrompt.id ? conditionalForm : p
-          )
+          p.id === editingConditionalPrompt.id ? conditionalForm : p
+        )
         : [...prev.conditionalPrompts, conditionalForm];
       return { ...prev, conditionalPrompts: newConditionalPrompts };
     });
@@ -457,23 +457,23 @@ const handleDeleteLink = (index: number, type: "partner" | "aipro") => {
     type: "productExpansion" | "blogMonetization" | "websiteMonetization";
     status: string;
   } & (
-    | {
+      | {
         type: "productExpansion";
         category: string;
         affiliateBrandName: string;
         mainUrl: string;
       }
-    | {
+      | {
         type: "blogMonetization";
         category: string;
         blogUrl: string;
       }
-    | {
+      | {
         type: "websiteMonetization";
         category: string;
         websiteUrl: string;
       }
-  );
+    );
 
   const addLinkaProMonetization = () => {
     // Create a MonetizationLink first
@@ -822,8 +822,8 @@ const handleDeleteLink = (index: number, type: "partner" | "aipro") => {
           payload = {
             prompts: agentConfig.useConditionalPrompts
               ? agentConfig.conditionalPrompts
-                  .map((cp) => cp.mainPrompt)
-                  .filter((p) => p.trim())
+                .map((cp) => cp.mainPrompt)
+                .filter((p) => p.trim())
               : agentConfig.prompts.filter((p) => p.trim()),
           };
           break;
@@ -1087,7 +1087,7 @@ const handleDeleteLink = (index: number, type: "partner" | "aipro") => {
                 <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
                   <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
                     {agentConfig.greetingMedia &&
-                    agentConfig.greetingMediaType ? (
+                      agentConfig.greetingMediaType ? (
                       agentConfig.greetingMediaType === "video" ? (
                         <video
                           src={agentConfig.greetingMedia}
@@ -2295,18 +2295,18 @@ case 4:
                   <div className="flex-1 overflow-y-auto px-1 sm:px-4">
                     <div className="space-y-4">
                       <div>
-                        <h5 className="text-sm font-semibold text-linka-russian-violet mb-2">
+                        {/* <h5 className="text-sm font-semibold text-linka-russian-violet mb-2">
                           Conversation Starters
-                        </h5>
+                        </h5> */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
                           {(agentConfig.useConditionalPrompts &&
-                          agentConfig.conditionalPrompts.length > 0
+                            agentConfig.conditionalPrompts.length > 0
                             ? agentConfig.conditionalPrompts
-                                .slice(0, 2)
-                                .map((cp) => cp.mainPrompt)
+                              .slice(0, 2)
+                              .map((cp) => cp.mainPrompt)
                             : agentConfig.prompts.filter(
-                                (prompt) => prompt.trim() !== ""
-                              )
+                              (prompt) => prompt.trim() !== ""
+                            )
                           ).map((prompt, index) => (
                             <button
                               key={index}
@@ -2322,18 +2322,20 @@ case 4:
                     </div>
                   </div>
                   <div className="mt-4 sm:mt-6">
-                    <div className="flex bg-gray-200 rounded-full px-4 py-2 items-center gap-2">
+                    <div className="flex bg-gray-200 rounded-md px-4 py-2 items-center gap-2">
                       <input
-                        type="text"
+                        type="text "
                         placeholder="Type or ask me something..."
-                        className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-500 focus:outline-none"
+                        className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-500 focus:outline-none font-bold"
                         disabled
                       />
-                      <button className="bg-linka-dark-orange text-white p-2 rounded-full flex items-center justify-center hover:bg-linka-dark-orange/90 transition-colors duration-200">
-                        <Send className="w-4 h-4" />
+
+                      <button className=" text-black p-2 rounded-full flex items-center justify-center hover:bg-linka-dark-orange/90 transition-colors duration-200">
+                        <Mic className="w-6 h-6" />
+
                       </button>
-                      <button className="bg-linka-dark-orange text-white p-2 rounded-full flex items-center justify-center hover:bg-linka-dark-orange/90 transition-colors duration-200">
-                        <Mic className="w-4 h-4" />
+                      <button className="bg-black text-white p-2 rounded-full flex items-center justify-center hover:bg-linka-dark-orange/90 transition-colors duration-200">
+                        <Send className="w-4 h-4" />
                       </button>
                     </div>
                   </div>
@@ -2438,6 +2440,28 @@ case 4:
     agentConfig.linkaProMonetizations.length,
     agentConfig.partnerLinks.length,
   ]);
+  // For Preview action
+  const handlePreviewLink = (index: any) => {
+    console.log(`Preview link at index ${index}`, agentConfig.partnerLinks[index]);
+  };
+
+  // For Retry action
+  const handleRetryLink = (index: any) => {
+    console.log(`Retry link at index ${index}`, agentConfig.partnerLinks[index]);
+    console.log('Make API call to retry processing here');
+  };
+
+  // For Delete action
+  const handleDeleteLink1 = (index: any) => {
+    console.log(`Delete link at index ${index}`, agentConfig.partnerLinks[index]);
+    console.log('Make API call to delete here');
+  };
+
+  // For Update Image action
+  const handleUpdateImage = (index: any) => {
+    console.log(`Update image for link at index ${index}`, agentConfig.partnerLinks[index]);
+    console.log('Open image upload modal here');
+  };
 
   return (
     <DashboardLayout>
@@ -2462,13 +2486,12 @@ case 4:
               {steps.map((step, index) => (
                 <div key={step.id} className="relative">
                   <div
-                    className={`stepper-item flex items-center p-3 sm:p-4 rounded-xl cursor-pointer transition-all hover:scale-105 hover:shadow-md ${
-                      progressData && progressData.completed_steps >= step.id
-                        ? "bg-white text-linka-russian-violet border-2 border-orange-200"
-                        : currentStep === step.id
-                          ? "bg-orange-100 text-linka-russian-violet border-2 border-orange-300"
-                          : "bg-white text-linka-russian-violet hover:bg-orange-50 border border-orange-200"
-                    }`}
+                    className={`stepper-item flex items-center p-3 sm:p-4 rounded-xl cursor-pointer transition-all hover:scale-105 hover:shadow-md ${progressData && progressData.completed_steps >= step.id
+                      ? "bg-white text-linka-russian-violet border-2 border-orange-200"
+                      : currentStep === step.id
+                        ? "bg-orange-100 text-linka-russian-violet border-2 border-orange-300"
+                        : "bg-white text-linka-russian-violet hover:bg-orange-50 border border-orange-200"
+                      }`}
                     onClick={() => {
                       if (
                         progressData &&
@@ -2483,16 +2506,15 @@ case 4:
                     }}
                   >
                     <div
-                      className={`stepper-number w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-white font-bold transition-all ${
-                        progressData && progressData.completed_steps >= step.id
-                          ? "bg-orange-400"
-                          : currentStep === step.id
-                            ? "bg-orange-500 ring-2 ring-orange-500 ring-offset-2"
-                            : "bg-orange-400"
-                      } mr-10 sm:mr-4`}
+                      className={`stepper-number w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-white font-bold transition-all ${progressData && progressData.completed_steps >= step.id
+                        ? "bg-orange-400"
+                        : currentStep === step.id
+                          ? "bg-orange-500 ring-2 ring-orange-500 ring-offset-2"
+                          : "bg-orange-400"
+                        } mr-10 sm:mr-4`}
                     >
                       {progressData &&
-                      progressData.completed_steps >= step.id ? (
+                        progressData.completed_steps >= step.id ? (
                         <svg
                           className="w-5 h-5"
                           fill="none"
@@ -2539,11 +2561,10 @@ case 4:
                   variant="outline"
                   onClick={prevStep}
                   disabled={currentStep === 1}
-                  className={`border-orange-300 text-orange-500 hover:bg-orange-100 hover:text-orange-600 transition-all duration-200 ${
-                    currentStep !== 1
-                      ? "hover:scale-105"
-                      : "opacity-50 cursor-not-allowed"
-                  }`}
+                  className={`border-orange-300 text-orange-500 hover:bg-orange-100 hover:text-orange-600 transition-all duration-200 ${currentStep !== 1
+                    ? "hover:scale-105"
+                    : "opacity-50 cursor-not-allowed"
+                    }`}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Previous
@@ -2723,7 +2744,7 @@ case 4:
             <DialogHeader>
               <DialogTitle>
                 {activeTab === "partner"
-                  ? "Partner Links"
+                  ? "Primary Recs"
                   : "Product Monetization"}
               </DialogTitle>
             </DialogHeader>
@@ -2745,19 +2766,14 @@ case 4:
                                   htmlFor={`partner-category-${link.id}`}
                                   className="text-linka-russian-violet font-medium"
                                 >
-                                  Category{" "}
-                                  <span className="text-red-500">*</span>
+                                  Category <span className="text-red-500">*</span>
                                 </Label>
                                 <Input
                                   id={`partner-category-${link.id}`}
                                   placeholder="e.g., Travel, Fashion"
                                   value={link.category}
                                   onChange={(e) =>
-                                    updatePartnerLink(
-                                      link.id!,
-                                      "category",
-                                      e.target.value
-                                    )
+                                    updatePartnerLink(link.id, "category", e.target.value)
                                   }
                                   className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                 />
@@ -2767,8 +2783,7 @@ case 4:
                                   htmlFor={`partner-link-${link.id}`}
                                   className="text-linka-russian-violet font-medium"
                                 >
-                                  Affiliate Link{" "}
-                                  <span className="text-red-500">*</span>
+                                  Affiliate Link <span className="text-red-500">*</span>
                                 </Label>
                                 <div className="relative">
                                   <Input
@@ -2776,11 +2791,7 @@ case 4:
                                     placeholder="https://affiliate-link.com"
                                     value={link.affiliateLink}
                                     onChange={(e) =>
-                                      updatePartnerLink(
-                                        link.id!,
-                                        "affiliateLink",
-                                        e.target.value
-                                      )
+                                      updatePartnerLink(link.id, "affiliateLink", e.target.value)
                                     }
                                     className="pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                   />
@@ -2789,61 +2800,77 @@ case 4:
                               </div>
                             </div>
 
-                            {/* Row 2: Add Knowledge & Brand Name */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <Label
-                                  htmlFor={`partner-knowledge-${link.id}`}
-                                  className="text-linka-russian-violet font-medium"
-                                >
-                                  Add Knowledge
-                                  <span className="text-linka-night/50 text-sm">
-                                    (i)
-                                  </span>
-                                </Label>
-                             </div>
-                            {/* Row 3: Social Media & Product Review */}
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label
-                                  htmlFor={`partner-social-${link.id}`}
-                                  className="text-linka-russian-violet font-medium"
-                                >
-                                  Social Media
-                                </Label>
-                                <Input
-                                  id={`partner-social-${link.id}`}
-                                  placeholder="https://social-media.com"
-                                  value={link.socialMediaLink || ""}
-                                  onChange={(e) =>
-                                    updatePartnerLink(
-                                      link.id!,
-                                      "socialMediaLink",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
+                            {/* Combined Row 2 & 3: Additional Information */}
+                            <div className="space-y-4">
+                              <div className="flex items-center space-x-2">
+                                <h3 className="text-linka-russian-violet font-semibold text-lg">
+                                  Additional Information
+                                </h3>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button>
+                                        <InfoIcon className="w-4 h-4 text-linka-russian-violet" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>Optional: Provide your AI-Agent with more context</p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
                               </div>
-                              <div className="space-y-2">
-                                <Label
-                                  htmlFor={`partner-review-${link.id}`}
-                                  className="text-linka-russian-violet font-medium"
-                                >
-                                  Product Review
-                                </Label>
-                                <Input
-                                  id={`partner-review-${link.id}`}
-                                  placeholder="e.g., Great product!"
-                                  value={link.productReview || ""}
-                                  onChange={(e) =>
-                                    updatePartnerLink(
-                                      link.id!,
-                                      "productReview",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                  <Label
+                                    htmlFor={`partner-social-${link.id}`}
+                                    className="text-linka-russian-violet font-medium"
+                                  >
+                                    Social Media
+                                  </Label>
+                                  <Input
+                                    id={`partner-social-${link.id}`}
+                                    placeholder="https://social-media.com"
+                                    value={link.socialMediaLink || ""}
+                                    onChange={(e) =>
+                                      updatePartnerLink(link.id, "socialMediaLink", e.target.value)
+                                    }
+                                    className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label
+                                    htmlFor={`partner-review-${link.id}`}
+                                    className="text-linka-russian-violet font-medium"
+                                  >
+                                    Product Review
+                                  </Label>
+                                  <Input
+                                    id={`partner-review-${link.id}`}
+                                    placeholder="e.g., Great product!"
+                                    value={link.productReview || ""}
+                                    onChange={(e) =>
+                                      updatePartnerLink(link.id, "productReview", e.target.value)
+                                    }
+                                    className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                </div>
+                                <div className="space-y-2">
+                                  <Label
+                                    htmlFor={`partner-brand-${link.id}`}
+                                    className="text-linka-russian-violet font-medium"
+                                  >
+                                    Brand Name
+                                  </Label>
+                                  <Input
+                                    id={`partner-brand-${link.id}`}
+                                    placeholder="e.g., TripAdvisor"
+                                    value={link.affiliateBrandName}
+                                    onChange={(e) =>
+                                      updatePartnerLink(link.id, "affiliateBrandName", e.target.value)
+                                    }
+                                    className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                </div>
                               </div>
                             </div>
                               <div className="space-y-2">
@@ -2980,184 +3007,184 @@ case 4:
                             <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
                               {selectedMonetizationOption ===
                                 "productExpansion" && (
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-                                  <div className="space-y-1 sm:space-y-2">
-                                    <Label
-                                      htmlFor={`pro-category-${link.id}`}
-                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                    >
-                                      Category{" "}
-                                      <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                      id={`pro-category-${link.id}`}
-                                      placeholder="e.g., Subscription, Service"
-                                      value={link.category}
-                                      onChange={(e) =>
-                                        updateLinkaProMonetization(
-                                          link.id,
-                                          "category",
-                                          e.target.value
-                                        )
-                                      }
-                                      className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                    />
-                                  </div>
-                                  <div className="space-y-1 sm:space-y-2">
-                                    <Label
-                                      htmlFor={`pro-brand-${link.id}`}
-                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                    >
-                                      Brand Affiliate Link{" "}
-                                      <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                      id={`pro-brand-${link.id}`}
-                                      placeholder="e.g., AI Pro"
-                                      value={link.affiliateBrandName}
-                                      onChange={(e) =>
-                                        updateLinkaProMonetization(
-                                          link.id,
-                                          "affiliateBrandName",
-                                          e.target.value
-                                        )
-                                      }
-                                      className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                    />
-                                  </div>
-                                  <div className="space-y-1 sm:space-y-2">
-                                    <Label
-                                      htmlFor={`pro-main-url-${link.id}`}
-                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                    >
-                                      Category URL{" "}
-                                      <span className="text-red-500">*</span>
-                                    </Label>
-                                    <div className="relative">
+                                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                                    <div className="space-y-1 sm:space-y-2">
+                                      <Label
+                                        htmlFor={`pro-category-${link.id}`}
+                                        className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                      >
+                                        Category{" "}
+                                        <span className="text-red-500">*</span>
+                                      </Label>
                                       <Input
-                                        id={`pro-main-url-${link.id}`}
-                                        placeholder="https://main-url.com"
-                                        value={link.mainUrl}
+                                        id={`pro-category-${link.id}`}
+                                        placeholder="e.g., Subscription, Service"
+                                        value={link.category}
                                         onChange={(e) =>
                                           updateLinkaProMonetization(
                                             link.id,
-                                            "mainUrl",
+                                            "category",
                                             e.target.value
                                           )
                                         }
-                                        className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                        className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                       />
-                                      <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                    </div>
+                                    <div className="space-y-1 sm:space-y-2">
+                                      <Label
+                                        htmlFor={`pro-brand-${link.id}`}
+                                        className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                      >
+                                        Brand Affiliate Link{" "}
+                                        <span className="text-red-500">*</span>
+                                      </Label>
+                                      <Input
+                                        id={`pro-brand-${link.id}`}
+                                        placeholder="e.g., AI Pro"
+                                        value={link.affiliateBrandName}
+                                        onChange={(e) =>
+                                          updateLinkaProMonetization(
+                                            link.id,
+                                            "affiliateBrandName",
+                                            e.target.value
+                                          )
+                                        }
+                                        className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                      />
+                                    </div>
+                                    <div className="space-y-1 sm:space-y-2">
+                                      <Label
+                                        htmlFor={`pro-main-url-${link.id}`}
+                                        className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                      >
+                                        Category URL{" "}
+                                        <span className="text-red-500">*</span>
+                                      </Label>
+                                      <div className="relative">
+                                        <Input
+                                          id={`pro-main-url-${link.id}`}
+                                          placeholder="https://main-url.com"
+                                          value={link.mainUrl}
+                                          onChange={(e) =>
+                                            updateLinkaProMonetization(
+                                              link.id,
+                                              "mainUrl",
+                                              e.target.value
+                                            )
+                                          }
+                                          className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                        />
+                                        <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
                               {selectedMonetizationOption ===
                                 "blogMonetization" && (
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                                  <div className="space-y-1 sm:space-y-2">
-                                    <Label
-                                      htmlFor={`pro-category-${link.id}`}
-                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                    >
-                                      Category{" "}
-                                      <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                      id={`pro-category-${link.id}`}
-                                      placeholder="e.g., Technology, Lifestyle"
-                                      value={link.category}
-                                      onChange={(e) =>
-                                        updateLinkaProMonetization(
-                                          link.id,
-                                          "category",
-                                          e.target.value
-                                        )
-                                      }
-                                      className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                    />
-                                  </div>
-                                  <div className="space-y-1 sm:space-y-2">
-                                    <Label
-                                      htmlFor={`pro-blog-url-${link.id}`}
-                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                    >
-                                      Blog Post URL{" "}
-                                      <span className="text-red-500">*</span>
-                                    </Label>
-                                    <div className="relative">
+                                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                                    <div className="space-y-1 sm:space-y-2">
+                                      <Label
+                                        htmlFor={`pro-category-${link.id}`}
+                                        className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                      >
+                                        Category{" "}
+                                        <span className="text-red-500">*</span>
+                                      </Label>
                                       <Input
-                                        id={`pro-blog-url-${link.id}`}
-                                        placeholder="https://blog-post-url.com"
-                                        value={link.blogUrl}
+                                        id={`pro-category-${link.id}`}
+                                        placeholder="e.g., Technology, Lifestyle"
+                                        value={link.category}
                                         onChange={(e) =>
                                           updateLinkaProMonetization(
                                             link.id,
-                                            "blogUrl",
+                                            "category",
                                             e.target.value
                                           )
                                         }
-                                        className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                        className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                       />
-                                      <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                    </div>
+                                    <div className="space-y-1 sm:space-y-2">
+                                      <Label
+                                        htmlFor={`pro-blog-url-${link.id}`}
+                                        className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                      >
+                                        Blog Post URL{" "}
+                                        <span className="text-red-500">*</span>
+                                      </Label>
+                                      <div className="relative">
+                                        <Input
+                                          id={`pro-blog-url-${link.id}`}
+                                          placeholder="https://blog-post-url.com"
+                                          value={link.blogUrl}
+                                          onChange={(e) =>
+                                            updateLinkaProMonetization(
+                                              link.id,
+                                              "blogUrl",
+                                              e.target.value
+                                            )
+                                          }
+                                          className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                        />
+                                        <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
 
                               {selectedMonetizationOption ===
                                 "websiteMonetization" && (
-                                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-                                  <div className="space-y-1 sm:space-y-2">
-                                    <Label
-                                      htmlFor={`pro-website-category-${link.id}`}
-                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                    >
-                                      Category{" "}
-                                      <span className="text-red-500">*</span>
-                                    </Label>
-                                    <Input
-                                      id={`pro-website-category-${link.id}`}
-                                      placeholder="e.g., E-commerce, Portfolio"
-                                      value={link.category}
-                                      onChange={(e) =>
-                                        updateLinkaProMonetization(
-                                          link.id,
-                                          "category",
-                                          e.target.value
-                                        )
-                                      }
-                                      className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                    />
-                                  </div>
-                                  <div className="space-y-1 sm:space-y-2">
-                                    <Label
-                                      htmlFor={`pro-website-url-${link.id}`}
-                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                    >
-                                      Website URL{" "}
-                                      <span className="text-red-500">*</span>
-                                    </Label>
-                                    <div className="relative">
+                                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                                    <div className="space-y-1 sm:space-y-2">
+                                      <Label
+                                        htmlFor={`pro-website-category-${link.id}`}
+                                        className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                      >
+                                        Category{" "}
+                                        <span className="text-red-500">*</span>
+                                      </Label>
                                       <Input
-                                        id={`pro-website-url-${link.id}`}
-                                        placeholder="https://your-website.com"
-                                        value={link.websiteUrl}
+                                        id={`pro-website-category-${link.id}`}
+                                        placeholder="e.g., E-commerce, Portfolio"
+                                        value={link.category}
                                         onChange={(e) =>
                                           updateLinkaProMonetization(
                                             link.id,
-                                            "websiteUrl",
+                                            "category",
                                             e.target.value
                                           )
                                         }
-                                        className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                        className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                       />
-                                      <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                    </div>
+                                    <div className="space-y-1 sm:space-y-2">
+                                      <Label
+                                        htmlFor={`pro-website-url-${link.id}`}
+                                        className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                      >
+                                        Website URL{" "}
+                                        <span className="text-red-500">*</span>
+                                      </Label>
+                                      <div className="relative">
+                                        <Input
+                                          id={`pro-website-url-${link.id}`}
+                                          placeholder="https://your-website.com"
+                                          value={link.websiteUrl}
+                                          onChange={(e) =>
+                                            updateLinkaProMonetization(
+                                              link.id,
+                                              "websiteUrl",
+                                              e.target.value
+                                            )
+                                          }
+                                          className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                        />
+                                        <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )}
+                                )}
                             </CardContent>
                           </Card>
                         ))}
@@ -3196,7 +3223,7 @@ case 4:
                         type="submit"
                         className="bg-linka-carolina-blue hover:bg-linka-carolina-blue/80 transition-transform hover:scale-105 text-white text-xs sm:text-sm h-8 sm:h-9"
                       >
-                        Submit
+                        Submit All
                       </Button>
                     </div>
                   </form>
