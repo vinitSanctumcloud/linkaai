@@ -49,6 +49,7 @@ import {
 import { toast } from "sonner";
 
 interface PartnerLink {
+  addKnowledge: string;
   name: string;
   url: string;
   // status: 'active' | 'inactive'; // Adjust based on your possible status values
@@ -63,19 +64,15 @@ interface ConditionalPrompt {
 }
 
 interface PartnerLink {
-  id: string;
+  id?: string;
   category: string;
-  affiliateBrandName: string;
   affiliateLink: string;
-  productReview?: string;
+  affiliateBrandName?: string;
   socialMediaLink?: string;
-  // affiliateimage: string | undefined;
+  productReview?: string;
   status?: "active" | "inactive";
 }
 
-// interface affiliateimage {
-//   name?: string;
-// }
 interface LinkaProMonetization {
   id: string;
   name: string;
@@ -128,35 +125,36 @@ export default function AgentBuilderPage() {
     name: "",
     trainingInstructions: "",
     prompts: ["", "", "", ""],
-    // partnerLinks: [],
-    // linkaProMonetizations: [],
-    partnerLinks: [
-      {
-        id: "1",
-        category: "Travel",
-        affiliateBrandName: "TripAdvisor",
-        affiliateLink: "Social Media",
-        productReview: "Great travel reviews",
-        socialMediaLink: "https://twitter.com/tripadvisor",
-        // affiliateimage: "travel.jpg",
-        name: "test",
-        url: "active",
-      },
-    ],
-    linkaProMonetizations: [
-      {
-        id: "1",
-        category: "Tech",
-        affiliateBrandName: "Apple",
-        mainUrl: "https://apple.com",
-        mainimage: { name: "tech.jpg" },
-        name: "test 1",
-        url: "",
-        status: "inactive",
-        blogUrl: "", // added
-        websiteUrl: "", // added
-      },
-    ],
+    partnerLinks: [],
+    linkaProMonetizations: [],
+    // partnerLinks: [
+    //   {
+    //     id: "",
+    //     category: "",
+    //     affiliateLink: "",
+    //     affiliateBrandName: "",
+    //     socialMediaLink: "",
+    //     productReview: "",
+    //     status: "active",
+    //     addKnowledge: "",
+    //     name: "",
+    //     url: ""
+    //   },
+    // ],
+    // linkaProMonetizations: [
+    //   {
+    //     id: "1",
+    //     category: "Tech",
+    //     affiliateBrandName: "Apple",
+    //     mainUrl: "https://apple.com",
+    //     mainimage: { name: "tech.jpg" },
+    //     name: "test 1",
+    //     url: "",
+    //     status: "inactive",
+    //     blogUrl: "", // added
+    //     websiteUrl: "", // added
+    //   },
+    // ],
 
     conditionalPrompts: [],
     useConditionalPrompts: false,
@@ -182,8 +180,10 @@ export default function AgentBuilderPage() {
   // Monetization modal state
   const [isMonetizationModalOpen, setIsMonetizationModalOpen] = useState(false);
 
-  const [selectedMonetizationOption, setSelectedMonetizationOption] =
-    useState("productExpansion");
+  const [selectedMonetizationOption, setSelectedMonetizationOption] = useState("productExpansion");
+
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
   const steps = [
     {
@@ -209,13 +209,123 @@ export default function AgentBuilderPage() {
     { id: 5, title: "Preview & Test", description: "Test your AI agent" },
   ];
 
-  const handleEditLink = (index: number, type: "partner" | "aipro") => {
-    // Logic to edit the link at the given index
+  useEffect(() => {
+  const fetchLinks = async () => {
+    setIsLoading(true);
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      setError("No access token found. Please log in.");
+      toast.error("No access token found. Please log in.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://api.tagwell.co/api/v4/ai-agent/agent/links/list?link_type=affiliate&page=${page}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log(data);
+        const links = data.data.link_list;
+
+        // Map API response to partnerLinks or linkaProMonetizations based on activeTab
+        if (activeTab === "partner") {
+          const mappedLinks: PartnerLink[] = links.map((link: any) => ({
+            id: link.id,
+            category: link.category_name || "",
+            affiliateLink: link.affiliate_url || "",
+            affiliateBrandName: link.brand_name || "",
+            socialMediaLink: link.social_media_link || "",
+            productReview: link.product_review || "",
+            status: link.status || "active",
+          }));
+          setAgentConfig((prev) => ({
+            ...prev,
+            partnerLinks: mappedLinks,
+          }));
+        } else if (activeTab === "aipro") {
+          const mappedLinks: LinkaProMonetization[] = links.map((link: any) => ({
+            id: link.id,
+            name: link.brand_name || link.category_name || link.link_type,
+            url: link.main_url || link.affiliate_url || link.blog_url || link.website_url || "",
+            status: link.status || "active",
+            category: link.category_name || "",
+            affiliateBrandName: link.brand_name || "",
+            mainUrl: link.main_url || "",
+            blogUrl: link.link_type === "blog_monetization" ? link.main_url : "",
+            websiteUrl: link.link_type === "website_monetization" ? link.main_url : "",
+            mainimage: link.main_image ? { name: link.main_image } : undefined,
+          }));
+          setAgentConfig((prev) => ({
+            ...prev,
+            linkaProMonetizations: mappedLinks,
+          }));
+        }
+
+        console.log(agentConfig);
+
+        setTotalPages(data.data.meta.total || 1);
+        toast.success("Affiliate links loaded successfully!");
+      } else {
+        const errorData = await response.json();
+        setError(`Failed to fetch links: ${errorData.message || "Unknown error"}`);
+        toast.error(`Failed to fetch links: ${errorData.message || "Unknown error"}`);
+      }
+    } catch (err) {
+      setError("An error occurred while fetching links.");
+      toast.error("An error occurred while fetching links.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleDeleteLink = (index: number, type: "partner" | "aipro") => {
-    // Logic to delete the link at the given index
-  };
+  if (activeTab === "partner" || activeTab === "aipro") {
+    fetchLinks();
+  }
+  }, [activeTab, page]);
+
+const handleEditLink = (index: number, type: "partner" | "aipro") => {
+  if (type === "partner") {
+    const link = agentConfig.partnerLinks[index];
+    setIsMonetizationModalOpen(true);
+    // Optionally, set state to prefill the modal with link data
+    console.log("Editing partner link:", link);
+  } else {
+    const link = agentConfig.linkaProMonetizations[index];
+    setIsMonetizationModalOpen(true);
+    setSelectedMonetizationOption(
+      link.blogUrl ? "blogMonetization" : link.websiteUrl ? "websiteMonetization" : "productExpansion"
+    );
+    console.log("Editing aipro link:", link);
+  }
+};
+
+const handleDeleteLink = (index: number, type: "partner" | "aipro") => {
+  if (type === "partner") {
+    const linkId = agentConfig.partnerLinks[index].id;
+    if (linkId) {
+      removePartnerLink(linkId);
+    } else {
+      toast.error("No ID found for this link.");
+    }
+  } else {
+    const linkId = agentConfig.linkaProMonetizations[index].id;
+    if (linkId) {
+      removeLinkaProMonetization(linkId);
+    } else {
+      toast.error("No ID found for this link.");
+    }
+  }
+};
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault(); // Prevent default form submission behavior
@@ -309,13 +419,12 @@ export default function AgentBuilderPage() {
       partnerLinks: [
         ...prev.partnerLinks,
         {
-          id: Date.now().toString(),
+          id: "",
           category: "",
-          affiliateBrandName: "",
           affiliateLink: "",
+          affiliateBrandName: "",
           productReview: "",
           socialMediaLink: "",
-          // affiliateimage: undefined,
           status: "active",
         },
       ],
@@ -859,6 +968,98 @@ export default function AgentBuilderPage() {
     }
   };
 
+    // const saveMonetization = () => {
+  //   // Ensure all required fields are filled
+  //   const hasEmptyRequiredFields = agentConfig.linkaProMonetizations.some(
+  //     (link) =>
+  //       !link.category.trim() ||
+  //       !link.affiliateBrandName.trim() ||
+  //       !link.mainUrl.trim()
+  //   );
+  //   if (hasEmptyRequiredFields) {
+  //     toast.error(
+  //       "Please fill in all required fields (Category, Affiliate Brand Name, Main URL)"
+  //     );
+  //     return;
+  //   }
+
+  //   setIsMonetizationModalOpen(false);
+  //   toast.success("Monetization saved successfully!");
+  // };
+
+  const saveMonetization = async () => {
+    // Validate required fields based on selectedMonetizationOption
+    let link_type = "";
+    const hasEmptyRequiredFields = agentConfig.linkaProMonetizations.some((link) => {
+      if (selectedMonetizationOption === "productExpansion") {
+        link_type = "products";
+        return !link.category.trim() || !link.affiliateBrandName.trim() || !link.mainUrl.trim();
+      } else if (selectedMonetizationOption === "blogMonetization") {
+        link_type = "blogs";
+        return !link.category.trim() || !link.blogUrl?.trim();
+      } else if (selectedMonetizationOption === "websiteMonetization") {
+        link_type = "website";
+        return !link.category.trim() || !link.websiteUrl?.trim();
+      }
+      return false;
+    });
+
+    if (hasEmptyRequiredFields) {
+      toast.error(
+        `Please fill in all required fields for ${selectedMonetizationOption.replace(/([A-Z])/g, ' $1').trim()}`
+      );
+      return;
+    }
+
+    // Prepare payload for the API
+    const payload = {
+      partnerLinks: agentConfig.linkaProMonetizations.map((link) => ({
+        link_type: link_type, // e.g., "product_expansion", "blog_monetization", "website_monetization"
+        category_name: link.category || "",
+        affiliate_url: link.affiliateBrandName || link.mainUrl || link.blogUrl || link.websiteUrl || "",
+        main_url: link.mainUrl || link.blogUrl || link.websiteUrl || "",
+        brand_name: link.affiliateBrandName || "",
+        social_media_link: "", // Not used in Linka Pro, included for consistency
+        product_review: "", // Not used in Linka Pro, included for consistency
+      })),
+    };
+
+    // Get access token
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      toast.error("No access token found. Please log in.");
+      return;
+    }
+
+    try {
+      // Make API call to save Linka Pro monetization links
+      const response = await fetch(
+        "https://api.tagwell.co/api/v4/ai-agent/add-links",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (response.ok) {
+        setIsMonetizationModalOpen(false);
+        toast.success("Linka Pro monetization links saved successfully!");
+      } else {
+        const errorData = await response.json();
+        toast.error(
+          `Failed to save monetization links: ${errorData.message || "Unknown error"}`
+        );
+      }
+    } catch (error) {
+      console.error("Error saving monetization links:", error);
+      toast.error("An error occurred while saving monetization links. Please try again.");
+    }
+  };
+
   const prevStep = () => {
     if (currentStep > 1) setCurrentStep(currentStep - 1);
   };
@@ -1122,341 +1323,695 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
             </CardContent>
           </Card>
         );
-      case 4:
-        return (
-          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
-            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
-              <div className="space-y-1">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
-                  <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-linka-dark-orange" />
-                  Monetization Options
-                </CardTitle>
-                <p className="text-xs sm:text-sm text-linka-night/70 font-light">
-                  Choose how you want to customize & monetize your AI-agent
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
-                <Button
-                  variant={activeTab === "partner" ? "default" : "outline"}
-                  onClick={() => setActiveTab("partner")}
-                  className={`text-xs sm:text-sm ${
-                    activeTab === "partner"
-                      ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                      : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                  } transition-all duration-300 hover:scale-105`}
-                >
-                  Linka Basic
-                </Button>
-                <Button
-                  variant={activeTab === "aipro" ? "default" : "outline"}
-                  onClick={() => setActiveTab("aipro")}
-                  className={`text-xs sm:text-sm ${
-                    activeTab === "aipro"
-                      ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                      : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                  } transition-all duration-300 hover:scale-105`}
-                >
-                  Linka Pro
-                </Button>
-                <Button
-                  variant={activeTab === "paywall" ? "default" : "outline"}
-                  onClick={() => setActiveTab("paywall")}
-                  className={`text-xs sm:text-sm ${
-                    activeTab === "paywall"
-                      ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                      : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                  } transition-all duration-300 hover:scale-105`}
-                >
-                  Linka Paywall
-                </Button>
-                <Button className="ml-auto text-xs sm:text-sm hidden sm:inline-flex">
-                  Upgrade
-                </Button>
-              </div>
-            </CardHeader>
+      // case 4:
+      //   return (
+      //     <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
+      //       <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+      //         <div className="space-y-1">
+      //           <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
+      //             <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-linka-dark-orange" />
+      //             Monetization Options
+      //           </CardTitle>
+      //           <p className="text-xs sm:text-sm text-linka-night/70 font-light">
+      //             Choose how you want to customize & monetize your AI-agent
+      //           </p>
+      //         </div>
+      //         <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
+      //           <Button
+      //             variant={activeTab === "partner" ? "default" : "outline"}
+      //             onClick={() => setActiveTab("partner")}
+      //             className={`text-xs sm:text-sm ${
+      //               activeTab === "partner"
+      //                 ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+      //                 : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+      //             } transition-all duration-300 hover:scale-105`}
+      //           >
+      //             Linka Basic
+      //           </Button>
+      //           <Button
+      //             variant={activeTab === "aipro" ? "default" : "outline"}
+      //             onClick={() => setActiveTab("aipro")}
+      //             className={`text-xs sm:text-sm ${
+      //               activeTab === "aipro"
+      //                 ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+      //                 : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+      //             } transition-all duration-300 hover:scale-105`}
+      //           >
+      //             Linka Pro
+      //           </Button>
+      //           <Button
+      //             variant={activeTab === "paywall" ? "default" : "outline"}
+      //             onClick={() => setActiveTab("paywall")}
+      //             className={`text-xs sm:text-sm ${
+      //               activeTab === "paywall"
+      //                 ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+      //                 : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+      //             } transition-all duration-300 hover:scale-105`}
+      //           >
+      //             Linka Paywall
+      //           </Button>
+      //           <Button className="ml-auto text-xs sm:text-sm hidden sm:inline-flex">
+      //             Upgrade
+      //           </Button>
+      //         </div>
+      //       </CardHeader>
 
-            <CardContent className="px-4 sm:px-6">
-              <div className="space-y-2">
-                {/* Title */}
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-                  <div className="flex-grow min-w-0">
-                    <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                      <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-linka-carolina-blue" />
-                      {activeTab === "aipro"
-                        ? "AI Smart Recommendations"
-                        : "Linka Basic"}
-                    </h3>
-                  </div>
+      //       <CardContent className="px-4 sm:px-6">
+      //         <div className="space-y-2">
+      //           {/* Title */}
+      //           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+      //             <div className="flex-grow min-w-0">
+      //               <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+      //                 <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-linka-carolina-blue" />
+      //                 {activeTab === "aipro"
+      //                   ? "AI Smart Recommendations"
+      //                   : "Linka Basic"}
+      //               </h3>
+      //             </div>
 
-                  {/* Button */}
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsMonetizationModalOpen(true)}
-                    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02] whitespace-nowrap flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 text-xs sm:text-sm"
+      //             {/* Button */}
+      //             <Button
+      //               variant="outline"
+      //               onClick={() => setIsMonetizationModalOpen(true)}
+      //               className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02] whitespace-nowrap flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 text-xs sm:text-sm"
+      //             >
+      //               <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+      //               {activeTab === "aipro"
+      //                 ? agentConfig.linkaProMonetizations?.length > 0
+      //                   ? "Add Link"
+      //                   : "Add First Link"
+      //                 : agentConfig.partnerLinks?.length > 0
+      //                   ? "Add Link"
+      //                   : "Add First Link"}
+      //             </Button>
+      //           </div>
+
+      //           {/* Description */}
+      //           <p className="text-xs text-linka-night/60 mt-1">
+      //             {activeTab === "aipro"
+      //               ? "Add monetization links for AI Pro services"
+      //               : "Personalized Recommendatons. 24/7 Earnings"}
+      //           </p>
+
+      //           {/* Radio Buttons - Only show for Linka Pro */}
+      //           {activeTab === "aipro" && (
+      //             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-3 sm:mt-4">
+      //               <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+      //                 <input
+      //                   type="radio"
+      //                   name="monetizationOption"
+      //                   value="productExpansion"
+      //                   className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+      //                   checked={
+      //                     selectedMonetizationOption === "productExpansion"
+      //                   }
+      //                   onChange={() =>
+      //                     setSelectedMonetizationOption("productExpansion")
+      //                   }
+      //                 />
+      //                 Product Expansion
+      //               </label>
+      //               <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+      //                 <input
+      //                   type="radio"
+      //                   name="monetizationOption"
+      //                   value="blogMonetization"
+      //                   className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+      //                   checked={
+      //                     selectedMonetizationOption === "blogMonetization"
+      //                   }
+      //                   onChange={() =>
+      //                     setSelectedMonetizationOption("blogMonetization")
+      //                   }
+      //                 />
+      //                 Blog Monetization
+      //               </label>
+      //               <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+      //                 <input
+      //                   type="radio"
+      //                   name="monetizationOption"
+      //                   value="websiteMonetization"
+      //                   className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+      //                   checked={
+      //                     selectedMonetizationOption === "websiteMonetization"
+      //                   }
+      //                   onChange={() =>
+      //                     setSelectedMonetizationOption("websiteMonetization")
+      //                   }
+      //                 />
+      //                 Website Monetization
+      //               </label>
+      //             </div>
+      //           )}
+      //         </div>
+      //       </CardContent>
+
+      //       <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-6 sm:space-y-8">
+      //         {activeTab === "partner" &&
+      //         agentConfig.partnerLinks.length > 0 ? (
+      //           <div className="overflow-x-auto">
+      //             <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+      //               <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+      //                 <tr>
+      //                   <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+      //                     Link Name
+      //                   </th>
+      //                   <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+      //                     URL
+      //                   </th>
+      //                   <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+      //                     Status
+      //                   </th>
+      //                   <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+      //                     Actions
+      //                   </th>
+      //                 </tr>
+      //               </thead>
+      //               <tbody>
+      //                 {agentConfig.partnerLinks.map((link, index) => (
+      //                   <tr
+      //                     key={index}
+      //                     className="bg-white border-b hover:bg-linka-alice-blue/10"
+      //                   >
+      //                     <td className="px-3 py-3 sm:px-6 sm:py-4">
+      //                       {link.category}
+      //                     </td>
+      //                     <td className="px-3 py-3 sm:px-6 sm:py-4">
+      //                       <a
+      //                         href={link.affiliateLink}
+      //                         target="_blank"
+      //                         rel="noopener noreferrer"
+      //                         className="text-linka-carolina-blue hover:underline break-all"
+      //                       >
+      //                         {link.affiliateLink}
+      //                       </a>
+      //                     </td>
+      //                     <td className="px-3 py-3 sm:px-6 sm:py-4">
+      //                       <span
+      //                         className={`px-2 py-1 rounded-full text-xs ${
+      //                           link.status === "active"
+      //                             ? "bg-green-100 text-green-800"
+      //                             : "bg-red-100 text-red-800"
+      //                         }`}
+      //                       >
+      //                         {link.status}
+      //                       </span>
+      //                     </td>
+      //                     <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+      //                       <Button
+      //                         variant="ghost"
+      //                         size="sm"
+      //                         onClick={() => handleEditLink(index, "partner")}
+      //                         className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+      //                       >
+      //                         Edit
+      //                       </Button>
+      //                       <Button
+      //                         variant="ghost"
+      //                         size="sm"
+      //                         onClick={() => handleDeleteLink(index, "partner")}
+      //                         className="text-red-500 hover:text-red-700 text-xs"
+      //                       >
+      //                         Delete
+      //                       </Button>
+      //                     </td>
+      //                   </tr>
+      //                 ))}
+      //               </tbody>
+      //             </table>
+      //           </div>
+      //         ) : activeTab === "aipro" &&
+      //           agentConfig.linkaProMonetizations.length > 0 ? (
+      //           <div className="overflow-x-auto">
+      //             <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+      //               <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+      //                 <tr>
+      //                   <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+      //                     Link Name
+      //                   </th>
+      //                   <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+      //                     URL
+      //                   </th>
+      //                   <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+      //                     Status
+      //                   </th>
+      //                   <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+      //                     Actions
+      //                   </th>
+      //                 </tr>
+      //               </thead>
+      //               <tbody>
+      //                 {agentConfig.linkaProMonetizations.map((link, index) => (
+      //                   <tr
+      //                     key={index}
+      //                     className="bg-white border-b hover:bg-linka-alice-blue/10"
+      //                   >
+      //                     <td className="px-3 py-3 sm:px-6 sm:py-4">
+      //                       {link.category}
+      //                     </td>
+      //                     <td className="px-3 py-3 sm:px-6 sm:py-4">
+      //                       <a
+      //                         href={link.url}
+      //                         target="_blank"
+      //                         rel="noopener noreferrer"
+      //                         className="text-linka-carolina-blue hover:underline break-all"
+      //                       >
+      //                         {link.url}
+      //                       </a>
+      //                     </td>
+      //                     <td className="px-3 py-3 sm:px-6 sm:py-4">
+      //                       <span
+      //                         className={`px-2 py-1 rounded-full text-xs ${
+      //                           link.status === "active"
+      //                             ? "bg-green-100 text-green-800"
+      //                             : "bg-red-100 text-red-800"
+      //                         }`}
+      //                       >
+      //                         {link.status}
+      //                       </span>
+      //                     </td>
+      //                     <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+      //                       <Button
+      //                         variant="ghost"
+      //                         size="sm"
+      //                         onClick={() => handleEditLink(index, "aipro")}
+      //                         className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+      //                       >
+      //                         Edit
+      //                       </Button>
+      //                       <Button
+      //                         variant="ghost"
+      //                         size="sm"
+      //                         onClick={() => handleDeleteLink(index, "aipro")}
+      //                         className="text-red-500 hover:text-red-700 text-xs"
+      //                       >
+      //                         Delete
+      //                       </Button>
+      //                     </td>
+      //                   </tr>
+      //                 ))}
+      //               </tbody>
+      //             </table>
+      //           </div>
+      //         ) : (
+      //           <p className="text-xs sm:text-sm text-linka-night/60 text-center">
+      //             {activeTab === "partner"
+      //               ? "No partner links added yet."
+      //               : "No monetization links added yet."}
+      //           </p>
+      //         )}
+
+      //         {/* Pagination Controls */}
+      //         {totalPages > 1 && (
+      //           <div className="flex justify-between items-center mt-4">
+      //             <Button
+      //               variant="outline"
+      //               onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+      //               disabled={page === 1}
+      //               className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+      //             >
+      //               <ArrowLeft className="w-4 h-4 mr-2" />
+      //               Previous
+      //             </Button>
+      //             <span className="text-sm text-linka-night">
+      //               Page {page} of {totalPages}
+      //             </span>
+      //             <Button
+      //               variant="outline"
+      //               onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+      //               disabled={page === totalPages}
+      //               className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+      //             >
+      //               Next
+      //               <ArrowRight className="w-4 h-4 ml-2" />
+      //             </Button>
+      //           </div>
+      //         )}
+
+      //         <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
+      //           <div className="flex items-start gap-2">
+      //             <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
+      //             <div>
+      //               <p className="text-xs font-medium text-linka-russian-violet mb-1">
+      //                 Pro Tips:
+      //               </p>
+      //               <ul className="text-xs text-linka-night/60 space-y-1">
+      //                 <li className="flex items-start gap-1.5">
+      //                   <span>•</span>
+      //                   <span>Test all links before sharing</span>
+      //                 </li>
+      //                 <li className="flex items-start gap-1.5">
+      //                   <span>•</span>
+      //                   <span>
+      //                     Ensure affiliate links are valid and trackable
+      //                   </span>
+      //                 </li>
+      //                 <li className="flex items-start gap-1.5">
+      //                   <span>•</span>
+      //                   <span>
+      //                     Provide detailed product reviews to enhance user trust
+      //                   </span>
+      //                 </li>
+      //                 <li className="flex items-start gap-1.5">
+      //                   <span>•</span>
+      //                   <span>
+      //                     Upload high-quality images to enhance visual appeal
+      //                   </span>
+      //                 </li>
+      //               </ul>
+      //             </div>
+      //           </div>
+      //         </div>
+      //       </CardContent>
+      //     </Card>
+      //   );
+
+case 4:
+  return (
+    <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
+      <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+        <div className="space-y-1">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
+            <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-linka-dark-orange" />
+            Monetization Options
+          </CardTitle>
+          <p className="text-xs sm:text-sm text-linka-night/70 font-light">
+            Choose how you want to customize & monetize your AI-agent
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
+          <Button
+            variant={activeTab === "partner" ? "default" : "outline"}
+            onClick={() => setActiveTab("partner")}
+            className={`text-xs sm:text-sm ${
+              activeTab === "partner"
+                ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            } transition-all duration-300 hover:scale-105`}
+          >
+            Linka Basic
+          </Button>
+          <Button
+            variant={activeTab === "aipro" ? "default" : "outline"}
+            onClick={() => setActiveTab("aipro")}
+            className={`text-xs sm:text-sm ${
+              activeTab === "aipro"
+                ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            } transition-all duration-300 hover:scale-105`}
+          >
+            Linka Pro
+          </Button>
+          <Button
+            variant={activeTab === "paywall" ? "default" : "outline"}
+            onClick={() => setActiveTab("paywall")}
+            className={`text-xs sm:text-sm ${
+              activeTab === "paywall"
+                ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            } transition-all duration-300 hover:scale-105`}
+          >
+            Linka Paywall Upgrade
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-6 sm:space-y-8">
+        <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+            <div className="flex-grow min-w-0">
+              <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-linka-carolina-blue" />
+                {activeTab === "aipro" ? "AI Smart Recommendations" : "Linka Basic"}
+              </h3>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setIsMonetizationModalOpen(true)}
+              className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02] whitespace-nowrap flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 text-xs sm:text-sm"
+            >
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              {activeTab === "aipro"
+                ? agentConfig.linkaProMonetizations?.length > 0
+                  ? "Add Link"
+                  : "Add First Link"
+                : agentConfig.partnerLinks?.length > 0
+                ? "Add Link"
+                : "Add First Link"}
+            </Button>
+          </div>
+          <p className="text-xs text-linka-night/60 mt-1">
+            {activeTab === "aipro"
+              ? "Add monetization links for AI Pro services"
+              : "Personalized Recommendations. 24/7 Earnings"}
+          </p>
+          {activeTab === "aipro" && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-3 sm:mt-4">
+              <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                <input
+                  type="radio"
+                  name="monetizationOption"
+                  value="productExpansion"
+                  className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                  checked={selectedMonetizationOption === "productExpansion"}
+                  onChange={() => setSelectedMonetizationOption("productExpansion")}
+                />
+                Product Expansion
+              </label>
+              <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                <input
+                  type="radio"
+                  name="monetizationOption"
+                  value="blogMonetization"
+                  className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                  checked={selectedMonetizationOption === "blogMonetization"}
+                  onChange={() => setSelectedMonetizationOption("blogMonetization")}
+                />
+                Blog Monetization
+              </label>
+              <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                <input
+                  type="radio"
+                  name="monetizationOption"
+                  value="websiteMonetization"
+                  className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                  checked={selectedMonetizationOption === "websiteMonetization"}
+                  onChange={() => setSelectedMonetizationOption("websiteMonetization")}
+                />
+                Website Monetization
+              </label>
+            </div>
+          )}
+        </div>
+        {isLoading ? (
+          <p className="text-sm text-linka-night/60 text-center">Loading links...</p>
+        ) : activeTab === "partner" && agentConfig.partnerLinks.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+              <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                <tr>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Link Name
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    URL
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Status
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {agentConfig.partnerLinks.map((link, index) => (
+                  <tr
+                    key={link.id || index} // Use link.id if available, fallback to index
+                    className="bg-white border-b hover:bg-linka-alice-blue/10"
                   >
-                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                    {activeTab === "aipro"
-                      ? agentConfig.linkaProMonetizations?.length > 0
-                        ? "Add Link"
-                        : "Add First Link"
-                      : agentConfig.partnerLinks?.length > 0
-                        ? "Add Link"
-                        : "Add First Link"}
-                  </Button>
-                </div>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
+                      {link.affiliateBrandName || link.category || "Unnamed Link"}
+                    </td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
+                      <a
+                        href={link.affiliateLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-linka-carolina-blue hover:underline break-all"
+                      >
+                        {link.affiliateLink || "No URL"}
+                      </a>
+                    </td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          link.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {link.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditLink(index, "partner")}
+                        className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteLink(index, "partner")}
+                        className="text-red-500 hover:text-red-700 text-xs"
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : activeTab === "aipro" && agentConfig.linkaProMonetizations.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+              <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                <tr>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Link Name
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    URL
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Status
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {agentConfig.linkaProMonetizations.map((link, index) => (
+                  <tr
+                    key={link.id || index}
+                    className="bg-white border-b hover:bg-linka-alice-blue/10"
+                  >
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
+                      {link.name || link.affiliateBrandName || link.category || "Unnamed Link"}
+                    </td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
+                      <a
+                        href={link.url || link.mainUrl || link.blogUrl || link.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-linka-carolina-blue hover:underline break-all"
+                      >
+                        {link.url || link.mainUrl || link.blogUrl || link.websiteUrl || "No URL"}
+                      </a>
+                    </td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          link.status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-red-100 text-red-800"
+                        }`}
+                      >
+                        {link.status}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditLink(index, "aipro")}
+                        className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                      >
+                        Edit
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteLink(index, "aipro")}
+                        className="text-red-500 hover:text-red-700 text-xs"
+                      >
+                        Delete
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-xs sm:text-sm text-linka-night/60 text-center">
+            {activeTab === "partner"
+              ? "No partner links added yet."
+              : "No monetization links added yet."}
+          </p>
+        )}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Previous
+            </Button>
+            <span className="text-sm text-linka-night">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={page === totalPages}
+              className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            >
+              Next
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        )}
+        <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
+          <div className="flex items-start gap-2">
+            <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-linka-russian-violet mb-1">
+                Pro Tips:
+              </p>
+              <ul className="text-xs text-linka-night/60 space-y-1">
+                <li className="flex items-start gap-1.5">
+                  <span>•</span>
+                  <span>Test all links before sharing</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span>•</span>
+                  <span>Ensure affiliate links are valid and trackable</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span>•</span>
+                  <span>Provide detailed product reviews to enhance user trust</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span>•</span>
+                  <span>Upload high-quality images to enhance visual appeal</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
-                {/* Description */}
-                <p className="text-xs text-linka-night/60 mt-1">
-                  {activeTab === "aipro"
-                    ? "Add monetization links for AI Pro services"
-                    : "Personalized Recommendatons. 24/7 Earnings"}
-                </p>
-
-                {/* Radio Buttons - Only show for Linka Pro */}
-                {activeTab === "aipro" && (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-3 sm:mt-4">
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="productExpansion"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={
-                          selectedMonetizationOption === "productExpansion"
-                        }
-                        onChange={() =>
-                          setSelectedMonetizationOption("productExpansion")
-                        }
-                      />
-                      Product Expansion
-                    </label>
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="blogMonetization"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={
-                          selectedMonetizationOption === "blogMonetization"
-                        }
-                        onChange={() =>
-                          setSelectedMonetizationOption("blogMonetization")
-                        }
-                      />
-                      Blog Monetization
-                    </label>
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="websiteMonetization"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={
-                          selectedMonetizationOption === "websiteMonetization"
-                        }
-                        onChange={() =>
-                          setSelectedMonetizationOption("websiteMonetization")
-                        }
-                      />
-                      Website Monetization
-                    </label>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-
-            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-6 sm:space-y-8">
-              {activeTab === "partner" &&
-              agentConfig.partnerLinks.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
-                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-                      <tr>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Link Name
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          URL
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Status
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {agentConfig.partnerLinks.map((link, index) => (
-                        <tr
-                          key={index}
-                          className="bg-white border-b hover:bg-linka-alice-blue/10"
-                        >
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            {link.name}
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            <a
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-linka-carolina-blue hover:underline break-all"
-                            >
-                              {link.url}
-                            </a>
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs ${
-                                link.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {link.status}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditLink(index, "partner")}
-                              className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteLink(index, "partner")}
-                              className="text-red-500 hover:text-red-700 text-xs"
-                            >
-                              Delete
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : activeTab === "aipro" &&
-                agentConfig.linkaProMonetizations.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
-                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-                      <tr>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Link Name
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          URL
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Status
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {agentConfig.linkaProMonetizations.map((link, index) => (
-                        <tr
-                          key={index}
-                          className="bg-white border-b hover:bg-linka-alice-blue/10"
-                        >
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            {link.name}
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            <a
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-linka-carolina-blue hover:underline break-all"
-                            >
-                              {link.url}
-                            </a>
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs ${
-                                link.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {link.status}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditLink(index, "aipro")}
-                              className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                            >
-                              Edit
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteLink(index, "aipro")}
-                              className="text-red-500 hover:text-red-700 text-xs"
-                            >
-                              Delete
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-xs sm:text-sm text-linka-night/60 text-center">
-                  {activeTab === "partner"
-                    ? "No partner links added yet."
-                    : "No monetization links added yet."}
-                </p>
-              )}
-
-              <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
-                <div className="flex items-start gap-2">
-                  <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-linka-russian-violet mb-1">
-                      Pro Tips:
-                    </p>
-                    <ul className="text-xs text-linka-night/60 space-y-1">
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>Test all links before sharing</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>
-                          Ensure affiliate links are valid and trackable
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>
-                          Provide detailed product reviews to enhance user trust
-                        </span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>
-                          Upload high-quality images to enhance visual appeal
-                        </span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
       case 3:
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
@@ -1811,24 +2366,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
     }
   };
 
-  const saveMonetization = () => {
-    // Ensure all required fields are filled
-    const hasEmptyRequiredFields = agentConfig.linkaProMonetizations.some(
-      (link) =>
-        !link.category.trim() ||
-        !link.affiliateBrandName.trim() ||
-        !link.mainUrl.trim()
-    );
-    if (hasEmptyRequiredFields) {
-      toast.error(
-        "Please fill in all required fields (Category, Affiliate Brand Name, Main URL)"
-      );
-      return;
-    }
 
-    setIsMonetizationModalOpen(false);
-    toast.success("Monetization saved successfully!");
-  };
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -2216,7 +2754,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                   value={link.category}
                                   onChange={(e) =>
                                     updatePartnerLink(
-                                      link.id,
+                                      link.id!,
                                       "category",
                                       e.target.value
                                     )
@@ -2239,7 +2777,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                     value={link.affiliateLink}
                                     onChange={(e) =>
                                       updatePartnerLink(
-                                        link.id,
+                                        link.id!,
                                         "affiliateLink",
                                         e.target.value
                                       )
@@ -2253,7 +2791,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
 
                             {/* Row 2: Add Knowledge & Brand Name */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                              <div className="space-y-2">
                                 <Label
                                   htmlFor={`partner-knowledge-${link.id}`}
                                   className="text-linka-russian-violet font-medium"
@@ -2263,44 +2800,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                     (i)
                                   </span>
                                 </Label>
-                                <Input
-                                  id={`partner-knowledge-${link.id}`}
-                                  placeholder="Provide your AI agent with more context"
-                                  // value={link?.addKnowledge || ""}
-                                  value={""}
-                                  onChange={(e) =>
-                                    updatePartnerLink(
-                                      link.id,
-                                      "addKnowledge",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label
-                                  htmlFor={`partner-brand-${link.id}`}
-                                  className="text-linka-russian-violet font-medium"
-                                >
-                                  Brand Name
-                                </Label>
-                                <Input
-                                  id={`partner-brand-${link.id}`}
-                                  placeholder="e.g., TripAdvisor"
-                                  value={link.affiliateBrandName}
-                                  onChange={(e) =>
-                                    updatePartnerLink(
-                                      link.id,
-                                      "affiliateBrandName",
-                                      e.target.value
-                                    )
-                                  }
-                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                              </div>
-                            </div>
-
+                             </div>
                             {/* Row 3: Social Media & Product Review */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
@@ -2316,7 +2816,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                   value={link.socialMediaLink || ""}
                                   onChange={(e) =>
                                     updatePartnerLink(
-                                      link.id,
+                                      link.id!,
                                       "socialMediaLink",
                                       e.target.value
                                     )
@@ -2337,7 +2837,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                   value={link.productReview || ""}
                                   onChange={(e) =>
                                     updatePartnerLink(
-                                      link.id,
+                                      link.id!,
                                       "productReview",
                                       e.target.value
                                     )
@@ -2346,6 +2846,30 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                 />
                               </div>
                             </div>
+                              <div className="space-y-2">
+                                <Label
+                                  htmlFor={`partner-brand-${link.id}`}
+                                  className="text-linka-russian-violet font-medium"
+                                >
+                                  Brand Name
+                                </Label>
+                                <Input
+                                  id={`partner-brand-${link.id}`}
+                                  placeholder="e.g., TripAdvisor"
+                                  value={link.affiliateBrandName}
+                                  onChange={(e) =>
+                                    updatePartnerLink(
+                                      link.id!,
+                                      "affiliateBrandName",
+                                      e.target.value
+                                    )
+                                  }
+                                  className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                />
+                              </div>
+                           
+
+
                           </CardContent>
                         </Card>
                       ))}
@@ -2371,12 +2895,12 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     </Button>
 
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         const hasEmptyRequiredFields =
                           agentConfig.partnerLinks.some(
                             (link) =>
                               !link.category.trim() ||
-                              !link.affiliateBrandName.trim() ||
+                              !link.affiliateBrandName?.trim() ||
                               !link.affiliateLink.trim()
                           );
                         if (hasEmptyRequiredFields) {
@@ -2385,6 +2909,54 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                           );
                           return;
                         }
+                        // Prepare payload for the API
+    const payload = {
+      links: agentConfig.partnerLinks.map((link) => ({
+        link_type: "affiliate",
+        category_name: link.category,
+        "affiliate_url": "",
+        "main_url": link.affiliateLink || "Electronics",
+        "brand_name": link.affiliateBrandName || "",
+        "social_media_link": link.socialMediaLink || "",
+        "product_review": link.productReview || "",
+      })),
+    };
+
+    // Get access token
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      toast.error("No access token found. Please log in.");
+      return;
+    }
+
+    try {
+      // Make API call to save partner links
+      const response = await fetch(
+        "https://api.tagwell.co/api/v4/ai-agent/add-links",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      if (response.ok) {
+        setIsMonetizationModalOpen(false);
+        
+        toast.success("Partner links saved successfully!");
+      } else {
+        const errorData = await response.json();
+        toast.error(
+          `Failed to save partner links: ${errorData.message || "Unknown error"}`
+        );
+      }
+    } catch (error) {
+      console.error("Error saving partner links:", error);
+      toast.error("An error occurred while saving partner links. Please try again.");
+    }
                         setIsMonetizationModalOpen(false);
                         toast.success("Partner links saved successfully!");
                       }}
@@ -2620,6 +3192,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                       </Button>
 
                       <Button
+                      onClick={saveMonetization}
                         type="submit"
                         className="bg-linka-carolina-blue hover:bg-linka-carolina-blue/80 transition-transform hover:scale-105 text-white text-xs sm:text-sm h-8 sm:h-9"
                       >
@@ -2635,4 +3208,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
       </div>
     </DashboardLayout>
   );
+
+  
 }
