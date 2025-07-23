@@ -74,12 +74,12 @@ export const signup = async (formData) => {
           "Signup server refused the request (418 I'm a Teapot). Please check the request payload or contact support."
         );
       }
-      if (data.errors) {
-        const errorMessages = Object.entries(data.errors)
-          .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
-          .join('\n');
-        throw new Error(`Signup failed due to validation errors:\n${errorMessages}`);
-      }
+      // if (data.errors) {
+      //   const errorMessages = Object.entries(data.errors)
+      //     .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
+      //     .join('\n');
+      //   throw new Error(`Signup failed due to validation errors:\n${errorMessages}`);
+      // }
       throw new Error(data.message || 'Signup failed. Please try again.');
     }
 

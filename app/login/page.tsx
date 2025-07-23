@@ -11,6 +11,7 @@ import { toast } from 'sonner'
 import { Loader2, ArrowLeft } from 'lucide-react'
 import { login } from '@/services/authService'
 import PublicRoute from './../../components/auth/PublicRoute'
+import logo from "@/public/Linklogo.png";
 
 interface FormData {
   email: string
@@ -157,7 +158,7 @@ export default function LoginPage() {
           <Card className="border-0 shadow-2xl">
             <CardHeader className="text-center">
               <div className="flex items-center justify-center mb-4">
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-orange-400 to-orange-600" />
+                <img src='./Linklogo.png' alt="" className='w-24'/>
                 <span className="ml-2 text-2xl font-bold text-gray-900">EarnLinks.AI</span>
               </div>
               <CardTitle className="text-2xl">Welcome back</CardTitle>

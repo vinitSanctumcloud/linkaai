@@ -141,9 +141,7 @@ export default function SignupPage() {
           <Card className="border-0 shadow-lg rounded-xl overflow-hidden bg-white">
             <CardHeader className="text-center space-y-3 px-6 py-8 sm:px-10 sm:py-10 bg-gradient-to-r from-orange-50 to-orange-100">
               <div className="flex items-center justify-center">
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-lg">EL</span>
-                </div>
+                <img src="./Linklogo.png" alt="" className='h-20 w-24'/>
                 <span className="ml-3 text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">EarnLinks.AI</span>
               </div>
               <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
@@ -331,7 +329,7 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {(formData.user_varient === 'CREATOR' || formData.user_varient === 'BUSINESS') && (
+                {(formData.user_varient === 'CREATOR' || formData.user_varient === 'BUSINESS' || formData.user_varient === 'NEITHER') && (
                   <div className="space-y-3 pt-1">
                     {/* Conditional Text Field */}
                     {formData.user_varient === 'CREATOR' && (
