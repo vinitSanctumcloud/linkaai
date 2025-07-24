@@ -67,7 +67,7 @@ interface PartnerLink {
   status?: "Submitted" | "Hold" | "Processing" | "Complete";
   productReview?: string
 }
- 
+
 interface LinkaProMonetizationProduct {
   id?: string;
   proType?: string; // "products"
@@ -144,6 +144,9 @@ export default function AgentBuilderPage() {
     greetingMedia: null,
   });
 
+  const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
+  const [editingPartnerLinkId, setEditingPartnerLinkId] = useState<string | null>(null);
+
   // Conditional prompt modal states
   const [isConditionalModalOpen, setIsConditionalModalOpen] = useState(false);
   const [editingConditionalPrompt, setEditingConditionalPrompt] =
@@ -215,12 +218,12 @@ export default function AgentBuilderPage() {
         if (response.ok) {
           const data = await response.json();
           const agentData = data.data.ai_agent;
-          console.log("agentData :: " , agentData);
+          console.log("agentData :: ", agentData);
 
           // Map prompts to extract prompt_text
-        const sanitizedPrompts = Array.isArray(agentData.prompts) && agentData.prompts.length > 0
-          ? agentData.prompts.map((prompt: { prompt_text: any; }) => (typeof prompt.prompt_text === "string" ? prompt.prompt_text : ""))
-          : ["", "", "", ""];
+          const sanitizedPrompts = Array.isArray(agentData.prompts) && agentData.prompts.length > 0
+            ? agentData.prompts.map((prompt: { prompt_text: any; }) => (typeof prompt.prompt_text === "string" ? prompt.prompt_text : ""))
+            : ["", "", "", ""];
 
           // Map the API response to the agentConfig state
           setAgentConfig({
@@ -267,17 +270,17 @@ export default function AgentBuilderPage() {
               return null;
             }).filter((link: any) => link !== null) || [],
             conditionalPrompts: agentData.conditional_prompts?.map((prompt: any) => ({
-            id: prompt.id || Date.now().toString(),
-            mainPrompt: prompt.main_prompt || "",
-            option1: {
-              label: prompt.option1?.label || "",
-              followUps: prompt.option1?.follow_ups || ["", "", ""],
-            },
-            option2: {
-              label: prompt.option2?.label || "",
-              followUps: prompt.option2?.follow_ups || ["", "", ""],
-            },
-          })) || [],
+              id: prompt.id || Date.now().toString(),
+              mainPrompt: prompt.main_prompt || "",
+              option1: {
+                label: prompt.option1?.label || "",
+                followUps: prompt.option1?.follow_ups || ["", "", ""],
+              },
+              option2: {
+                label: prompt.option2?.label || "",
+                followUps: prompt.option2?.follow_ups || ["", "", ""],
+              },
+            })) || [],
             useConditionalPrompts: agentData.use_conditional_prompts || false,
             greetingTitle: agentData.greeting_title || "",
             greeting: agentData.welcome_greeting || "",
@@ -285,7 +288,7 @@ export default function AgentBuilderPage() {
             greetingMedia: agentData.greeting_media_url || null,
           });
 
-          console.log("agentConfig :: " ,agentConfig);
+          console.log("agentConfig :: ", agentConfig);
           console.log(agentConfig.greetingMedia);
           toast.success("Agent details loaded successfully!");
         } else {
@@ -305,8 +308,8 @@ export default function AgentBuilderPage() {
   }, []);
 
   useEffect(() => {
-  console.log("agentConfig updated:", agentConfig);
-}, [agentConfig]);
+    console.log("agentConfig updated:", agentConfig);
+  }, [agentConfig]);
 
   useEffect(() => {
     const fetchLinks = async () => {
@@ -412,11 +415,19 @@ export default function AgentBuilderPage() {
   const handleEditLink = (index: number, type: "partner" | "aipro") => {
     if (type === "partner") {
       const link = agentConfig.partnerLinks[index];
+      setAgentConfig((prev) => ({
+        ...prev,
+        partnerLinks: [link], // Reset to only the link being edited
+      }));
       setIsMonetizationModalOpen(true);
       console.log("Editing partner link:", link);
     } else {
       const link = agentConfig.linkaProMonetizations[index];
       setSelectedMonetizationOption(link.proType || "products");
+      setAgentConfig((prev) => ({
+        ...prev,
+        linkaProMonetizations: [link], // Reset to only the link being edited
+      }));
       setIsMonetizationModalOpen(true);
       console.log("Editing aipro link:", link);
     }
@@ -681,7 +692,7 @@ export default function AgentBuilderPage() {
   ) => {
     setAgentConfig((prev) => ({
       ...prev,
-      linkaProMonetizations: prev.linkaProMonetizations.map((link) => link.id === id ? { ...link, [field]: value } : link ),
+      linkaProMonetizations: prev.linkaProMonetizations.map((link) => link.id === id ? { ...link, [field]: value } : link),
     }));
   };
 
@@ -822,8 +833,8 @@ export default function AgentBuilderPage() {
   };
 
   useEffect(() => {
-  console.log("Modal opened, current linkaProMonetizations:", agentConfig.linkaProMonetizations);
-}, [isMonetizationModalOpen, agentConfig.linkaProMonetizations]);
+    console.log("Modal opened, current linkaProMonetizations:", agentConfig.linkaProMonetizations);
+  }, [isMonetizationModalOpen, agentConfig.linkaProMonetizations]);
 
   useEffect(() => {
     console.log("agentConfig.linkaProMonetizations updated:", agentConfig.linkaProMonetizations);
@@ -1069,10 +1080,10 @@ export default function AgentBuilderPage() {
           return;
       }
 
-      console.log(apiUrl);
-      console.log(payload);
-      console.log(currentStep);
-      console.log(accessToken);
+      // console.log(apiUrl);
+      // console.log(payload);
+      // console.log(currentStep);
+      // console.log(accessToken);
 
       response = await fetch(apiUrl, {
         method: currentStep === 1 ? "POST" : "PUT",
@@ -1097,7 +1108,7 @@ export default function AgentBuilderPage() {
           current_status: `Completed step ${currentStep}`,
           completed_at: new Date().toISOString(),
         }));
-        if (currentStep < 5) setCurrentStep(5);
+        if (currentStep < 5) setCurrentStep(currentStep + 1);
       } else {
         const errorData = await response.json();
         toast.error(
@@ -1621,7 +1632,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                               onClick={() => handleEditLink(index, "partner")}
                               className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
                             >
-                              Edit
+                              <Edit className="w-4 h-4" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -1629,7 +1640,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                               onClick={() => handleDeleteLink(index, "partner")}
                               className="text-red-500 hover:text-red-700 text-xs"
                             >
-                              Delete
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </td>
                         </tr>
@@ -1689,8 +1700,8 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                             <td className="px-3 py-3 sm:px-6 sm:py-4">
                               <span
                                 className={`px-2 py-1 rounded-full text-xs ${link.status === 1
-                                    ? "bg-green-100 text-green-800"
-                                    : "bg-red-100 text-red-800"
+                                  ? "bg-green-100 text-green-800"
+                                  : "bg-red-100 text-red-800"
                                   }`}
                               >
                                 {link.status === 1 ? "Active" : "Inactive"}
@@ -1703,7 +1714,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                 onClick={() => handleEditLink(index, "aipro")}
                                 className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
                               >
-                                Edit
+                                <Edit className="w-4 h-4" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -2025,7 +2036,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
               <CardContent className="px-6 pb-6">
                 <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[70vh] flex flex-col w-[full] lg:w-[50%] mx-auto">
                   <div className="flex justify-center mb-6 w-full">
-                    <div className="w-52 h-52 sm:w-72 sm:h-72 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
+                    <div className="w-52 h-52 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
                       {/* {agentConfig.greetingMedia ? (
                         <video
                           src={agentConfig.greetingMedia}
@@ -2055,35 +2066,35 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                         <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
                       )} */}
                       {agentConfig.greetingMedia && agentConfig.greetingMediaType && !imageError ? (
-  agentConfig.greetingMediaType.toLowerCase() === "video" ? (
-    <video
-      src={agentConfig.greetingMedia}
-      autoPlay
-      muted
-      loop
-      playsInline
-      className="w-full h-full object-cover rounded-full"
-      onError={() => toast.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.")}
-    />
-  ) : (
-    <img
-      src={agentConfig.greetingMedia}
-      alt="Greeting Image"
-      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-      onError={() => {
-        setImageError(true);
-        toast.error("Error loading greeting image.");
-      }}
-    />
-  )
-) : (
-  <div className="flex flex-col items-center">
-    <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
-    {imageError && (
-      <p className="text-xs text-red-500 mt-2">Failed to load image</p>
-    )}
-  </div>
-)}
+                        agentConfig.greetingMediaType.toLowerCase() === "video" ? (
+                          <video
+                            src={agentConfig.greetingMedia}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            className="w-full h-full object-cover rounded-full"
+                            onError={() => toast.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.")}
+                          />
+                        ) : (
+                          <img
+                            src={agentConfig.greetingMedia}
+                            alt="Greeting Image"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            onError={() => {
+                              setImageError(true);
+                              toast.error("Error loading greeting image.");
+                            }}
+                          />
+                        )
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+                          {imageError && (
+                            <p className="text-xs text-red-500 mt-2">Failed to load image</p>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="text-center mb-6 sm:mb-8">
@@ -2199,7 +2210,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
         if (response.ok) {
           const data = await response.json();
           setProgressData(data.data.progress);
-          setCurrentStep(5); // Set current step to next_step from API
+          setCurrentStep(data.data.progress.next_step || 1); // Set current step to next_step from API
           toast.success("Progress loaded successfully!");
         } else {
           const errorData = await response.json();
@@ -2221,28 +2232,85 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
     fetchProgress();
   }, []);
 
-  // Add new link when modal opens
+  // // Add new link when modal opens
+  // useEffect(() => {
+  //   if (
+  //     isMonetizationModalOpen &&
+  //     activeTab === "aipro" &&
+  //     agentConfig.linkaProMonetizations.length === 0
+  //   ) {
+  //     addLinkaProMonetization();
+  //   }
+  //   if (
+  //     isMonetizationModalOpen &&
+  //     activeTab === "partner" &&
+  //     agentConfig.partnerLinks.length === 0
+  //   ) {
+  //     addPartnerLink();
+  //   }
+  // }, [
+  //   isMonetizationModalOpen,
+  //   activeTab,
+  //   agentConfig.linkaProMonetizations.length,
+  //   agentConfig.partnerLinks.length,
+  // ]);
+
+  // useEffect(() => {
+  //   if (isMonetizationModalOpen && activeTab === "aipro") {
+  //     // Reset to empty or a single new link only if not editing
+  //     setAgentConfig((prev) => ({
+  //       ...prev,
+  //       linkaProMonetizations: [], // Start with no links
+  //     }));
+  //     // Add a new link if the modal is opened to add a new one
+  //     addLinkaProMonetization();
+  //   }
+  //   // Clean up when modal closes
+  //   return () => {
+  //     if (!isMonetizationModalOpen && activeTab === "aipro") {
+  //       setAgentConfig((prev) => ({
+  //         ...prev,
+  //         linkaProMonetizations: [], // Optional: Clear on close if needed
+  //       }));
+  //     }
+  //   };
+  // }, [isMonetizationModalOpen, activeTab]);
+
+
   useEffect(() => {
-    if (
-      isMonetizationModalOpen &&
-      activeTab === "aipro" &&
-      agentConfig.linkaProMonetizations.length === 0
-    ) {
-      addLinkaProMonetization();
+    if (isMonetizationModalOpen) {
+      if (activeTab === "aipro") {
+        if (!editingLinkId) {
+          setAgentConfig((prev) => ({
+            ...prev,
+            linkaProMonetizations: [],
+          }));
+          addLinkaProMonetization();
+        }
+      } else if (activeTab === "partner") {
+        if (!editingPartnerLinkId) {
+          setAgentConfig((prev) => ({
+            ...prev,
+            partnerLinks: [],
+          }));
+          addPartnerLink();
+        }
+      }
     }
-    if (
-      isMonetizationModalOpen &&
-      activeTab === "partner" &&
-      agentConfig.partnerLinks.length === 0
-    ) {
-      addPartnerLink();
-    }
-  }, [
-    isMonetizationModalOpen,
-    activeTab,
-    // agentConfig.linkaProMonetizations.length,
-    // agentConfig.partnerLinks.length,
-  ]);
+    return () => {
+      if (!isMonetizationModalOpen) {
+        setAgentConfig((prev) => ({
+          ...prev,
+          linkaProMonetizations: [],
+          partnerLinks: [],
+        }));
+        setEditingLinkId(null);
+        setEditingPartnerLinkId(null);
+      }
+    };
+  }, [isMonetizationModalOpen, activeTab, editingLinkId, editingPartnerLinkId]);
+
+
   // For Preview action
   const handlePreviewLink = (index: any) => {
     console.log(`Preview link at index ${index}`, agentConfig.partnerLinks[index]);
@@ -2287,24 +2355,15 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                         : "bg-white text-linka-russian-violet hover:bg-orange-50 border border-orange-200"
                       }`}
                     onClick={() => {
-                      if (
-                        progressData &&
-                        progressData.completed_steps >= step.id - 1
-                      ) {
-                        setCurrentStep(step.id);
-                      } else {
-                        toast.error(
-                          "Please complete the previous steps first."
-                        );
-                      }
+                      setCurrentStep(step.id);
                     }}
                   >
                     <div
                       className={`stepper-number w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-white font-bold transition-all ${progressData && progressData.completed_steps >= step.id
-                          ? "bg-orange-400"
-                          : currentStep === step.id
-                            ? "bg-orange-500 ring-2 ring-orange-500 ring-offset-2"
-                            : "bg-orange-400"
+                        ? "bg-orange-400"
+                        : currentStep === step.id
+                          ? "bg-orange-500 ring-2 ring-orange-500 ring-offset-2"
+                          : "bg-orange-400"
                         } mr-10 sm:mr-4`}
                     >
                       {progressData &&
@@ -2356,8 +2415,8 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   onClick={prevStep}
                   disabled={currentStep === 1}
                   className={`border-orange-300 text-orange-500 hover:bg-orange-100 hover:text-orange-600 transition-all duration-200 ${currentStep !== 1
-                      ? "hover:scale-105"
-                      : "opacity-50 cursor-not-allowed"
+                    ? "hover:scale-105"
+                    : "opacity-50 cursor-not-allowed"
                     }`}
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" />
@@ -2541,7 +2600,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
           </DialogContent>
         </Dialog>
         <Dialog open={isMonetizationModalOpen} onOpenChange={setIsMonetizationModalOpen}>
-          <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm rounded-xl">
+          <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm rounded-xl" key={agentConfig.linkaProMonetizations.length}>
             <DialogHeader>
               <DialogTitle className="text-linka-russian-violet">
                 {activeTab === "partner" ? "Primary Recs" : "AI Pro Monetization"}
@@ -2762,175 +2821,175 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                 <form onSubmit={handleSubmit}>
                   {agentConfig.linkaProMonetizations.length > 0 ? (
                     <div className="space-y-4">
-{agentConfig.linkaProMonetizations.map((link) => (
-  <Card
-    key={link.id} // Ensure unique key
-    className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
-  >
-    <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
-      {link.proType === "products" && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
-          <div className="space-y-1 sm:space-y-2">
-            <Label
-              htmlFor={`pro-category-${link.id}`}
-              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-            >
-              Category <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id={`pro-category-${link.id}`}
-              placeholder="e.g., Subscription, Service"
-              value={link.category || ""}
-              onChange={(e) =>
-                updateLinkaProMonetization(link.id!, "category", e.target.value)
-              }
-              className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-            />
-          </div>
-          <div className="space-y-1 sm:space-y-2">
-            <Label
-              htmlFor={`pro-affiliate-link-${link.id}`}
-              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-            >
-              Affiliate Link
-            </Label>
-            <div className="relative">
-              <Input
-                id={`pro-affiliate-link-${link.id}`}
-                placeholder="https://affiliate-link.com"
-                value={(link as LinkaProMonetizationProduct).affiliateLink || ""}
-                onChange={(e) =>
-                  updateLinkaProMonetization(
-                    link.id!,
-                    "affiliateLink",
-                    e.target.value
-                  )
-                }
-                className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-              />
-              <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
-            </div>
-          </div>
-          <div className="space-y-1 sm:space-y-2">
-            <Label
-              htmlFor={`pro-category-url-${link.id}`}
-              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-            >
-              Category URL <span className="text-red-500">*</span>
-            </Label>
-            <div className="relative">
-              <Input
-                id={`pro-category-url-${link.id}`}
-                placeholder="https://category-url.com"
-                value={(link as LinkaProMonetizationProduct).categoryUrl || ""}
-                onChange={(e) =>
-                  updateLinkaProMonetization(
-                    link.id!,
-                    "categoryUrl",
-                    e.target.value
-                  )
-                }
-                className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-              />
-              <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
-            </div>
-          </div>
-        </div>
-      )}
-      {link.proType === "blogs" && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <div className="space-y-1 sm:space-y-2">
-            <Label
-              htmlFor={`pro-category-${link.id}`}
-              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-            >
-              Category <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id={`pro-category-${link.id}`}
-              placeholder="e.g., Technology, Lifestyle"
-              value={link.category || ""}
-              onChange={(e) =>
-                updateLinkaProMonetization(link.id!, "category", e.target.value)
-              }
-              className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-            />
-          </div>
-          <div className="space-y-1 sm:space-y-2">
-            <Label
-              htmlFor={`pro-blog-url-${link.id}`}
-              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-            >
-              Blog Post URL <span className="text-red-500">*</span>
-            </Label>
-            <div className="relative">
-              <Input
-                id={`pro-blog-url-${link.id}`}
-                placeholder="https://blog-post-url.com"
-                value={(link as LinkaProMonetizationBlog).blogUrl || ""}
-                onChange={(e) =>
-                  updateLinkaProMonetization(link.id!, "blogUrl", e.target.value)
-                }
-                className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-              />
-              <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
-            </div>
-          </div>
-        </div>
-      )}
-      {link.proType === "websites" && (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
-          <div className="space-y-1 sm:space-y-2">
-            <Label
-              htmlFor={`pro-website-category-${link.id}`}
-              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-            >
-              Category <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id={`pro-website-category-${link.id}`}
-              placeholder="e.g., E-commerce, Portfolio"
-              value={link.category || ""}
-              onChange={(e) =>
-                updateLinkaProMonetization(link.id!, "category", e.target.value)
-              }
-              className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-            />
-          </div>
-          <div className="space-y-1 sm:space-y-2">
-            <Label
-              htmlFor={`pro-website-url-${link.id}`}
-              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-            >
-              Website URL <span className="text-red-500">*</span>
-            </Label>
-            <div className="relative">
-              <Input
-                id={`pro-website-url-${link.id}`}
-                placeholder="https://your-website.com"
-                value={(link as LinkaProMonetizationWebsite).websiteUrl || ""}
-                onChange={(e) =>
-                  updateLinkaProMonetization(link.id!, "websiteUrl", e.target.value)
-                }
-                className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-              />
-              <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Add Delete Button for Each Link */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => handleDeleteLink(agentConfig.linkaProMonetizations.indexOf(link), "aipro")}
-        className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs"
-      >
-        <Trash2 className="w-4 h-4" />
-      </Button>
-    </CardContent>
-  </Card>
-))}
+                      {agentConfig.linkaProMonetizations.map((link) => (
+                        <Card
+                          key={link.id} // Ensure unique key
+                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
+                        >
+                          <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
+                            {link.proType === "products" && (
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                                <div className="space-y-1 sm:space-y-2">
+                                  <Label
+                                    htmlFor={`pro-category-${link.id}`}
+                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                  >
+                                    Category <span className="text-red-500">*</span>
+                                  </Label>
+                                  <Input
+                                    id={`pro-category-${link.id}`}
+                                    placeholder="e.g., Subscription, Service"
+                                    value={link.category || ""}
+                                    onChange={(e) =>
+                                      updateLinkaProMonetization(link.id!, "category", e.target.value)
+                                    }
+                                    className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                </div>
+                                <div className="space-y-1 sm:space-y-2">
+                                  <Label
+                                    htmlFor={`pro-affiliate-link-${link.id}`}
+                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                  >
+                                    Affiliate Link
+                                  </Label>
+                                  <div className="relative">
+                                    <Input
+                                      id={`pro-affiliate-link-${link.id}`}
+                                      placeholder="https://affiliate-link.com"
+                                      value={(link as LinkaProMonetizationProduct).affiliateLink || ""}
+                                      onChange={(e) =>
+                                        updateLinkaProMonetization(
+                                          link.id!,
+                                          "affiliateLink",
+                                          e.target.value
+                                        )
+                                      }
+                                      className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                    />
+                                    <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                  </div>
+                                </div>
+                                <div className="space-y-1 sm:space-y-2">
+                                  <Label
+                                    htmlFor={`pro-category-url-${link.id}`}
+                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                  >
+                                    Category URL <span className="text-red-500">*</span>
+                                  </Label>
+                                  <div className="relative">
+                                    <Input
+                                      id={`pro-category-url-${link.id}`}
+                                      placeholder="https://category-url.com"
+                                      value={(link as LinkaProMonetizationProduct).categoryUrl || ""}
+                                      onChange={(e) =>
+                                        updateLinkaProMonetization(
+                                          link.id!,
+                                          "categoryUrl",
+                                          e.target.value
+                                        )
+                                      }
+                                      className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                    />
+                                    <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {link.proType === "blogs" && (
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                                <div className="space-y-1 sm:space-y-2">
+                                  <Label
+                                    htmlFor={`pro-category-${link.id}`}
+                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                  >
+                                    Category <span className="text-red-500">*</span>
+                                  </Label>
+                                  <Input
+                                    id={`pro-category-${link.id}`}
+                                    placeholder="e.g., Technology, Lifestyle"
+                                    value={link.category || ""}
+                                    onChange={(e) =>
+                                      updateLinkaProMonetization(link.id!, "category", e.target.value)
+                                    }
+                                    className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                </div>
+                                <div className="space-y-1 sm:space-y-2">
+                                  <Label
+                                    htmlFor={`pro-blog-url-${link.id}`}
+                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                  >
+                                    Blog Post URL <span className="text-red-500">*</span>
+                                  </Label>
+                                  <div className="relative">
+                                    <Input
+                                      id={`pro-blog-url-${link.id}`}
+                                      placeholder="https://blog-post-url.com"
+                                      value={(link as LinkaProMonetizationBlog).blogUrl || ""}
+                                      onChange={(e) =>
+                                        updateLinkaProMonetization(link.id!, "blogUrl", e.target.value)
+                                      }
+                                      className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                    />
+                                    <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {link.proType === "websites" && (
+                              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
+                                <div className="space-y-1 sm:space-y-2">
+                                  <Label
+                                    htmlFor={`pro-website-category-${link.id}`}
+                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                  >
+                                    Category <span className="text-red-500">*</span>
+                                  </Label>
+                                  <Input
+                                    id={`pro-website-category-${link.id}`}
+                                    placeholder="e.g., E-commerce, Portfolio"
+                                    value={link.category || ""}
+                                    onChange={(e) =>
+                                      updateLinkaProMonetization(link.id!, "category", e.target.value)
+                                    }
+                                    className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                  />
+                                </div>
+                                <div className="space-y-1 sm:space-y-2">
+                                  <Label
+                                    htmlFor={`pro-website-url-${link.id}`}
+                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                  >
+                                    Website URL <span className="text-red-500">*</span>
+                                  </Label>
+                                  <div className="relative">
+                                    <Input
+                                      id={`pro-website-url-${link.id}`}
+                                      placeholder="https://your-website.com"
+                                      value={(link as LinkaProMonetizationWebsite).websiteUrl || ""}
+                                      onChange={(e) =>
+                                        updateLinkaProMonetization(link.id!, "websiteUrl", e.target.value)
+                                      }
+                                      className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                    />
+                                    <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            {/* Add Delete Button for Each Link */}
+                            {/* <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteLink(agentConfig.linkaProMonetizations.indexOf(link), "aipro")}
+                              className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button> */}
+                          </CardContent>
+                        </Card>
+                      ))}
                     </div>
                   ) : (
                     <div className="text-center py-6 sm:py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
