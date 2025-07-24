@@ -48,8 +48,9 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { CopyIcon, Cross2Icon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { CopyIcon, Cross2Icon, DotsVerticalIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Toaster } from "@/components/ui/toaster";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 // Interfaces remain unchanged
 interface ConditionalPrompt {
   id: string;
@@ -164,7 +165,7 @@ export default function AgentBuilderPage() {
   // Monetization modal state
   const [isMonetizationModalOpen, setIsMonetizationModalOpen] = useState(false);
 
-  const [selectedMonetizationOption, setSelectedMonetizationOption] = useState("productExpansion");
+  const [selectedMonetizationOption, setSelectedMonetizationOption] = useState("products");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [agentLink, setAgentLink] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -291,7 +292,7 @@ export default function AgentBuilderPage() {
 
           console.log("agentConfig :: ", agentConfig);
           console.log(agentConfig.greetingMedia);
-          toast.success("Agent details loaded successfully!");
+          // toast.success("Agent details loaded successfully!");
         } else {
           const errorData = await response.json();
           setError(`Failed to fetch agent details: ${errorData.message || "Unknown error"}`);
@@ -394,7 +395,7 @@ export default function AgentBuilderPage() {
 
           console.log(agentConfig);
           setTotalPages(data.data.meta.total || 1);
-          toast.success("Affiliate links loaded successfully!");
+          // toast.success("Affiliate links loaded successfully!");
         } else {
           const errorData = await response.json();
           setError(`Failed to fetch links: ${errorData.message || "Unknown error"}`);
@@ -759,7 +760,7 @@ export default function AgentBuilderPage() {
             // greetingImage: imageUrl,
             // greetingVideo: null // Clear video if image is uploaded
           }));
-          toast.success("Image uploaded successfully!");
+          // toast.success("Image uploaded successfully!");
         } else {
           const errorData = await response.json();
           toast.error(
@@ -817,7 +818,7 @@ export default function AgentBuilderPage() {
             greetingMedia: videoUrl,
             greetingMediaType: "video",
           }));
-          toast.success("Video uploaded successfully!");
+          // toast.success("Video uploaded successfully!");
         } else {
           const errorData = await response.json();
           toast.error(
@@ -983,37 +984,49 @@ export default function AgentBuilderPage() {
           break;
 
         case 4:
-          if (
-            agentConfig.partnerLinks.length === 0 &&
-            agentConfig.linkaProMonetizations.length === 0
-          ) {
-            toast.warning(
-              "No monetization links added. You can skip this step if not needed."
-            );
-          }
+          // if (
+          //   agentConfig.partnerLinks.length === 0 &&
+          //   agentConfig.linkaProMonetizations.length === 0
+          // ) {
+          //   toast.warning(
+          //     "No monetization links added. You can skip this step if not needed."
+          //   );
+          // }
 
-          apiUrl = "/api/settings";
-          payload = {
-            agentName: agentConfig.name,
-            trainingInstructions: agentConfig.trainingInstructions,
-            agentGreeting: agentConfig.greeting,
-            agentPrompts: agentConfig.useConditionalPrompts
-              ? []
-              : agentConfig.prompts.filter((p) => p.trim()),
-            conditionalPrompts: agentConfig.useConditionalPrompts
-              ? agentConfig.conditionalPrompts
-              : [],
-            partnerLinks: agentConfig.partnerLinks.filter(
-              (link) => link.affiliateLink.trim() !== ""
-            ),
-            linkaProMonetizations: agentConfig.linkaProMonetizations.filter(
-              (link) => link.category.trim() !== ""
-            ),
-            greetingTitle: agentConfig.greetingTitle,
-            // greetingImage: agentConfig.greetingImage,
-            // greetingVideo: agentConfig.greetingVideo
-          };
-          break;
+          // apiUrl = "/api/settings";
+          // payload = {
+          //   agentName: agentConfig.name,
+          //   trainingInstructions: agentConfig.trainingInstructions,
+          //   agentGreeting: agentConfig.greeting,
+          //   agentPrompts: agentConfig.useConditionalPrompts
+          //     ? []
+          //     : agentConfig.prompts.filter((p) => p.trim()),
+          //   conditionalPrompts: agentConfig.useConditionalPrompts
+          //     ? agentConfig.conditionalPrompts
+          //     : [],
+          //   partnerLinks: agentConfig.partnerLinks.filter(
+          //     (link) => link.affiliateLink.trim() !== ""
+          //   ),
+          //   linkaProMonetizations: agentConfig.linkaProMonetizations.filter(
+          //     (link) => link.category.trim() !== ""
+          //   ),
+          //   greetingTitle: agentConfig.greetingTitle,
+          //   // greetingImage: agentConfig.greetingImage,
+          //   // greetingVideo: agentConfig.greetingVideo
+          // };
+
+            // Skip step 4 logic and directly advance to step 5
+            setProgressData((prev) => ({
+              ...prev,
+              completed_steps: Math.max(prev?.completed_steps || 0, currentStep),
+              next_step: 5,
+              current_status: `Skipped step ${currentStep}`,
+              completed_at: new Date().toISOString(),
+            }));
+            setCurrentStep(5);
+            toast.success(`Step ${currentStep} saved successfully!`);
+            return; // Exit early to avoid executing API call logic
+          // break;
 
         case 5:
           if (
@@ -1081,11 +1094,6 @@ export default function AgentBuilderPage() {
           return;
       }
 
-      // console.log(apiUrl);
-      // console.log(payload);
-      // console.log(currentStep);
-      // console.log(accessToken);
-
       response = await fetch(apiUrl, {
         method: currentStep === 1 ? "POST" : "PUT",
         headers: {
@@ -1097,7 +1105,7 @@ export default function AgentBuilderPage() {
 
       if (response.ok) {
         toast.success(
-          currentStep === 5
+          currentStep === 3
             ? "AI Agent saved and published successfully!"
             : `Step ${currentStep} saved successfully!`
         );
@@ -1180,7 +1188,7 @@ export default function AgentBuilderPage() {
 
       if (response.ok) {
         setIsMonetizationModalOpen(false);
-        toast.success("Linka Pro monetization links saved successfully!");
+        // toast.success("Linka Pro monetization links saved successfully!");
       } else {
         const errorData = await response.json();
         toast.error(`Failed to save monetization links: ${errorData.message || "Unknown error"}`);
@@ -1476,7 +1484,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
                     } transition-all duration-300 hover:scale-105`}
                 >
-                  Linka Basic
+                  Primary Recs
                 </Button>
                 <Button
                   variant={activeTab === "aipro" ? "default" : "outline"}
@@ -1486,17 +1494,18 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
                     } transition-all duration-300 hover:scale-105`}
                 >
-                  Linka Pro
+                  Smart Recs
                 </Button>
                 <Button
                   variant={activeTab === "paywall" ? "default" : "outline"}
+                  disabled={true}
                   onClick={() => setActiveTab("paywall")}
                   className={`text-xs sm:text-sm ${activeTab === "paywall"
                     ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
                     : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
                     } transition-all duration-300 hover:scale-105`}
                 >
-                  Linka Paywall Upgrade
+                  Linka Paywall (Coming Soon)
                 </Button>
               </div>
             </CardHeader>
@@ -1506,7 +1515,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   <div className="flex-grow min-w-0">
                     <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet flex items-center gap-2">
                       <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-linka-carolina-blue" />
-                      {activeTab === "aipro" ? "AI Smart Recommendations" : "Linka Basic"}
+                      {activeTab === "aipro" ? "Smart Recs" : "Primary Recs"}
                     </h3>
                   </div>
                   <Button
@@ -1526,8 +1535,8 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                 </div>
                 <p className="text-xs text-linka-night/60 mt-1">
                   {activeTab === "aipro"
-                    ? "Add monetization links for AI Pro services"
-                    : "Personalized Recommendations. 24/7 Earnings"}
+                    ? "Smarter Recommendations. Scaled Earnings."
+                    : "Your AI-Agent will make Personalized Recommendations based on your primary recs."}
                 </p>
                 {activeTab === "aipro" && (
                   <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-3 sm:mt-4">
@@ -1566,12 +1575,13 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                         value="website"
                         className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
                         checked={selectedMonetizationOption === "website"}
+                        disabled={true}
                         onChange={() => {
                           setSelectedMonetizationOption("website");
                           setPage(1); // Reset page to 1
                         }}
                       />
-                      Website Monetization
+                      Website Monetization (coming soon)
                     </label>
                   </div>
                 )}
@@ -1584,7 +1594,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
                       <tr>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Link Name
+                          Category
                         </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           URL
@@ -1604,17 +1614,34 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                           className="bg-white border-b hover:bg-linka-alice-blue/10"
                         >
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            {link.category || "Unnamed Link"}
+                            {link.category || ""}
                           </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
+                          {/* <td className="px-3 py-3 sm:px-6 sm:py-4">
                             <a
                               href={(link as any).categoryUrl || (link as any).blogUrl || (link as any).websiteUrl}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-linka-carolina-blue hover:underline break-all"
                             >
-                              {(link as any).categoryUrl || (link as any).blogUrl || (link as any).websiteUrl || "No URL"}
+                              {(link as any).categoryUrl || (link as any).blogUrl || (link as any).websiteUrl || ""}
                             </a>
+                          </td> */}
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            {(() => {
+                              const url = link.affiliateLink;
+                              return url ? (
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-linka-carolina-blue hover:underline"
+                                >
+                                  Affiliate
+                                </a>
+                              ) : (
+                                <span>Affiliate</span>
+                              );
+                            })()}
                           </td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
                             <span
@@ -1655,7 +1682,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
                       <tr>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Link Name
+                          Category
                         </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           URL
@@ -1688,7 +1715,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                             <td className="px-3 py-3 sm:px-6 sm:py-4">
                               {link.category || "Unnamed Link"}
                             </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            {/* <td className="px-3 py-3 sm:px-6 sm:py-4">
                               <a
                                 href={url}
                                 target="_blank"
@@ -1697,6 +1724,30 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                               >
                                 {url || "No URL"}
                               </a>
+                            </td> */}
+                           <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              {(() => {
+                                let url: string | undefined;
+                                if (link.proType === "products") {
+                                  url = (link as LinkaProMonetizationProduct).categoryUrl;
+                                } else if (link.proType === "blogs") {
+                                  url = (link as LinkaProMonetizationBlog).blogUrl;
+                                } else if (link.proType === "websites") {
+                                  url = (link as LinkaProMonetizationWebsite).websiteUrl;
+                                }
+                                return url ? (
+                                  <a
+                                    href={url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-linka-carolina-blue hover:underline"
+                                  >
+                                    {link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}
+                                  </a>
+                                ) : (
+                                  <span>{link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}</span>
+                                );
+                              })()}
                             </td>
                             <td className="px-3 py-3 sm:px-6 sm:py-4">
                               <span
@@ -1724,9 +1775,58 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                 className="text-red-500 hover:text-red-700 text-xs"
                               >
                                 <Trash2 className="w-4 h-4" />
-                                {/* Delete */}
                               </Button>
                             </td>
+                    {/* <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                            >
+                              <DotsVerticalIcon className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1">
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                              onClick={() => handleEditLink(index, "aipro")}
+                            >
+                              <Edit className="w-4 h-4 mr-2" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                              onClick={() => handlePreviewLink(index)}
+                            >
+                              <Link2 className="w-4 h-4 mr-2" />
+                              Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                              onClick={() => handleRetryLink(index)}
+                            >
+                              <ArrowRight className="w-4 h-4 mr-2" />
+                              Retry
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                              onClick={() => handleUpdateImage(index)}
+                            >
+                              <Upload className="w-4 h-4 mr-2" />
+                              Update Image
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                              onClick={() => handleDeleteLink(index, "aipro")}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td> */}
                           </tr>
                         );
                       })}
@@ -2180,7 +2280,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
           const data = await response.json();
           setProgressData(data.data.progress);
           setCurrentStep(data.data.progress.next_step || 1); // Set current step to next_step from API
-          toast.success("Progress loaded successfully!");
+          // toast.success("Progress loaded successfully!");
         } else {
           const errorData = await response.json();
           setError(
@@ -2571,8 +2671,11 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
         <Dialog open={isMonetizationModalOpen} onOpenChange={setIsMonetizationModalOpen}>
           <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm rounded-xl" key={agentConfig.linkaProMonetizations.length}>
             <DialogHeader>
-              <DialogTitle className="text-linka-russian-violet">
-                {activeTab === "partner" ? "Primary Recs" : "AI Pro Monetization"}
+            <DialogTitle className="text-linka-russian-violet">
+              {activeTab === "partner" ? "Primary Recs" : 
+                selectedMonetizationOption === "products" ? "Product Monetization" :
+                selectedMonetizationOption === "blogs" ? "Blog Monetization" :
+                selectedMonetizationOption === "websites" ? "Website Monetization" : "AI Pro Monetization"}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 sm:space-y-6 py-4 sm:py-6">
@@ -2652,7 +2755,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                     htmlFor={`partner-social-${link.id}`}
                                     className="text-linka-russian-violet font-medium"
                                   >
-                                    Social Media
+                                    Social Media Link
                                   </Label>
                                   <Input
                                     id={`partner-social-${link.id}`}
@@ -2767,7 +2870,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                           );
                           if (response.ok) {
                             setIsMonetizationModalOpen(false);
-                            toast.success("Partner links saved successfully!");
+                            // toast.success("Partner links saved successfully!");
                           } else {
                             const errorData = await response.json();
                             toast.error(
@@ -2973,6 +3076,13 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   )}
                   <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4 mt-3 sm:mt-4">
                     <Button
+                      onClick={saveMonetization}
+                      className="bg-linka-carolina-blue hover:bg-linka-carolina-blue/80 transition-transform hover:scale-105 text-white text-xs sm:text-sm h-8 sm:h-9"
+                    >
+                      <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      Submit
+                    </Button>
+                    <Button
                       variant="outline"
                       onClick={() => setIsMonetizationModalOpen(false)}
                       className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue hover:text-white transition-transform hover:scale-105 text-xs sm:text-sm h-8 sm:h-9"
@@ -2985,13 +3095,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     >
                       <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                       Add New Link
-                    </Button>
-                    <Button
-                      onClick={saveMonetization}
-                      className="bg-linka-carolina-blue hover:bg-linka-carolina-blue/80 transition-transform hover:scale-105 text-white text-xs sm:text-sm h-8 sm:h-9"
-                    >
-                      <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      Save
                     </Button>
                   </div>
                 </form>
