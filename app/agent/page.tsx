@@ -3167,7 +3167,7 @@ const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: ()
                     >
                       🎉
                     </motion.span>
-                    Agent Ready!
+                    Your AI-Agent is Live!
                   </DialogTitle>
                 </motion.div>
               </DialogHeader>
@@ -3179,7 +3179,7 @@ const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: ()
                   transition={{ delay: 0.3, duration: 0.5, ease: 'easeOut' }}
                   className="text-gray-600 mb-6"
                 >
-                  Your AI agent is successfully created and ready to assist users!
+                  Share your agent and earn seamlessly
                 </motion.p>
 
                 <motion.div
