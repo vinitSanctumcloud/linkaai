@@ -40,21 +40,15 @@ import {
   MessageSquare,
   InfoIcon,
   LinkIcon,
-  Link2,
-  TrashIcon,
-  RefreshCwIcon,
-  EyeIcon
+  Link2
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-// interface PartnerLink {
-//   addKnowledge: string;
-//   name: string;
-//   url: string;
-//   // status: 'active' | 'inactive'; // Adjust based on your possible status values
-// }
 
+import { motion, AnimatePresence } from 'framer-motion';
+
+import { CopyIcon, Cross2Icon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
 // Interfaces remain unchanged
 interface ConditionalPrompt {
   id: string;
@@ -166,8 +160,10 @@ export default function AgentBuilderPage() {
   // Monetization modal state
   const [isMonetizationModalOpen, setIsMonetizationModalOpen] = useState(false);
 
-  const [selectedMonetizationOption, setSelectedMonetizationOption] = useState("products");
-
+  const [selectedMonetizationOption, setSelectedMonetizationOption] = useState("productExpansion");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [agentLink, setAgentLink] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -834,46 +830,58 @@ export default function AgentBuilderPage() {
   }, [agentConfig.linkaProMonetizations]);
 
   const handleSave = async () => {
-    try {
-      const response = await fetch("/api/settings", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          agentName: agentConfig.name,
-          trainingInstructions: agentConfig.trainingInstructions,
-          agentPrompts: agentConfig.useConditionalPrompts
-            ? []
-            : agentConfig.prompts.filter((p) => p.trim()),
-          conditionalPrompts: agentConfig.useConditionalPrompts
-            ? agentConfig.conditionalPrompts
-            : [],
-          partnerLinks: agentConfig.partnerLinks.filter(
-            (link) => link.affiliateLink.trim() !== ""
-          ),
-          linkaProMonetizations: agentConfig.linkaProMonetizations.filter(
-            (link) => link.category.trim() !== ""
-          ),
-          // agentGreeting: agentConfig.greeting,
-          greetingTitle: agentConfig.greetingTitle,
-        }),
-      });
+    // try {
+    //   setIsSaving(true);
+    //   const response = await fetch("/api/settings", {
+    //     method: "PUT",
+    //     headers: { "Content-Type": "application/json" },
+    //     body: JSON.stringify({
+    //       agentName: agentConfig.name,
+    //       trainingInstructions: agentConfig.trainingInstructions,
+    //       agentPrompts: agentConfig.useConditionalPrompts
+    //         ? []
+    //         : agentConfig.prompts.filter((p) => p.trim()),
+    //       conditionalPrompts: agentConfig.useConditionalPrompts
+    //         ? agentConfig.conditionalPrompts
+    //         : [],
+    //       partnerLinks: agentConfig.partnerLinks.filter(
+    //         (link) => link.affiliateLink.trim() !== ""
+    //       ),
+    //       linkaProMonetizations: agentConfig.linkaProMonetizations.filter(
+    //         (link) => link.mainUrl.trim() !== ""
+    //       ),
+    //       greetingTitle: agentConfig.greetingTitle,
+    //     }),
+    //   });
 
-      if (response.ok) {
-        toast.success("AI Agent saved successfully!");
-        // Update progress data
-        setProgressData((prev) => ({
-          ...prev,
-          completed_steps: Math.max(prev?.completed_steps || 0, currentStep),
-          next_step: currentStep < 5 ? currentStep + 1 : 5,
-          current_status: `Saved step ${currentStep}`,
-          completed_at: new Date().toISOString(),
-        }));
-      } else {
-        toast.error("Failed to save AI Agent");
-      }
-    } catch (error) {
-      toast.error("An error occurred while saving");
-    }
+    //   const data = await response.json();
+
+    //   if (response.ok) {
+    //     const link = `${window.location.origin}/agent/${data.id || data.slug}`;
+    //     setAgentLink(link);
+    //     setIsModalOpen(true);
+
+    //     // Update progress data
+    //     setProgressData((prev) => ({
+    //       ...prev,
+    //       completed_steps: Math.max(prev?.completed_steps || 0, currentStep),
+    //       next_step: currentStep < 5 ? currentStep + 1 : 5,
+    //       current_status: `Saved step ${currentStep}`,
+    //       completed_at: new Date().toISOString(),
+    //     }));
+    //   } else {
+    //     alert(data.message || "Failed to save AI Agent");
+    //   }
+    // } catch (error) {
+    //   alert("An error occurred while saving");
+    //   console.error("Save error:", error);
+    // } finally {
+    //   setIsSaving(false);
+    // }
+    console.log("first")
+    const link = `abc.com`;
+    setAgentLink(link);
+    setIsModalOpen(true)
   };
 
   const nextStep = async () => {
@@ -1089,7 +1097,7 @@ export default function AgentBuilderPage() {
           current_status: `Completed step ${currentStep}`,
           completed_at: new Date().toISOString(),
         }));
-        if (currentStep < 5) setCurrentStep(currentStep + 1);
+        if (currentStep < 5) setCurrentStep(5);
       } else {
         const errorData = await response.json();
         toast.error(
@@ -1452,8 +1460,8 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   variant={activeTab === "partner" ? "default" : "outline"}
                   onClick={() => setActiveTab("partner")}
                   className={`text-xs sm:text-sm ${activeTab === "partner"
-                      ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                      : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
                     } transition-all duration-300 hover:scale-105`}
                 >
                   Linka Basic
@@ -1462,8 +1470,8 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   variant={activeTab === "aipro" ? "default" : "outline"}
                   onClick={() => setActiveTab("aipro")}
                   className={`text-xs sm:text-sm ${activeTab === "aipro"
-                      ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                      : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
                     } transition-all duration-300 hover:scale-105`}
                 >
                   Linka Pro
@@ -1472,8 +1480,8 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   variant={activeTab === "paywall" ? "default" : "outline"}
                   onClick={() => setActiveTab("paywall")}
                   className={`text-xs sm:text-sm ${activeTab === "paywall"
-                      ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                      : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
                     } transition-all duration-300 hover:scale-105`}
                 >
                   Linka Paywall Upgrade
@@ -1599,8 +1607,8 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
                             <span
                               className={`px-2 py-1 rounded-full text-xs ${link.status === "Hold"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
                                 }`}
                             >
                               {link.status}
@@ -2015,7 +2023,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                 </p>
               </CardHeader>
               <CardContent className="px-6 pb-6">
-                <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[90vh] flex flex-col w-[full] lg:w-[50%] mx-auto">
+                <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[70vh] flex flex-col w-[full] lg:w-[50%] mx-auto">
                   <div className="flex justify-center mb-6 w-full">
                     <div className="w-52 h-52 sm:w-72 sm:h-72 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
                       {/* {agentConfig.greetingMedia ? (
@@ -2191,7 +2199,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
         if (response.ok) {
           const data = await response.json();
           setProgressData(data.data.progress);
-          setCurrentStep(data.data.progress.next_step || 1); // Set current step to next_step from API
+          setCurrentStep(5); // Set current step to next_step from API
           toast.success("Progress loaded successfully!");
         } else {
           const errorData = await response.json();
@@ -2356,18 +2364,28 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   Previous
                 </Button>
                 {currentStep === 5 ? (
-                  <Button
-                    onClick={handleSave}
-                    className="bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white shadow-md px-6 py-2 transition-all duration-300 hover:scale-[1.02]"
-                  >
-                    <Save className="w-4 h-4 mr-2" />
-                    Save & Publish Agent
-                  </Button>
+                  <>
+                    <Button
+                      onClick={handleSave}
+                      // disabled={isSaving || !agentLink} // Added condition to disable if no agentLink
+                      className={`px-4 py-2 rounded-md text-white font-medium ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
+                    >
+                      {isSaving ? 'Saving...' : 'Save & Publish Agent'}
+                    </Button>
+
+                    {isModalOpen && agentLink && (
+                      <AgentSaveModal
+                        agentLink={agentLink}
+                        onClose={() => setIsModalOpen(false)}
+                      />
+                    )}
+                  </>
                 ) : (
                   <div className="flex gap-4">
                     <Button
                       onClick={nextStep}
-                      className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 transition-all duration-300 hover:scale-105"
+                      disabled={!nextStep} // Added condition to disable if no nextStep function
+                      className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2 transition-all duration-300 hover:scale-105 disabled:bg-gray-400 disabled:cursor-not-allowed"
                     >
                       Next
                       <ArrowRight className="w-4 h-4 ml-2" />
@@ -2954,8 +2972,210 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
+    </DashboardLayout >
   );
-
-
 }
+
+export const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: () => void }) => {
+  const [copied, setCopied] = useState(false);
+  const [isOpen, setIsOpen] = useState(true);
+  const [showParticles, setShowParticles] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(agentLink);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setIsOpen(false);
+      setTimeout(onClose, 500); // Increased for smoother exit animation
+    }
+  };
+
+  useEffect(() => {
+    setShowParticles(true);
+    const timer = setTimeout(() => setShowParticles(false), 2000); // Extended duration
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <>
+      <AnimatePresence>
+        {showParticles && <CelebrationParticles />}
+      </AnimatePresence>
+
+      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+        <DialogContent className="sm:max-w-[625px] p-0 overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -50, scale: 0.9 }}
+            transition={{ type: 'spring', damping: 25, stiffness: 200, duration: 0.4 }}
+          >
+            <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
+              <DialogHeader className="flex-row justify-between items-start p-6 pb-4 border-b">
+                <motion.div
+                  initial={{ scale: 0.8, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  transition={{ delay: 0.2, type: 'spring', damping: 15 }}
+                >
+                  <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center">
+                    <motion.span
+                      animate={{
+                        rotate: [0, 15, -15, 0, 10, -10, 0],
+                        scale: [1, 1.2, 1, 1.1, 1]
+                      }}
+                      transition={{
+                        duration: 1.2,
+                        times: [0, 0.2, 0.4, 0.6, 0.8, 0.9, 1],
+                        ease: 'easeInOut'
+                      }}
+                      className="inline-block mr-2"
+                    >
+                      🎉
+                    </motion.span>
+                    Agent Ready!
+                  </DialogTitle>
+                </motion.div>
+              </DialogHeader>
+
+              <div className="p-6">
+                <motion.p
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.3, duration: 0.5, ease: 'easeOut' }}
+                  className="text-gray-600 mb-6"
+                >
+                  Your AI agent is successfully created and ready to assist users!
+                </motion.p>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.4, duration: 0.5, ease: 'easeOut' }}
+                  className="mb-6"
+                >
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Agent Link</label>
+                  <div className="flex rounded-md shadow-sm">
+                    <input
+                      type="text"
+                      readOnly
+                      value={agentLink}
+                      className="flex-1 min-w-0 block w-full px-3 py-2 rounded-l-md border border-gray-300 sm:text-sm outline-none focus:outline-none focus:ring-0 focus:border-gray-300"
+                    />
+                    <motion.button
+                      onClick={handleCopy}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-green-600 text-white font-medium hover:bg-green-700 outline-none focus:outline-none focus:ring-0"
+                    >
+                      {copied ? (
+                        <motion.span
+                          initial={{ scale: 0.8 }}
+                          animate={{ scale: 1 }}
+                          transition={{ type: 'spring', stiffness: 300 }}
+                        >
+                          Copied!
+                        </motion.span>
+                      ) : (
+                        <>
+                          <CopyIcon className="w-4 h-4 mr-2" />
+                          Copy
+                        </>
+                      )}
+                    </motion.button>
+                  </div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.5, duration: 0.5, ease: 'easeOut' }}
+                  className="flex justify-end space-x-3"
+                >
+                  <motion.button
+                    onClick={() => handleOpenChange(false)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                  >
+                    Close
+                  </motion.button>
+                  <motion.a
+                    href={agentLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 border border-transparent rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 inline-flex items-center"
+                  >
+                    <OpenInNewWindowIcon className="w-4 h-4 mr-2" />
+                    Open Agent
+                  </motion.a>
+                </motion.div>
+              </div>
+            </div>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
+};
+
+const CelebrationParticles = () => {
+  const particles = Array.from({ length: 50 }).map((_, i) => {
+    const size = Math.random() * 12 + 6;
+    const colors = [
+      'from-yellow-400 to-pink-500',
+      'from-blue-400 to-purple-500',
+      'from-green-400 to-blue-500'
+    ];
+    const color = colors[Math.floor(Math.random() * colors.length)];
+
+    return (
+      <motion.div
+        key={i}
+        className={`absolute rounded-full bg-gradient-to-br ${color}`}
+        style={{
+          width: `${size}px`,
+          height: `${size}px`,
+          left: `${Math.random() * 100}%`,
+          top: `${Math.random() * 100}%`,
+        }}
+        initial={{
+          y: -100,
+          x: Math.random() * 200 - 100,
+          opacity: 0.8,
+          scale: 0
+        }}
+        animate={{
+          y: [0, Math.random() * 200 + 100],
+          x: [0, Math.random() * 200 - 100],
+          opacity: [0.8, 0],
+          scale: [1, Math.random() * 0.5],
+          rotate: [0, Math.random() * 720 - 360]
+        }}
+        transition={{
+          duration: 2,
+          delay: Math.random() * 0.8,
+          ease: 'easeOut',
+          times: [0, 0.7, 1]
+        }}
+      />
+    );
+  });
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="fixed inset-0 pointer-events-none z-[60]"
+    >
+      {particles}
+    </motion.div>
+  );
+};

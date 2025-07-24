@@ -25,6 +25,12 @@ import {
   Eye,
 } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Settings {
   customUrl?: string;
@@ -35,7 +41,13 @@ interface Settings {
 export default function EmbedPage() {
   const [settings, setSettings] = useState<Settings | null>(null);
   const [embedSize, setEmbedSize] = useState({ width: "400", height: "600" });
+  const [isCopied, setIsCopied] = useState(false);
 
+  const handleCopy = () => {
+    copyToClipboard(popupCode);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -63,7 +75,7 @@ export default function EmbedPage() {
       : "https://earnlinks.ai";
   const chatUrl = settings?.customUrl
     ? `${baseUrl}/chat/${settings.customUrl}`
-    : "";
+    : "https://earnlinks.ai";
 
   const iframeCode = `<iframe 
   src="${chatUrl}" 
@@ -89,7 +101,7 @@ export default function EmbedPage() {
   })();
 </script>`;
 
-  const popupCode = `<!-- EarnLinks.AI Popup Chat -->
+  const popupCode = `<!-- EarnLinks.AI share Chat -->
 <script>
   (function() {
     var button = document.createElement('button');
@@ -143,10 +155,10 @@ export default function EmbedPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="iframe" className="w-full">
+                <Tabs defaultValue="share" className="w-full">
                   <TabsList className="grid w-full grid-cols-3 h-auto p-1">
                     <TabsTrigger
-                      value="popup"
+                      value="share"
                       className="py-2 text-xs sm:text-sm"
                     >
                       <Smartphone className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -167,7 +179,7 @@ export default function EmbedPage() {
                       Widget
                     </TabsTrigger>
                     {/* <TabsTrigger
-                      value="popup"
+                      value="share"
                       className="py-2 text-xs sm:text-sm"
                     >
                       <Smartphone className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -235,32 +247,44 @@ export default function EmbedPage() {
                     </div>
                   </TabsContent>
 
-                  <TabsContent value="popup" className="mt-4">
+                  <TabsContent value="share" className="mt-4">
                     <div className="space-y-3">
                       <div>
                         <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
-                          Popup Chat Button
+                          Share Chat Link
                         </h3>
                         <p className="text-gray-600 text-xs sm:text-sm mb-3">
-                          Floating chat button that opens your AI agent in a
-                          popup window.
+                          Copy and share this URL to let others chat with your AI agent.
                         </p>
                       </div>
                       <div className="relative">
-                        <Textarea
-                          value={popupCode}
-                          readOnly
-                          rows={8}
-                          className="font-mono text-xs sm:text-sm p-3"
-                        />
-                        <Button
-                          onClick={() => copyToClipboard(popupCode)}
-                          className="absolute top-2 right-2 h-7 w-7 p-0"
-                          variant="ghost"
-                          size="sm"
+                        <div
+                          onClick={() => {
+                            handleCopy();
+                            // You might want to add state management for the tooltip here
+                          }}
+                          className="font-mono text-xs sm:text-sm p-3 border rounded-md cursor-pointer hover:bg-gray-50 flex items-center justify-between"
                         >
-                          <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
-                        </Button>
+                          <span className="truncate">{chatUrl}</span>
+                          {/* <span className="text-blue-500 ml-2 text-xs">Copy</span> */}
+                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                onClick={() => copyToClipboard(popupCode)}
+                                className="absolute top-2 right-2 h-7 w-7 p-0"
+                                variant="ghost"
+                                size="sm"
+                              >
+                                <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              {isCopied ? 'Copied!' : 'Copy URL'}
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
                       </div>
                     </div>
                   </TabsContent>
@@ -360,7 +384,7 @@ export default function EmbedPage() {
                 {[
                   "Place the iframe code where you want the chat to appear on your page.",
                   "For mobile responsiveness, consider using percentage widths like '100%'.",
-                  "The popup option works great for websites where space is limited.",
+                  "The share option works great for websites where space is limited.",
                   "Test your implementation on different devices to ensure optimal experience.",
                 ].map((tip, index) => (
                   <div key={index} className="flex items-start">
@@ -397,19 +421,18 @@ export default function EmbedPage() {
                   {/* Preview container with responsive sizing */}
                   <div className="relative w-full">
                     <div
-                      className={`mx-auto bg-gray-50 rounded-lg sm:rounded-xl shadow-md overflow-hidden ${
-                        embedSize.width === "100%" ? "w-full" : "w-auto"
-                      }`}
+                      className={`mx-auto bg-gray-50 rounded-lg sm:rounded-xl shadow-md overflow-hidden ${embedSize.width === "100%" ? "w-full" : "w-auto"
+                        }`}
                       style={{
                         width:
                           embedSize.width === "100%"
                             ? "100%"
                             : `${Math.min(
-                                parseInt(embedSize.width),
-                                typeof window !== "undefined"
-                                  ? window.innerWidth - 40
-                                  : 400
-                              )}px`,
+                              parseInt(embedSize.width),
+                              typeof window !== "undefined"
+                                ? window.innerWidth - 40
+                                : 400
+                            )}px`,
                         height: `${Math.min(parseInt(embedSize.height), 600)}px`,
                         minHeight: "250px",
                         maxWidth: "100%",

@@ -554,32 +554,40 @@ export default function AnalyticsPage() {
             >
               <div className="flex h-full flex-col md:flex-row gap-4 sm:gap-6 lg:gap-8 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
                 <div className="w-full flex flex-col justify-center space-y-6">
-                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 sm:p-6 lg:p-8 rounded-xl shadow-sm hover:shadow-md transition-shadow duration-300">
-                    <h3 className="text-sm sm:text-base font-medium text-gray-600 dark:text-gray-300 mb-4 flex items-center">
-                      <Smartphone className="w-4 h-4 sm:w-5 sm:h-5 mr-2 text-purple-500" />
-                      Device Distribution
+                  <div className="bg-gray-50 dark:bg-gray-800/50 p-4 rounded-lg">
+                    <h3 className="text-sm font-medium text-gray-600 dark:text-gray-300 mb-3 flex items-center">
+                      <Globe className="w-4 h-4 mr-2 text-blue-500" />
+                      Top Locations
                     </h3>
-                    <div className="space-y-4">
-                      {analyticsData?.devices.map((device, index) => (
-                        <div key={index} className="flex items-center justify-between">
-                          <div className="flex items-center">
-                            {device.icon}
-                            <span className="ml-2 text-sm sm:text-base font-medium text-gray-800 dark:text-gray-200">{device.name}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <span className="text-sm sm:text-base font-semibold text-gray-700 dark:text-gray-300 mr-2 sm:mr-3">{device.value}%</span>
-                            <div className="w-20 sm:w-28 md:w-36 lg:w-48 bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                              <div
-                                className="h-2.5 rounded-full transition-all duration-300"
-                                style={{
-                                  width: `${device.value}%`,
-                                  backgroundColor: chartColors[index % chartColors.length]
-                                }}
-                              />
+                    <div className="space-y-3">
+                      {analyticsData?.countries
+                        .slice(0, 4)
+                        .map((country, index) => (
+                          <div
+                            key={index}
+                            className="flex items-center justify-between"
+                          >
+                            <div className="flex items-center">
+                              <span className="mr-2 text-lg">
+                                {country.flag}
+                              </span>
+                              <span className="text-sm font-medium text-gray-800 dark:text-gray-200">
+                                {country.name}
+                              </span>
+                            </div>
+                            <div className="flex items-center">
+                              <span className="text-sm font-semibold text-gray-700 dark:text-gray-300 mr-2">
+                                {country.value}%
+                              </span>
+                              <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                <div
+                                  className="bg-blue-500 h-2 rounded-full"
+                                  style={{ width: `${country.value}%` }}
+                                />
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   </div>
                 </div>
