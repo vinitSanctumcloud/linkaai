@@ -2036,7 +2036,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
               <CardContent className="px-6 pb-6">
                 <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[70vh] flex flex-col w-[full] lg:w-[50%] mx-auto">
                   <div className="flex justify-center mb-6 w-full">
-                    <div className="w-52 h-52 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
+                    <div className="w-52 h-52  rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
                       {/* {agentConfig.greetingMedia ? (
                         <video
                           src={agentConfig.greetingMedia}

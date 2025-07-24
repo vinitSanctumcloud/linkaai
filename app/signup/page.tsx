@@ -19,7 +19,7 @@ interface FormData {
   email: string
   password: string
   password_confirmation: string
-  user_varient: 'CREATOR' | 'BUSINESS' | 'NEITHER'
+  user_varient: 'CREATOR' | 'BUSINESS' | ''
   creator_industry: string
   accept_aggrements: boolean
   creator_handle?: string | null
@@ -304,7 +304,7 @@ export default function SignupPage() {
                     {[
                       { value: 'CREATOR', label: 'Creator' },
                       { value: 'BUSINESS', label: 'Business/Brand' },
-                      { value: 'NEITHER', label: 'Just Exploring' },
+                      { value: '', label: 'Just Exploring' },
                     ].map((option) => (
                       <label
                         key={option.value}
@@ -329,7 +329,7 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {(formData.user_varient === 'CREATOR' || formData.user_varient === 'BUSINESS' || formData.user_varient === 'NEITHER') && (
+                {(formData.user_varient === 'CREATOR' || formData.user_varient === 'BUSINESS' || formData.user_varient === '') && (
                   <div className="space-y-3 pt-1">
                     {/* Conditional Text Field */}
                     {formData.user_varient === 'CREATOR' && (

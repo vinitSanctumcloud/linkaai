@@ -31,7 +31,6 @@ export const signup = async (formData) => {
   }
 
   // Additional validation for required fields
-  const requiredFields = ['first_name', 'last_name', 'email', 'password', 'user_varient'];
   for (const field of requiredFields) {
     if (!formData[field] || formData[field].toString().trim() === '') {
       throw new Error(`Missing or empty required field: ${field}`);
