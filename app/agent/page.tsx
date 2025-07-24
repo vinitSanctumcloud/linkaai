@@ -3035,7 +3035,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
   );
 }
 
-export const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: () => void }) => {
+const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: () => void }) => {
   const [copied, setCopied] = useState(false);
   const [isOpen, setIsOpen] = useState(true);
   const [showParticles, setShowParticles] = useState(false);
