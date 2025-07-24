@@ -49,6 +49,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { CopyIcon, Cross2Icon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
+import { Toaster } from "@/components/ui/toaster";
 // Interfaces remain unchanged
 interface ConditionalPrompt {
   id: string;
@@ -2023,158 +2024,126 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
         );
       case 5:
         return (
-          <div className="space-y-6">
-            <Card className="border-none shadow-lg rounded-xl overflow-hidden bg-white border border-gray-200">
-              <CardHeader className="px-6 pt-6 pb-4">
-                <CardTitle className="text-2xl font-semibold text-linka-russian-violet">
-                  Live Preview
-                </CardTitle>
-                <p className="text-sm text-linka-night/70">
-                  This is exactly what your users will see
-                </p>
-              </CardHeader>
-              <CardContent className="px-6 pb-6">
-                <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[70vh] flex flex-col w-[full] lg:w-[50%] mx-auto">
-                  <div className="flex justify-center mb-6 w-full">
-                    <div className="w-52 h-52  rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange to-linka-carolina-blue flex items-center justify-center shadow-md">
-                      {/* {agentConfig.greetingMedia ? (
-                        <video
-                          src={agentConfig.greetingMedia}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          className="w-full h-full object-cover rounded-full"
-                          onError={() =>
-                            toast.error(
-                              "Error loading video in preview. Please ensure the file is a valid MP4, WebM, or OGG."
-                            )
-                          }
-                        />
-                      ) : agentConfig.greetingMedia ? (
-                        <img
-                          src={agentConfig.greetingMedia}
-                          alt="Greeting Media"
-                          className="w-full h-full object-cover"
-                          onError={() =>
-                            toast.error(
-                              "Error loading greeting image in preview."
-                            )
-                          }
-                        />
-                      ) : (
-                        <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
-                      )} */}
-                      {agentConfig.greetingMedia && agentConfig.greetingMediaType && !imageError ? (
-                        agentConfig.greetingMediaType.toLowerCase() === "video" ? (
-                          <video
-                            src={agentConfig.greetingMedia}
-                            autoPlay
-                            muted
-                            loop
-                            playsInline
-                            className="w-full h-full object-cover rounded-full"
-                            onError={() => toast.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.")}
-                          />
+          <div className="bg-gray-100 h-[800px] md:h-[950px] flex items-center justify-center">
+            <Toaster />
+            <div className="w-full max-w-9xl h-full">
+              <Card className="border-none shadow-lg rounded-xl overflow-hidden bg-white border border-gray-200 h-full">
+                <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+                  <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
+                    Live Preview
+                  </CardTitle>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
+                    This is exactly what your users will see
+                  </p>
+                </CardHeader>
+                <CardContent className="p-4 sm:p-6 h-[calc(100%-80px)]">
+                  {/* Preview Container */}
+                  <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[500px] md:h-[600px] flex flex-col w-full max-w-md mx-auto">
+                    {/* Avatar Container */}
+                    <div className="flex justify-center mb-4 sm:mb-6">
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full overflow-hidden bg-gradient-to-br from-orange-500 to-blue-400 flex items-center justify-center shadow-md">
+                        {agentConfig.greetingMedia && agentConfig.greetingMediaType && !imageError ? (
+                          agentConfig.greetingMediaType.toLowerCase() === "video" ? (
+                            <video
+                              src={agentConfig.greetingMedia}
+                              autoPlay
+                              muted
+                              loop
+                              playsInline
+                              className="w-full h-full object-cover rounded-full"
+                              onError={() => toast.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.")}
+                            />
+                          ) : (
+                            <img
+                              src={agentConfig.greetingMedia}
+                              alt="Greeting Image"
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                              onError={() => {
+                                setImageError(true);
+                                toast.error("Error loading greeting image.");
+                              }}
+                            />
+                          )
                         ) : (
-                          <img
-                            src={agentConfig.greetingMedia}
-                            alt="Greeting Image"
-                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                            onError={() => {
-                              setImageError(true);
-                              toast.error("Error loading greeting image.");
-                            }}
-                          />
-                        )
-                      ) : (
-                        <div className="flex flex-col items-center">
-                          <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
-                          {imageError && (
-                            <p className="text-xs text-red-500 mt-2">Failed to load image</p>
-                          )}
-                        </div>
-                      )}
+                          <div className="flex flex-col items-center">
+                            <Bot className="w-6 h-6 sm:w-8 sm:h-8 md:w-10 md:h-10 lg:w-12 lg:h-12 text-white/90 animate-pulse" />
+                            {imageError && (
+                              <p className="text-[10px] sm:text-xs text-red-500 mt-1 sm:mt-2">Failed to load image</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-center mb-6 sm:mb-8">
-                    <h4 className="text-lg sm:text-xl font-semibold text-gray-800">
-                      {agentConfig.greetingTitle || "Your Agent"}
-                    </h4>
-                    <p className="text-lg sm:text-xl font-normal text-gray-700">
-                      {agentConfig.greeting ||
-                        "Ready to assist you with your needs!"}
-                    </p>
-                  </div>
-                  <div className="flex-1 overflow-y-auto px-1 sm:px-4">
-                    <div className="space-y-4">
-                      <div>
-                        {/* <h5 className="text-sm font-semibold text-linka-russian-violet mb-2">
-                          Conversation Starters
-                        </h5> */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-                          {(agentConfig.useConditionalPrompts &&
-                            agentConfig.conditionalPrompts.length > 0
-                            ? agentConfig.conditionalPrompts
-                              .slice(0, 2)
-                              .map((cp) => cp.mainPrompt)
-                            : agentConfig.prompts.filter(
-                              (prompt) => prompt.trim() !== ""
-                            )
-                          ).map((prompt, index) => (
-                            <button
-                              key={index}
-                              className="border border-gray-300 rounded-md py-2 px-4 text-sm hover:bg-gray-100 cursor-pointer text-left transition-colors duration-200"
-                            >
-                              <span className="font-medium text-gray-800">
-                                {prompt || `Prompt ${index + 1}`}
-                              </span>
-                            </button>
-                          ))}
+
+                    {/* Greeting Text */}
+                    <div className="text-center mb-4 sm:mb-6">
+                      <h4 className="text-sm sm:text-base md:text-lg lg:text-xl font-semibold text-gray-800">
+                        {agentConfig.greetingTitle}
+                      </h4>
+                      <p className="text-xs sm:text-sm md:text-base text-gray-700 mt-1 sm:mt-2">
+                        {agentConfig.greeting}
+                      </p>
+                    </div>
+
+                    {/* Prompt Buttons */}
+                    <div className="flex-1 overflow-y-auto px-1 sm:px-2">
+                      <div className="space-y-3">
+                        <div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                            {(agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length > 0
+                              ? agentConfig.conditionalPrompts.slice(0, 2).map((cp) => cp.mainPrompt)
+                              : agentConfig.prompts.filter((prompt) => prompt.trim() !== "")
+                            ).map((prompt, index) => (
+                              <button
+                                key={index}
+                                className="border border-gray-300 rounded-md py-2 px-3 text-xs sm:text-sm hover:bg-gray-100 cursor-pointer text-left transition-colors duration-200"
+                              >
+                                <span className="font-medium text-gray-800 line-clamp-2">
+                                  {prompt || `Prompt ${index + 1}`}
+                                </span>
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="mt-4 sm:mt-6">
-                    <div className="flex bg-gray-200 rounded-md px-4 py-2 items-center gap-2">
-                      <input
-                        type="text "
-                        placeholder="Type or ask me something..."
-                        className="flex-1 bg-transparent text-sm text-gray-800 placeholder-gray-500 focus:outline-none font-bold"
-                        disabled
-                      />
 
-                      <button className=" text-black p-2 rounded-full flex items-center justify-center hover:bg-linka-dark-orange/90 transition-colors duration-200">
-                        <Mic className="w-6 h-6" />
-
-                      </button>
-                      <button className="bg-black text-white p-2 rounded-full flex items-center justify-center hover:bg-linka-dark-orange/90 transition-colors duration-200">
-                        <Send className="w-4 h-4" />
-                      </button>
+                    {/* Input Area */}
+                    <div className="mt-auto">
+                      <div className="flex bg-gray-200 rounded-md px-3 py-2 items-center gap-2">
+                        <input
+                          type="text"
+                          placeholder="Type or ask me something..."
+                          className="flex-1 bg-transparent text-xs sm:text-sm text-gray-800 placeholder-gray-500 focus:outline-none font-medium"
+                          disabled
+                        />
+                        <button className="text-black p-1 sm:p-2 rounded-full flex items-center justify-center  transition-colors duration-200">
+                          <Mic className="w-4 h-4 sm:w-5 sm:h-5" />
+                        </button>
+                        <button className="bg-black text-white p-1 sm:p-2 rounded-full flex items-center justify-center  transition-colors duration-200">
+                          <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mt-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="text-base">⚡️</span>
-                    <h3 className="text-sm font-semibold text-blue-900">
-                      Pro Tips
-                    </h3>
+
+                  {/* Pro Tips */}
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mt-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm">⚡️</span>
+                      <h3 className="text-xs sm:text-sm font-semibold text-blue-900">
+                        Pro Tips
+                      </h3>
+                    </div>
+                    <ul className="list-disc pl-5 space-y-1 text-xs sm:text-sm text-blue-800">
+                      <li>Ask relevant questions to test your avatar.</li>
+                      <li>Preview images and videos may take a moment to load on first launch.</li>
+                      <li>Refine your agent's persona and instructions based on results.</li>
+                    </ul>
                   </div>
-                  <ul className="list-disc pl-5 space-y-1 text-xs text-blue-800">
-                    <li>Ask relevant questions to test your avatar.</li>
-                    <li>
-                      Preview images and videos may take a moment to load on
-                      first launch.
-                    </li>
-                    <li>
-                      Refine your agent’s persona and instructions based on
-                      results.
-                    </li>
-                  </ul>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         );
       default:

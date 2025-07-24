@@ -168,7 +168,7 @@ export default function AgentDetails() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900 bg-opacity-50">
+    <div className="fixed inset-0 flex items-center justify-center z-50  bg-opacity-50">
       <div className="w-[90vw] max-w-[400px] h-[80vh] max-h-[600px] sm:max-w-[450px] sm:max-h-[700px] lg:max-w-[500px] lg:max-h-[800px]">
         <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 h-full flex flex-col overflow-hidden">
           {/* Header with Agent Info */}

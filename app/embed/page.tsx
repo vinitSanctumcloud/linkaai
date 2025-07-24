@@ -31,6 +31,9 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store";
+import { fetchAgentDetails } from "@/store/slices/agentSlice";
 
 interface Settings {
   customUrl?: string;
@@ -39,9 +42,15 @@ interface Settings {
 }
 
 export default function EmbedPage() {
+  const dispatch = useDispatch<AppDispatch>()
   const [settings, setSettings] = useState<Settings | null>(null);
   const [embedSize, setEmbedSize] = useState({ width: "400", height: "600" });
   const [isCopied, setIsCopied] = useState(false);
+  const { agent: agentDetails, status, error } = useSelector((state: RootState) => state.agents);
+
+  useEffect(() => {
+    dispatch(fetchAgentDetails());
+  }, [dispatch]);
 
   const handleCopy = () => {
     copyToClipboard(popupCode);
@@ -69,13 +78,13 @@ export default function EmbedPage() {
     toast.success("Copied to clipboard!");
   };
 
+  const agentSlug = agentDetails?.ai_agent_slug
+
   const baseUrl =
     typeof window !== "undefined"
       ? window.location.origin
       : "https://earnlinks.ai";
-  const chatUrl = settings?.customUrl
-    ? `${baseUrl}/chat/${settings.customUrl}`
-    : "https://earnlinks.ai";
+  const chatUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/liveagent/${agentSlug}`
 
   const iframeCode = `<iframe 
   src="${chatUrl}" 
@@ -144,56 +153,49 @@ export default function EmbedPage() {
           {/* Left Column - Configuration and Embed Options */}
           <div className="space-y-4 md:space-y-6">
             {/* Embed Options Card */}
-            <Card className="border border-gray-200 shadow-sm rounded-xl">
-              <CardHeader>
-                <CardTitle className="text-lg sm:text-xl">
+            <Card className="border border-gray-200 shadow-sm rounded-xl w-full max-w-3xl mx-auto">
+              <CardHeader className="px-4 sm:px-6">
+                <CardTitle className="text-lg sm:text-xl font-semibold">
                   Share your AI agent with your audience.
                 </CardTitle>
-                <CardDescription className="text-sm sm:text-base">
+                <CardDescription className="text-sm sm:text-base mt-1">
                   Add it to your link-in-bio, embed it on your website, or share
                   it directly in chats and emails.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
                 <Tabs defaultValue="share" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 h-auto p-1">
+                  <TabsList className="grid w-full grid-cols-3 h-auto p-1 gap-1">
                     <TabsTrigger
                       value="share"
-                      className="py-2 text-xs sm:text-sm"
+                      className="py-2 text-xs xs:text-sm flex items-center justify-center"
                     >
-                      <Smartphone className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      Share URL (Copy URL)
+                      <Smartphone className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <span className="truncate">Share URL</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="iframe"
-                      className="py-2 text-xs sm:text-sm"
+                      className="py-2 text-xs xs:text-sm flex items-center justify-center"
                     >
-                      <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      Iframe
+                      <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <span className="truncate">Iframe</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="widget"
-                      className="py-2 text-xs sm:text-sm"
+                      className="py-2 text-xs xs:text-sm flex items-center justify-center"
                     >
-                      <Code className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      Widget
+                      <Code className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <span className="truncate">Widget</span>
                     </TabsTrigger>
-                    {/* <TabsTrigger
-                      value="share"
-                      className="py-2 text-xs sm:text-sm"
-                    >
-                      <Smartphone className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      Copy URL
-                    </TabsTrigger> */}
                   </TabsList>
 
                   <TabsContent value="iframe" className="mt-4">
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">
                           Simple Iframe Embed
                         </h3>
-                        <p className="text-gray-600 text-xs sm:text-sm mb-3">
+                        <p className="text-gray-600 text-xs sm:text-sm">
                           Basic iframe code that you can paste directly into
                           your HTML.
                         </p>
@@ -202,14 +204,15 @@ export default function EmbedPage() {
                         <Textarea
                           value={iframeCode}
                           readOnly
-                          rows={6}
-                          className="font-mono text-xs sm:text-sm p-3"
+                          rows={4}
+                          className="font-mono text-xs sm:text-sm p-3 pr-10"
                         />
                         <Button
                           onClick={() => copyToClipboard(iframeCode)}
                           className="absolute top-2 right-2 h-7 w-7 p-0"
                           variant="ghost"
                           size="sm"
+                          aria-label="Copy code"
                         >
                           <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -220,10 +223,10 @@ export default function EmbedPage() {
                   <TabsContent value="widget" className="mt-4">
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">
                           JavaScript Widget
                         </h3>
-                        <p className="text-gray-600 text-xs sm:text-sm mb-3">
+                        <p className="text-gray-600 text-xs sm:text-sm">
                           Dynamic widget that loads asynchronously and is more
                           flexible.
                         </p>
@@ -232,14 +235,15 @@ export default function EmbedPage() {
                         <Textarea
                           value={widgetCode}
                           readOnly
-                          rows={8}
-                          className="font-mono text-xs sm:text-sm p-3"
+                          rows={6}
+                          className="font-mono text-xs sm:text-sm p-3 pr-10"
                         />
                         <Button
                           onClick={() => copyToClipboard(widgetCode)}
                           className="absolute top-2 right-2 h-7 w-7 p-0"
                           variant="ghost"
                           size="sm"
+                          aria-label="Copy code"
                         >
                           <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
@@ -250,37 +254,34 @@ export default function EmbedPage() {
                   <TabsContent value="share" className="mt-4">
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">
                           Share Chat Link
                         </h3>
-                        <p className="text-gray-600 text-xs sm:text-sm mb-3">
+                        <p className="text-gray-600 text-xs sm:text-sm">
                           Copy and share this URL to let others chat with your AI agent.
                         </p>
                       </div>
                       <div className="relative">
                         <div
-                          onClick={() => {
-                            handleCopy();
-                            // You might want to add state management for the tooltip here
-                          }}
-                          className="font-mono text-xs sm:text-sm p-3 border rounded-md cursor-pointer hover:bg-gray-50 flex items-center justify-between"
+                          onClick={handleCopy}
+                          className="font-mono text-xs sm:text-sm p-3 pr-10 border rounded-md cursor-pointer hover:bg-gray-50 flex items-center overflow-hidden"
                         >
                           <span className="truncate">{chatUrl}</span>
-                          {/* <span className="text-blue-500 ml-2 text-xs">Copy</span> */}
                         </div>
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
                               <Button
-                                onClick={() => copyToClipboard(popupCode)}
+                                onClick={() => copyToClipboard(chatUrl)}
                                 className="absolute top-2 right-2 h-7 w-7 p-0"
                                 variant="ghost"
                                 size="sm"
+                                aria-label="Copy URL"
                               >
                                 <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>
+                            <TooltipContent side="top">
                               {isCopied ? 'Copied!' : 'Copy URL'}
                             </TooltipContent>
                           </Tooltip>
@@ -416,12 +417,12 @@ export default function EmbedPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="px-3 sm:px-6 pb-3 sm:pb-6">
+              <CardContent className="px-3  pb-3 sm:pb-6">
                 <div className="p-2 sm:p-6 rounded-lg">
                   {/* Preview container with responsive sizing */}
                   <div className="relative w-full">
                     <div
-                      className={`mx-auto bg-gray-50 rounded-lg sm:rounded-xl shadow-md overflow-hidden ${embedSize.width === "100%" ? "w-full" : "w-auto"
+                      className={`mx-auto bg-red-50 rounded-lg sm:rounded-xl shadow-md overflow-hidden ${embedSize.width === "100%" ? "w-full" : "w-auto"
                         }`}
                       style={{
                         width:
@@ -468,11 +469,11 @@ export default function EmbedPage() {
                   <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-center gap-2 sm:gap-3">
                     <Button
                       variant={
-                        embedSize.width === "300" ? "default" : "outline"
+                        embedSize.width === "400" ? "default" : "outline"
                       }
                       size="sm"
                       onClick={() =>
-                        setEmbedSize({ width: "300", height: "500" })
+                        setEmbedSize({ width: "400", height: "600" })
                       }
                       className="text-xs sm:text-sm py-1 sm:py-2"
                     >
