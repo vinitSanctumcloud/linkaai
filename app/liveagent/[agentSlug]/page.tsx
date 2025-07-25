@@ -152,7 +152,15 @@ export default function AgentDetails() {
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
-    const public_id = getOrCreatePublicId(agentDetails?.user_id, agentDetails?.id);
+    if (!agentDetails) {
+      setMessages((prev) => [
+        ...prev,
+        { text: 'Agent details are not loaded yet. Please try again.', sender: 'assistant' },
+      ]);
+      return;
+    }
+
+    const public_id = getOrCreatePublicId(agentDetails.user_id, agentDetails.id);
 
     const newMessage: Message = { text: input, sender: 'user' };
     setMessages((prev) => [...prev, newMessage]);
@@ -194,11 +202,11 @@ export default function AgentDetails() {
           assistantText += chunk;
 
           let cleanedText = assistantText
-            .replace(/\[METAID:[^\]]+\]/g, '') // Remove meta IDs
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '') // Remove all markdown links
-            .replace(/Check\s?them\s?out\s?here/gi, '') // Remove "Check them out here" text
-            .replace(/\s{2,}/g, ' ') // Remove extra spaces
-            .replace(/(\d+\.\s.*?)(?=\d+\.\s|$)/gs, '\n\n$1\n\n') // Add blank line after each numbered point
+            .replace(/\[METAID:[^\]]+\]/g, '')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
+            .replace(/Check\s?them\s?out\s?here/gi, '')
+            .replace(/\s{2,}/g, ' ')
+            .replace(/(\d+\.\s[^\n]*)/g, '$1\n\n') // Match each numbered point and add double newlines
             .trim();
 
           setMessages((prev) => {
@@ -215,12 +223,12 @@ export default function AgentDetails() {
       setMessages((prev) => {
         const updated = [...prev];
         let cleanedText = assistantText
-          .replace(/\[METAID:[^\]]+\]/g, '')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
-          .replace(/Check\s?them\s?out\s?here/gi, '')
-          .replace(/\s{2,}/g, ' ')
-          .replace(/(\d+\.\s.*?)(?=\d+\.\s|$)/gs, '$1\n\n')
-          .trim();
+            .replace(/\[METAID:[^\]]+\]/g, '')
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
+            .replace(/Check\s?them\s?out\s?here/gi, '')
+            .replace(/\s{2,}/g, ' ')
+            .replace(/(\d+\.\s[^\n]*)/g, '$1\n\n') // Match each numbered point and add double newlines
+            .trim();
         updated[updated.length - 1] = {
           text: cleanedText,
           sender: 'assistant',
@@ -315,7 +323,7 @@ export default function AgentDetails() {
           {showWelcome && (
             <div className="bg-gradient-to-r  p-4 rounded-t-2xl">
               <div className="flex flex-col items-center">
-                <div className="w-20 h-20 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 border-white shadow-md">
+                <div className="w-48 h-48 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 border-white shadow-md">
                   <img
                     src={agentDetails.greeting_media_url || 'https://via.placeholder.com/150'}
                     alt={agentDetails.agent_name}
