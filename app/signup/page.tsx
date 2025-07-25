@@ -9,8 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Loader2, ArrowLeft, EyeOff, Eye } from 'lucide-react'
-import PublicRoute from './../../components/auth/PublicRoute' // Adjust the import path as necessary
-
+import PublicRoute from './../../components/auth/PublicRoute'
 import { signup } from '@/services/authService'
 
 interface FormData {
@@ -33,8 +32,8 @@ interface FormErrors {
 export default function SignupPage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
   const [formData, setFormData] = useState<FormData>({
     first_name: '',
@@ -63,12 +62,12 @@ export default function SignupPage() {
       newErrors.password = 'Password must be at least 8 characters'
     if (formData.password !== formData.password_confirmation)
       newErrors.password_confirmation = 'Passwords do not match'
-    if (!formData.accept_aggrements) newErrors.accept_aggrements = 'You must accept the agreements'
-    // if (formData.user_varient === 'CREATOR' && !formData.creator_handle?.trim())
-    //   newErrors.creator_handle = 'Creator handle is required'
-    // if (formData.user_varient === 'BUSINESS' && !formData.business_name?.trim())
-    //   newErrors.business_name = 'Business handle is required'
-
+    if (!formData.accept_aggrements)
+      newErrors.accept_aggrements = 'You must accept the agreements'
+    if (formData.user_varient === 'CREATOR' && !formData.creator_handle?.trim())
+      newErrors.creator_handle = 'Creator handle is required'
+    if (formData.user_varient === 'BUSINESS' && !formData.business_name?.trim())
+      newErrors.business_name = 'Business name is required'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -79,11 +78,12 @@ export default function SignupPage() {
     setErrors((prev) => ({ ...prev, [field]: '' }))
   }, [])
 
-  const togglePasswordVisibility = () => setShowPassword(!showPassword);
-  const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword);
+  const togglePasswordVisibility = () => setShowPassword(!showPassword)
+  const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword)
 
-  const handleSubmit = useCallback(async (e: { preventDefault: () => void }) => {
-    e.preventDefault();
+  const handleSubmit = useCallback(
+    async (e: { preventDefault: () => void }) => {
+      e.preventDefault()
 
     if (!validateInput()) {
       // Get the first error message from the errors object, or use a fallback
@@ -95,53 +95,57 @@ export default function SignupPage() {
       return;
     }
 
-    setIsLoading(true);
+      setIsLoading(true)
 
-    try {
-      const result = await signup(formData);
-      console.log('Signup result:', result);
+      try {
+        const result = await signup(formData)
+        console.log('Signup result:', result)
 
-      if (result.data.access_token) {
-        // Store access token in localStorage
-        try {
-          localStorage.setItem('accessToken', result.data.access_token);
-          toast.success(result.message || 'Account created successfully!', {
-            position: "top-right",
-            duration: 2000,
-          });
-          router.push('/');
-        } catch (storageError) {
-          console.error('Failed to store access token in localStorage:', storageError);
-          toast.error('Account created, but failed to save session. Please try again.', {
-            position: "top-right",
-            duration: 2000,
-          });
+        if (result.data.access_token) {
+          try {
+            localStorage.setItem('accessToken', result.data.access_token)
+            toast.success(result.message || 'Account created successfully!')
+            router.push('/')
+          } catch (storageError) {
+            console.error('Failed to store access token in localStorage:', storageError)
+            toast.error('Account created, but failed to save session. Please try again.')
+          }
+        } else {
+          console.warn('Signup response missing access_token:', result)
+          toast.error(result.message || 'Signup failed: No access token received. Please try again.')
         }
-      } else {
-        console.warn('Signup response missing access_token:', result);
-        toast.error(result.message || 'Signup failed: No access token received. Please try again.', {
-          position: "top-right",
-          duration: 2000,
-        });
+      } catch (error) {
+        const errorMessage =
+          error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
+            ? error.message
+            : 'An unexpected error occurred during signup. Please try again.'
+        toast.error(errorMessage)
+        console.error('Signup error:', error)
+      } finally {
+        setIsLoading(false)
       }
-    } catch (error) {
-      const errorMessage =
-        error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
-          ? error.message
-          : 'An unexpected error occurred during signup. Please try again.';
-      toast.error(errorMessage, {
-        position: "top-right",
-        duration: 2000,
-      });
-      console.error('Signup error:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [formData, router, validateInput, errors]); // Added errors to dependencies
+    },
+    [formData, router, validateInput, errors]
+  )
 
   return (
     <PublicRoute>
-      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+      <style jsx global>{`
+        @keyframes fadeIn {
+          0% { opacity: 0; transform: translateY(20px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+          animation: fadeIn 0.5s ease-out forwards;
+          animation-delay: 0.1s;
+        }
+        @media (prefers-reduced-motion: no-preference) {
+          .fade-in {
+            animation-play-state: running;
+          }
+        }
+      `}</style>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-2xl space-y-6">
           <div className="flex items-center">
             <Link
@@ -153,13 +157,12 @@ export default function SignupPage() {
             </Link>
           </div>
 
-          <Card className="border-0 shadow-lg rounded-xl overflow-hidden bg-white">
-            <CardHeader className="text-center space-y-3 px-6 py-8 sm:px-10 sm:py-10 bg-gradient-to-r from-orange-50 to-orange-100">
+          <Card className="border-0 shadow-2xl rounded-xl bg-white/90 backdrop-blur-sm fade-in">
+            <CardHeader className="text-center space-y-3 px-6 py-8 sm:px-10 sm:py-10">
               <div className="flex items-center justify-center">
-                <img src="./Linklogo.png" alt="" className='h-20 w-24' />
-                <span className="ml-3 text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">EarnLinks.AI</span>
+                <img src="./Linklogo.png" alt="Logo" className="h-20 w-auto" />
               </div>
-              <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">
+              <CardTitle className="text-2xl sm:text-3xl font-bold text-gray-900">
                 Create your account
               </CardTitle>
               <CardDescription className="text-gray-600 text-sm sm:text-base">
@@ -183,7 +186,7 @@ export default function SignupPage() {
                       value={formData.first_name}
                       onChange={(e) => handleChange('first_name', e.target.value.trim())}
                       required
-                      className={`w-full ${errors.first_name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'}`}
+                      className={`w-full border-gray-300 transition-colors duration-200 ${errors.first_name ? 'border-red-500' : ''}`}
                       aria-invalid={!!errors.first_name}
                       aria-describedby={errors.first_name ? 'first_name-error' : undefined}
                     />
@@ -204,7 +207,7 @@ export default function SignupPage() {
                       value={formData.last_name}
                       onChange={(e) => handleChange('last_name', e.target.value.trim())}
                       required
-                      className={`w-full ${errors.last_name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'}`}
+                      className={`w-full border-gray-300  transition-colors duration-200 ${errors.last_name ? 'border-red-500' : ''}`}
                       aria-invalid={!!errors.last_name}
                       aria-describedby={errors.last_name ? 'last_name-error' : undefined}
                     />
@@ -226,7 +229,7 @@ export default function SignupPage() {
                     value={formData.email}
                     onChange={(e) => handleChange('email', e.target.value.trim().toLowerCase())}
                     required
-                    className={`w-full ${errors.email ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'}`}
+                    className={`w-full border-gray-300 :ring-0  transition-colors duration-200 ${errors.email ? 'border-red-500' : ''}`}
                     aria-invalid={!!errors.email}
                     aria-describedby={errors.email ? 'email-error' : undefined}
                   />
@@ -250,7 +253,7 @@ export default function SignupPage() {
                         onChange={(e) => handleChange('password', e.target.value)}
                         required
                         minLength={8}
-                        className={`w-full pr-10 ${errors.password ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'}`}
+                        className={`w-full pr-10 border-gray-300 :ring-0  transition-colors duration-200 ${errors.password ? 'border-red-500' : ''}`}
                         aria-invalid={!!errors.password}
                         aria-describedby={errors.password ? 'password-error' : undefined}
                       />
@@ -286,7 +289,7 @@ export default function SignupPage() {
                         onChange={(e) => handleChange('password_confirmation', e.target.value)}
                         required
                         minLength={8}
-                        className={`w-full pr-10 ${errors.password_confirmation ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'}`}
+                        className={`w-full pr-10 border-gray-300  transition-colors duration-200 ${errors.password_confirmation ? 'border-red-500' : ''}`}
                         aria-invalid={!!errors.password_confirmation}
                         aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
                       />
@@ -323,10 +326,10 @@ export default function SignupPage() {
                     ].map((option) => (
                       <label
                         key={option.value}
-                        className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all ${formData.user_varient === option.value
+                        className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all duration-200 ${formData.user_varient === option.value
                           ? 'border-orange-300 bg-orange-50 shadow-sm'
                           : 'border-gray-200 hover:border-orange-200'
-                          }`}
+                        }`}
                       >
                         <input
                           type="radio"
@@ -334,7 +337,7 @@ export default function SignupPage() {
                           value={option.value}
                           checked={formData.user_varient === option.value}
                           onChange={(e) => handleChange('user_varient', e.target.value)}
-                          className="h-4 w-4 text-orange-600 border-gray-300 focus:ring-orange-500"
+                          className="h-4 w-4 text-orange-600 border-gray-300 "
                         />
                         <span className="text-sm font-medium text-gray-700">
                           {option.label}
@@ -346,7 +349,6 @@ export default function SignupPage() {
 
                 {(formData.user_varient === 'CREATOR' || formData.user_varient === 'BUSINESS' || formData.user_varient === '') && (
                   <div className="space-y-3 pt-1">
-                    {/* Conditional Text Field */}
                     {formData.user_varient === 'CREATOR' && (
                       <div className="mt-3">
                         <Label className="text-sm font-medium text-gray-700 block">
@@ -357,10 +359,15 @@ export default function SignupPage() {
                           name="creator_handle"
                           value={formData.creator_handle || ''}
                           onChange={(e) => handleChange('creator_handle', e.target.value)}
-                          className={`w-full mt-3 ${errors.creator_handle ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'}`}
+                          className={`w-full mt-3 border-gray-300 transition-colors duration-200 ${errors.creator_handle ? 'border-red-500' : ''}`}
                           aria-invalid={!!errors.creator_handle}
-                          aria-describedby={errors.creator_handle ? 'creator_handle -error' : undefined}
+                          aria-describedby={errors.creator_handle ? 'creator_handle-error' : undefined}
                         />
+                        {errors.creator_handle && (
+                          <p id="creator_handle-error" className="text-xs text-red-600 font-medium">
+                            {errors.creator_handle}
+                          </p>
+                        )}
                       </div>
                     )}
                     {formData.user_varient === 'BUSINESS' && (
@@ -373,7 +380,7 @@ export default function SignupPage() {
                           type="text"
                           value={formData.business_name}
                           onChange={(e) => handleChange('business_name', e.target.value.trim())}
-                          className={`w-full mt-3 ${errors.business_name ? 'border-red-500 focus:ring-red-500' : 'border-gray-300 focus:ring-orange-500 focus:border-orange-500'}`}
+                          className={`w-full mt-3 border-gray-300 transition-colors duration-200 ${errors.business_name ? 'border-red-500' : ''}`}
                           aria-invalid={!!errors.business_name}
                           aria-describedby={errors.business_name ? 'business_name-error' : undefined}
                         />
@@ -393,7 +400,7 @@ export default function SignupPage() {
                     id="accept_aggrements"
                     checked={formData.accept_aggrements}
                     onChange={(e) => handleChange('accept_aggrements', e.target.checked)}
-                    className="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded focus:ring-orange-500"
+                    className="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded "
                     required
                   />
                   <Label htmlFor="accept_aggrements" className="text-xs sm:text-sm text-gray-600">
@@ -425,7 +432,7 @@ export default function SignupPage() {
                   className={`w-full mt-2 py-3 text-sm font-medium text-white rounded-lg transition-all duration-200 ${isLoading || !formData.accept_aggrements
                     ? 'bg-orange-300 cursor-not-allowed'
                     : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg'
-                    }`}
+                  }`}
                 >
                   {isLoading ? (
                     <div className="flex items-center justify-center">

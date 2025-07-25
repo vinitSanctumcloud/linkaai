@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-
 import {
   Dialog,
   DialogContent,
@@ -40,7 +39,8 @@ import {
   MessageSquare,
   InfoIcon,
   LinkIcon,
-  Link2
+  Link2,
+  Info
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -160,6 +160,30 @@ export default function AgentBuilderPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+
+  const CATEGORY_PRODUCTS_PLACEHOLDER = 'Travel Packages, Hotel Bookings, Tour Experiences';
+  const CATEGORY_URL_PLACEHOLDER = 'https://www.tripadvisor.com/TravelDeals';
+  const CATEGORY_BLOGS_PLACEHOLDER = 'Travel Tips, Destination Guides, Hotel Reviews';
+  const BLOG_POST_URL_PLACEHOLDER = 'https://www.tripadvisor.com/blog';
+  const CATEGORY_WEBSITES_PLACEHOLDER = 'Travel Booking, Review Aggregator, Tourism Guides';
+  const WEBSITE_URL_PLACEHOLDER = 'https://www.tripadvisor.com';
+
+  const CATEGORY_PLACEHOLDER = 'Travel, Hospitality, Tourism';
+  const AFFILIATE_LINK_PLACEHOLDER = 'https://www.tripadvisor.com/PartnerLinks';
+  const SOCIAL_MEDIA_LINK_PLACEHOLDER = 'https://www.instagram.com/tripadvisor';
+  const PRODUCT_REVIEW_PLACEHOLDER = 'TripAdvisor is a trusted platform for millions of travelers, offering honest reviews, price comparisons, and seamless booking for hotels, flights, and attractions worldwide.';
+  const BRAND_NAME_PLACEHOLDER = 'TripAdvisor';
+  const AGENT_NAME_PLACEHOLDER = 'Sofia - Travel Consultant, Alex - Booking Specialist, Jamie - Customer Support';
+  const TRAINING_INSTRUCTIONS_PLACEHOLDER = `# PERSONA
+- **Role:** Digital Travel Concierge  
+- **Tone & Personality:** Friendly, knowledgeable, and enthusiastic about travel  
+
+# INSTRUCTIONS  
+- **Specialization:** Hotel recommendations, itinerary planning, travel deals  
+- **Goal:** Help users find the best travel experiences, save money, and explore destinations confidently  
+
+# EXAMPLE  
+You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented, and passionate about helping travelers discover hidden gems, book the best hotels, and optimize their trips. Your tone is professional yet approachable, ensuring users feel guided—not overwhelmed—by choices.`;
   const [modalLinks, setModalLinks] = useState<PartnerLink[] | LinkaProMonetization[]>([]);
   const [partnerLinksTableData, setPartnerLinksTableData] = useState<PartnerLink[]>([]);
   const [aiproLinksTableData, setAiproLinksTableData] = useState<LinkaProMonetization[]>([]);
@@ -215,7 +239,7 @@ export default function AgentBuilderPage() {
         if (response.ok) {
           const data = await response.json();
           const agentData = data.data.ai_agent;
-          console.log("agentData :: ", agentData);
+          // console.log("agentData :: ", agentData);
 
           // Map prompts to extract prompt_text
           const sanitizedPrompts = Array.isArray(agentData.prompts) && agentData.prompts.length > 0
@@ -285,8 +309,8 @@ export default function AgentBuilderPage() {
             greetingMedia: agentData.greeting_media_url || null,
           });
 
-          console.log("agentConfig :: ", agentConfig);
-          console.log(agentConfig.greetingMedia);
+          // console.log("agentConfig :: ", agentConfig);
+          // console.log(agentConfig.greetingMedia);
           // toast.success("Agent details loaded successfully!");
         } else {
           const errorData = await response.json();
@@ -310,9 +334,9 @@ export default function AgentBuilderPage() {
     fetchAgentDetails();
   }, []);
 
-  useEffect(() => {
-    console.log("agentConfig updated:", agentConfig);
-  }, [agentConfig]);
+  // useEffect(() => {
+  //   console.log("agentConfig updated:", agentConfig);
+  // }, [agentConfig]);
 
   useEffect(() => {
     const fetchLinks = async () => {
@@ -1679,196 +1703,230 @@ export default function AgentBuilderPage() {
     switch (currentStep) {
       case 1:
         return (
-          <Card className="border-none shadow-lg rounded-2xl overflow-hidden bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
-            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
-              <div className="space-y-1">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight">
-                  Greeting Media
-                </CardTitle>
-                <p className="text-xs sm:text-sm text-linka-night/70 font-light">
-                  Upload an image or video and create your opening message
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
-              <div className="flex flex-col items-center w-full">
-                <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet mb-3 sm:mb-4">
-                  AI Agent Greeting
-                </h3>
-                <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
-                  <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
-                    {agentConfig.greetingMedia &&
-                      agentConfig.greetingMediaType ? (
-                      agentConfig.greetingMediaType === "video" ? (
-                        <video
-                          src={agentConfig.greetingMedia}
-                          autoPlay
-                          muted
-                          loop
-                          playsInline
-                          className="w-full h-full object-cover rounded-full"
-                          onError={() =>
-                            toast.error(
-                              "Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.", {
-                              position: "top-right",
-                              duration: 2000,
+          <TooltipProvider>
+            <Card className="border-none shadow-lg rounded-2xl overflow-hidden bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+              <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight">
+                      Greeting Media
+                    </CardTitle>
+                    {/* <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Customize the visual and text greeting for your AI agent.</p>
+                      </TooltipContent>
+                    </Tooltip> */}
+                  </div>
+                  <p className="text-xs sm:text-sm text-linka-night/70 font-light">
+                    Upload an image or video and create your opening message
+                  </p>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
+                <div className="flex flex-col items-center w-full">
+                  <div className="flex items-center gap-2 mb-3 sm:mb-4">
+                    <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet">
+                      AI Agent Greeting
+                    </h3>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Upload a visual to represent your AI agent's greeting.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+                      {agentConfig.greetingMedia && agentConfig.greetingMediaType ? (
+                        agentConfig.greetingMediaType === "video" ? (
+                          <video
+                            src={agentConfig.greetingMedia}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            className="w-full h-full object-cover rounded-full"
+                            onError={() =>
+                              toast.error(
+                                "Error loading video. Please ensure the file is a valid MP4, WebM, or OGG."
+                              )
                             }
-                            )
-                          }
-                        />
+                          />
+                        ) : (
+                          <img
+                            src={agentConfig.greetingMedia}
+                            alt="Greeting Image"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            onError={() => toast.error("Error loading greeting image.")}
+                          />
+                        )
                       ) : (
-                        <img
-                          src={agentConfig.greetingMedia}
-                          alt="Greeting Image"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          onError={() =>
-                            toast.error("Error loading greeting image.", {
-                              position: "top-right",
-                              duration: 2000,
-                            })
-                          }
-                        />
-                      )
-                    ) : (
-                      <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
-                    )}
-                  </div>
-                  <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
-                    <div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => handleGreetingMediaUpload(e, "image")}
-                        className="hidden"
-                        id="greeting-image-upload"
-                      />
-                      <label
-                        htmlFor="greeting-image-upload"
-                        className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
-                      >
-                        <Upload
-                          className="w-4 h-4 sm:w-5 sm:h-5"
-                          strokeWidth={2.5}
-                        />
-                        <span className="text-xs font-medium hidden sm:inline">
-                          Image
-                        </span>
-                        <span className="sr-only">Upload greeting image</span>
-                      </label>
+                        <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+                      )}
                     </div>
-                    <div>
-                      <input
-                        type="file"
-                        accept="video/*"
-                        onChange={(e) => handleGreetingMediaUpload(e, "video")}
-                        className="hidden"
-                        id="greeting-video-upload"
-                      />
-                      <label
-                        htmlFor="greeting-video-upload"
-                        className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
-                      >
-                        <Upload
-                          className="w-4 h-4 sm:w-5 sm:h-5"
-                          strokeWidth={2.5}
+                    <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
+                      <div>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handleGreetingMediaUpload(e, "image")}
+                          className="hidden"
+                          id="greeting-image-upload"
                         />
-                        <span className="text-xs font-medium hidden sm:inline">
-                          Video
-                        </span>
-                        <span className="sr-only">Upload greeting video</span>
-                      </label>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <label
+                              htmlFor="greeting-image-upload"
+                              className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                            >
+                              <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                              <span className="text-xs font-medium hidden sm:inline">Image</span>
+                              <span className="sr-only">Upload greeting image</span>
+                            </label>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Upload an image (max 5MB) for your AI's greeting.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                      <div>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={(e) => handleGreetingMediaUpload(e, "video")}
+                          className="hidden"
+                          id="greeting-video-upload"
+                        />
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <label
+                              htmlFor="greeting-video-upload"
+                              className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                            >
+                              <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                              <span className="text-xs font-medium hidden sm:inline">Video</span>
+                              <span className="sr-only">Upload greeting video</span>
+                            </label>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Upload a video (max 10MB, MP4/WebM/OGG) for your AI's greeting.</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <p className="text-xs text-linka-night/60 mt-3 sm:mt-5 font-medium text-center">
-                  Upload either an image (max 5MB) or a video (max 10MB,
-                  MP4/WebM/OGG)
-                </p>
-              </div>
-
-              <div className="space-y-2 sm:space-y-3">
-                <Label
-                  htmlFor="greeting-title"
-                  className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base"
-                >
-                  Greeting Title{" "}
-                  <span className="text-xs text-linka-dark-orange">
-                    (Max 50 chars)
-                  </span>
-                </Label>
-                <input
-                  id="greeting-title"
-                  type="text"
-                  placeholder="Example: Hi I'm { Your Name }"
-                  value={agentConfig.greetingTitle || ""}
-                  onChange={(e) =>
-                    handleInputChange("greetingTitle", e.target.value)
-                  }
-                  maxLength={50}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
-                />
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-linka-night/50 italic">
-                    Pro tip: Keep it short and engaging
-                  </p>
-                  <span
-                    className={`text-xs ${agentConfig.greetingTitle?.length === 50 ? "text-red-400" : "text-linka-night/50"}`}
-                  >
-                    {agentConfig.greetingTitle?.length || 0}/50
-                  </span>
-                </div>
-              </div>
-
-              <div className="space-y-2 sm:space-y-3">
-                <Label
-                  htmlFor="greeting"
-                  className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base"
-                >
-                  Opening Greeting{" "}
-                  <span className="text-xs text-linka-dark-orange">
-                    (Max 120 chars)
-                  </span>
-                </Label>
-                <Textarea
-                  id="greeting"
-                  placeholder="Example: I can help you find the coolest places in NYC to visit!"
-                  value={agentConfig.greeting}
-                  onChange={(e) =>
-                    handleInputChange("greeting", e.target.value)
-                  }
-                  rows={3}
-                  maxLength={120}
-                  className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
-                />
-                <div className="flex justify-between items-center">
-                  <p className="text-xs text-linka-night/50 italic">
-                    Pro tip: Keep it relevant to your expertise
-                  </p>
-                  <span
-                    className={`text-xs ${agentConfig.greeting?.length === 120 ? "text-red-400" : "text-linka-night/50"}`}
-                  >
-                    {agentConfig.greeting?.length || 0}/120
-                  </span>
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-4 sm:p-5 border border-linka-alice-blue/80 overflow-hidden relative">
-                <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
-                <p className="text-xs text-linka-night/60 mb-2 sm:mb-3 font-medium uppercase tracking-wider">
-                  Live Preview
-                </p>
-                <div className="text-center space-y-2 sm:space-y-3 relative z-10">
-                  <h4 className="text-lg sm:text-xl md:text-2xl font-medium text-linka-russian-violet animate-in fade-in">
-                    {agentConfig.greetingTitle || "Hi I'm Your AI"}
-                  </h4>
-                  <p className="text-base sm:text-lg md:text-xl font-semibold text-linka-night/90 animate-in fade-in delay-100">
-                    {agentConfig.greeting ||
-                      "I can help you find the coolest places in NYC to visit!"}
+                  <p className="text-xs text-linka-night/60 mt-3 sm:mt-5 font-medium text-center">
+                    Upload either an image (max 5MB) or a video (max 10MB, MP4/WebM/OGG)
                   </p>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="greeting-title"
+                      className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base"
+                    >
+                      Greeting Title{" "}
+                      <span className="text-xs text-linka-dark-orange">(Max 50 chars)</span>
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Example: Hi, I'm Sabrina</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <input
+                    id="greeting-title"
+                    type="text"
+                    placeholder="Example: Hi I'm { Your Name }"
+                    value={agentConfig.greetingTitle || ""}
+                    onChange={(e) => handleInputChange("greetingTitle", e.target.value)}
+                    maxLength={50}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
+                  />
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-linka-night/50 italic">Pro tip: Keep it short and engaging</p>
+                    <span
+                      className={`text-xs ${agentConfig.greetingTitle?.length === 50 ? "text-red-400" : "text-linka-night/50"}`}
+                    >
+                      {agentConfig.greetingTitle?.length || 0}/50
+                    </span>
+                  </div>
+                </div>
+
+                <div className="space-y-2 sm:space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Label
+                      htmlFor="greeting"
+                      className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base"
+                    >
+                      Opening Greeting{" "}
+                      <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
+                    </Label>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Example: I can help you find the coolest places in NYC to visit!</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <Textarea
+                    id="greeting"
+                    placeholder="Example: I can help you find the coolest places in NYC to visit!"
+                    value={agentConfig.greeting}
+                    onChange={(e) => handleInputChange("greeting", e.target.value)}
+                    rows={3}
+                    maxLength={120}
+                    className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
+                  />
+                  <div className="flex justify-between items-center">
+                    <p className="text-xs text-linka-night/50 italic">Pro tip: Keep it relevant to your expertise</p>
+                    <span
+                      className={`text-xs ${agentConfig.greeting?.length === 120 ? "text-red-400" : "text-linka-night/50"}`}
+                    >
+                      {agentConfig.greeting?.length || 0}/120
+                    </span>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-4 sm:p-5 border border-linka-alice-blue/80 overflow-hidden relative">
+                  <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
+                  <div className="flex items-center gap-2 mb-2 sm:mb-3">
+                    <p className="text-xs text-linka-night/60 font-medium uppercase tracking-wider">
+                      Live Preview
+                    </p>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Preview how your AI's greeting will appear to users.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </div>
+                  <div className="text-center space-y-2 sm:space-y-3 relative z-10">
+                    <h4 className="text-lg sm:text-xl md:text-2xl font-medium text-linka-russian-violet animate-in fade-in">
+                      {agentConfig.greetingTitle || "Hi I'm Your AI"}
+                    </h4>
+                    <p className="text-base sm:text-lg md:text-xl font-semibold text-linka-night/90 animate-in fade-in delay-100">
+                      {agentConfig.greeting ||
+                        "I can help you find the coolest places in NYC to visit!"}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TooltipProvider>
         );
       case 2:
         return (
@@ -1883,22 +1941,42 @@ export default function AgentBuilderPage() {
             </CardHeader>
             <CardContent className="space-y-6 p-6">
               <div className="space-y-3">
-                <Label
-                  htmlFor="agent-name"
-                  className="text-base font-medium text-gray-700"
-                >
-                  Agent Name
-                  <span className="text-red-500 ml-1">*</span>
-                </Label>
+                <div className="flex items-center space-x-2">
+                  <Label
+                    htmlFor="agent-name"
+                    className="text-base font-medium text-gray-700"
+                  >
+                    Agent Name
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                          aria-label="Agent name tooltip"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+
+                      >
+                        {AGENT_NAME_PLACEHOLDER}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Input
                   id="agent-name"
-                  placeholder="e.g., Sofia, Alex, Travel Guide"
+                  placeholder={AGENT_NAME_PLACEHOLDER}
                   value={agentConfig.name}
-                  onChange={(e) => handleInputChange("name", e.target.value)}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
                   className="w-full text-base p-3 border border-gray-300 rounded-lg 
-                  focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 
-                  transition-all duration-200 placeholder:text-gray-400/60
-                  hover:border-gray-400"
+            focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 
+            transition-all duration-200 placeholder:text-gray-400/60
+            hover:border-gray-400"
                 />
                 <p className="text-xs text-gray-500 mt-1">
                   Pick a unique, friendly name for your AI agent
@@ -1906,35 +1984,45 @@ export default function AgentBuilderPage() {
               </div>
 
               <div className="space-y-3">
-                <Label
-                  htmlFor="training-instructions"
-                  className="text-base font-medium text-gray-700"
-                >
-                  Training Instructions
-                  <span className="text-red-500 ml-1">*</span>
-                </Label>
+                <div className="flex items-center space-x-2">
+                  <Label
+                    htmlFor="training-instructions"
+                    className="text-base font-medium text-gray-700"
+                  >
+                    Training Instructions
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                          aria-label="Training instructions tooltip"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+
+                      >
+                        {TRAINING_INSTRUCTIONS_PLACEHOLDER}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
                 <Textarea
                   id="training-instructions"
-                  placeholder={`# PERSONA
-- Their Role (e.g., digital concierge, stylist, skincare expert)
-- Tone and personality (e.g., friendly, elegant, witty, minimal)
-
-# INSTRUCTIONS
-- What they specialize in (e.g., travel, tech, fashion)
-- Their Goal for users (e.g., recommend, inspire, solve problems)
-
-# EXAMPLE
-You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant, and knowledgeable about European-inspired fashion, Parisian luxury, and curated travel + shopping experiences in France. You help visitors discover high-quality brands, wardrobe staples, and timeless fashion finds — always in a chic, minimal, and helpful tone.`}
+                  placeholder={TRAINING_INSTRUCTIONS_PLACEHOLDER}
                   value={agentConfig.trainingInstructions}
                   onChange={(e) =>
-                    handleInputChange("trainingInstructions", e.target.value)
+                    handleInputChange('trainingInstructions', e.target.value)
                   }
                   rows={8}
                   className="w-full text-base p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-gray-400/60 hover:border-gray-400 resize-none"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Clear and detailed instructions will improve your agent's
-                  performance
+                  Clear and detailed instructions will improve your agent's performance
                 </p>
               </div>
             </CardContent>
@@ -2198,6 +2286,16 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                             <td className="px-3 py-3 sm:px-6 sm:py-4">
                               {link.category || "Unnamed Link"}
                             </td>
+                            {/* <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              <a
+                                href={url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-linka-carolina-blue hover:underline break-all"
+                              >
+                                {url || "No URL"}
+                              </a>
+                            </td> */}
                             <td className="px-3 py-3 sm:px-6 sm:py-4">
                               {(() => {
                                 let url: string | undefined;
@@ -3353,40 +3451,76 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                             {(link as LinkaProMonetization).proType === "products" && (
                               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                                 <div className="space-y-1 sm:space-y-2">
-                                  <Label
-                                    htmlFor={`pro-category-${link.id}`}
-                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                  >
-                                    Category <span className="text-red-500">*</span>
-                                  </Label>
+                                  <div className="flex items-center space-x-2">
+                                    <Label
+                                      htmlFor={`pro-category-${link.id}`}
+                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                    >
+                                      Category <span className="text-red-500">*</span>
+                                    </Label>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            aria-label="Category tooltip"
+                                          >
+                                            <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+
+                                        >
+                                          {CATEGORY_PRODUCTS_PLACEHOLDER}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
                                   <Input
                                     id={`pro-category-${link.id}`}
-                                    placeholder="e.g., Subscription, Service"
-                                    value={link.category || ""}
+                                    placeholder={CATEGORY_PRODUCTS_PLACEHOLDER}
+                                    value={link.category || ''}
                                     onChange={(e) =>
-                                      updateLinkaProMonetization(link.id!, "category", e.target.value)
+                                      updateLinkaProMonetization(link.id!, 'category', e.target.value)
                                     }
                                     className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                   />
                                 </div>
                                 <div className="space-y-1 sm:space-y-2">
-                                  <Label
-                                    htmlFor={`pro-affiliate-link-${link.id}`}
-                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                  >
-                                    Affiliate Link
-                                  </Label>
+                                  <div className="flex items-center space-x-2">
+                                    <Label
+                                      htmlFor={`pro-affiliate-link-${link.id}`}
+                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                    >
+                                      Affiliate Link
+                                    </Label>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            aria-label="Affiliate link tooltip"
+                                          >
+                                            <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+
+                                        >
+                                          {AFFILIATE_LINK_PLACEHOLDER}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
                                   <div className="relative">
                                     <Input
                                       id={`pro-affiliate-link-${link.id}`}
-                                      placeholder="https://affiliate-link.com"
-                                      value={(link as LinkaProMonetizationProduct).affiliateLink || ""}
+                                      placeholder={AFFILIATE_LINK_PLACEHOLDER}
+                                      value={(link as LinkaProMonetizationProduct).affiliateLink || ''}
                                       onChange={(e) =>
-                                        updateLinkaProMonetization(
-                                          link.id!,
-                                          "affiliateLink",
-                                          e.target.value
-                                        )
+                                        updateLinkaProMonetization(link.id!, 'affiliateLink', e.target.value)
                                       }
                                       className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                     />
@@ -3394,23 +3528,39 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                   </div>
                                 </div>
                                 <div className="space-y-1 sm:space-y-2">
-                                  <Label
-                                    htmlFor={`pro-category-url-${link.id}`}
-                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                  >
-                                    Category URL <span className="text-red-500">*</span>
-                                  </Label>
+                                  <div className="flex items-center space-x-2">
+                                    <Label
+                                      htmlFor={`pro-category-url-${link.id}`}
+                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                    >
+                                      Category URL <span className="text-red-500">*</span>
+                                    </Label>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            aria-label="Category URL tooltip"
+                                          >
+                                            <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+
+                                        >
+                                          {CATEGORY_URL_PLACEHOLDER}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
                                   <div className="relative">
                                     <Input
                                       id={`pro-category-url-${link.id}`}
-                                      placeholder="https://category-url.com"
-                                      value={(link as LinkaProMonetizationProduct).categoryUrl || ""}
+                                      placeholder={CATEGORY_URL_PLACEHOLDER}
+                                      value={(link as LinkaProMonetizationProduct).categoryUrl || ''}
                                       onChange={(e) =>
-                                        updateLinkaProMonetization(
-                                          link.id!,
-                                          "categoryUrl",
-                                          e.target.value
-                                        )
+                                        updateLinkaProMonetization(link.id!, 'categoryUrl', e.target.value)
                                       }
                                       className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                     />
@@ -3422,36 +3572,76 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                             {(link as LinkaProMonetization).proType === "blogs" && (
                               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                                 <div className="space-y-1 sm:space-y-2">
-                                  <Label
-                                    htmlFor={`pro-category-${link.id}`}
-                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                  >
-                                    Category <span className="text-red-500">*</span>
-                                  </Label>
+                                  <div className="flex items-center space-x-2">
+                                    <Label
+                                      htmlFor={`pro-category-${link.id}`}
+                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                    >
+                                      Category <span className="text-red-500">*</span>
+                                    </Label>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            aria-label="Category tooltip"
+                                          >
+                                            <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+
+                                        >
+                                          {CATEGORY_BLOGS_PLACEHOLDER}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
                                   <Input
                                     id={`pro-category-${link.id}`}
-                                    placeholder="e.g., Technology, Lifestyle"
-                                    value={link.category || ""}
+                                    placeholder={CATEGORY_BLOGS_PLACEHOLDER}
+                                    value={link.category || ''}
                                     onChange={(e) =>
-                                      updateLinkaProMonetization(link.id!, "category", e.target.value)
+                                      updateLinkaProMonetization(link.id!, 'category', e.target.value)
                                     }
                                     className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                   />
                                 </div>
                                 <div className="space-y-1 sm:space-y-2">
-                                  <Label
-                                    htmlFor={`pro-blog-url-${link.id}`}
-                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                  >
-                                    Blog Post URL <span className="text-red-500">*</span>
-                                  </Label>
+                                  <div className="flex items-center space-x-2">
+                                    <Label
+                                      htmlFor={`pro-blog-url-${link.id}`}
+                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                    >
+                                      Blog Post URL <span className="text-red-500">*</span>
+                                    </Label>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            aria-label="Blog post URL tooltip"
+                                          >
+                                            <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+
+                                        >
+                                          {BLOG_POST_URL_PLACEHOLDER}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
                                   <div className="relative">
                                     <Input
                                       id={`pro-blog-url-${link.id}`}
-                                      placeholder="https://blog-post-url.com"
-                                      value={(link as LinkaProMonetizationBlog).blogUrl || ""}
+                                      placeholder={BLOG_POST_URL_PLACEHOLDER}
+                                      value={(link as LinkaProMonetizationBlog).blogUrl || ''}
                                       onChange={(e) =>
-                                        updateLinkaProMonetization(link.id!, "blogUrl", e.target.value)
+                                        updateLinkaProMonetization(link.id!, 'blogUrl', e.target.value)
                                       }
                                       className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                     />
@@ -3463,36 +3653,80 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                             {(link as LinkaProMonetization).proType === "websites" && (
                               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                                 <div className="space-y-1 sm:space-y-2">
-                                  <Label
-                                    htmlFor={`pro-website-category-${link.id}`}
-                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                  >
-                                    Category <span className="text-red-500">*</span>
-                                  </Label>
+                                  <div className="flex items-center space-x-2">
+                                    <Label
+                                      htmlFor={`pro-website-category-${link.id}`}
+                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                    >
+                                      Category <span className="text-red-500">*</span>
+                                    </Label>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            aria-label="Category tooltip"
+                                          >
+                                            <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+
+                                        >
+                                          {CATEGORY_WEBSITES_PLACEHOLDER}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
                                   <Input
                                     id={`pro-website-category-${link.id}`}
-                                    placeholder="e.g., E-commerce, Portfolio"
-                                    value={link.category || ""}
+                                    placeholder={CATEGORY_WEBSITES_PLACEHOLDER}
+                                    value={link.category || ''}
                                     onChange={(e) =>
-                                      updateLinkaProMonetization(link.id!, "category", e.target.value)
+                                      updateLinkaProMonetization(link.id!, 'category', e.target.value)
                                     }
                                     className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                   />
                                 </div>
                                 <div className="space-y-1 sm:space-y-2">
-                                  <Label
-                                    htmlFor={`pro-website-url-${link.id}`}
-                                    className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                  >
-                                    Website URL <span className="text-red-500">*</span>
-                                  </Label>
+                                  <div className="flex items-center space-x-2">
+                                    <Label
+                                      htmlFor={`pro-website-url-${link.id}`}
+                                      className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                    >
+                                      Website URL <span className="text-red-500">*</span>
+                                    </Label>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <button
+                                            type="button"
+                                            className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            aria-label="Website URL tooltip"
+                                          >
+                                            <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                          </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent
+                                        // className={cn(
+                                        //   'z-50 overflow-hidden rounded-lg border-none bg-white/90 backdrop-blur-sm px-3 py-1.5 text-xs sm:text-sm text-linka-russian-violet shadow-md max-w-80 w-fit',
+                                        //   'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95'
+                                        // )}
+                                        // sideOffset={5}
+                                        >
+                                          {WEBSITE_URL_PLACEHOLDER}
+                                        </TooltipContent>
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
                                   <div className="relative">
                                     <Input
                                       id={`pro-website-url-${link.id}`}
-                                      placeholder="https://your-website.com"
-                                      value={(link as LinkaProMonetizationWebsite).websiteUrl || ""}
+                                      placeholder={WEBSITE_URL_PLACEHOLDER}
+                                      value={(link as LinkaProMonetizationWebsite).websiteUrl || ''}
                                       onChange={(e) =>
-                                        updateLinkaProMonetization(link.id!, "websiteUrl", e.target.value)
+                                        updateLinkaProMonetization(link.id!, 'websiteUrl', e.target.value)
                                       }
                                       className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                     />
@@ -3501,6 +3735,15 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                 </div>
                               </div>
                             )}
+                            {/* Add Delete Button for Each Link */}
+                            {/* <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleDeleteLink(agentConfig.linkaProMonetizations.indexOf(link), "aipro")}
+          className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs"
+        >
+          <Trash2 className="w-4 h-4" />
+        </Button> */}
                           </CardContent>
                         </Card>
                       ))}

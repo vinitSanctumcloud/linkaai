@@ -1,0 +1,14 @@
+/* Hide scrollbar but keep functionality */
+nav {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+nav::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, and Opera */
+}
+
+/* styles.css */
+.TooltipContent[data-state='open'] {
+  animation: slide-in-left 10s ease-out forwards;
+}

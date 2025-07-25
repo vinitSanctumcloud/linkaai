@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 
 import {
@@ -27,6 +27,10 @@ import {
   LayoutTemplate,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import { initializeAuthState } from '@/store/slices/authSlice';
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/store";
+import { RootState } from "@/store/types";
 
 interface AnalyticsSummary {
   totalClicks: number;
@@ -41,10 +45,16 @@ interface Settings {
 }
 
 export default function DashboardPage() {
+  const dispatch = useDispatch<AppDispatch>();
   const [analytics, setAnalytics] = useState<AnalyticsSummary | null>(null);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [affiliateLinksCount, setAffiliateLinksCount] = useState(0);
   const [loading, setLoading] = useState(false);
+  const { aiAgentData } = useSelector((state:RootState)=>state.auth)
+
+  useEffect(() => {
+      dispatch(initializeAuthState());
+    }, [dispatch]);
 
   return (
     <DashboardLayout>
@@ -78,7 +88,7 @@ export default function DashboardPage() {
                       marginLeft: "0.50rem",
                     }}
                   >
-                    User!
+                    {aiAgentData?.user?.first_name || "User"}
                   </motion.span>
                 </h1>
                 <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-lg select-text">

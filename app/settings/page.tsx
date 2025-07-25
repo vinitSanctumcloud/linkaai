@@ -1032,7 +1032,7 @@ export default function SettingsPage() {
               {/* Token Balance Box */}
               <Card className="border-0 shadow-lg rounded-2xl p-4">
                 <CardHeader>
-                  <CardTitle className="text-xl font-bold text-gray-800">Tokens Balance</CardTitle>
+                  <CardTitle className="text-xl font-bold text-gray-800">Tokens / Credits</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-end gap-2">
@@ -1056,8 +1056,9 @@ export default function SettingsPage() {
                   </div>
 
                   <p className="text-sm text-gray-500">
-                    Tokens are used to access brand contact information. 1 token = 1 contact unlock.
-                  </p>
+                    Tokens are used for AI-Agent chat  credits, blog scans and product rec expansion
+                    1 Token = 1 Credit
+                    </p>
                 </CardContent>
               </Card>
 

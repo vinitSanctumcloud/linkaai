@@ -21,16 +21,35 @@ export const login = async ({ email, password }) => {
 
 // 🟢 Signup
 export const signup = async (formData) => {
-  // Validate required fields
+  // Define base required fields (excluding conditional fields)
+  const baseRequiredFields = [
+    'first_name',
+    'last_name',
+    'email',
+    'password',
+    'password_confirmation',
+  ];
+
+  // Validate agreements
   if (!formData.accept_aggrements) {
     throw new Error('You must accept the terms and conditions');
   }
 
+  // Validate password match
   if (formData.password !== formData.password_confirmation) {
     throw new Error('Passwords do not match');
   }
 
-  // Additional validation for required fields
+  // Determine additional required fields based on user_varient
+  let requiredFields = [...baseRequiredFields];
+  if (formData.user_varient === 'CREATOR') {
+    requiredFields.push('creator_handle');
+  } else if (formData.user_varient === 'BUSINESS') {
+    requiredFields.push('business_name');
+  }
+  // For user_varient === '', no additional fields are required
+
+  // Validate required fields
   for (const field of requiredFields) {
     if (!formData[field] || formData[field].toString().trim() === '') {
       throw new Error(`Missing or empty required field: ${field}`);
@@ -45,8 +64,14 @@ export const signup = async (formData) => {
     password: formData.password,
     confirm_password: formData.password_confirmation,
     user_varient: formData.user_varient,
-    creator_handle: formData.creator_handle?.trim().toLowerCase(),
-    business_name: formData.business_name?.trim().toLowerCase(),
+    creator_handle:
+      formData.user_varient === 'CREATOR'
+        ? formData.creator_handle?.trim().toLowerCase()
+        : null,
+    business_name:
+      formData.user_varient === 'BUSINESS'
+        ? formData.business_name?.trim().toLowerCase()
+        : null,
   };
 
   console.log('Sending signup request to:', API.SIGNUP);
@@ -73,17 +98,11 @@ export const signup = async (formData) => {
           "Signup server refused the request (418 I'm a Teapot). Please check the request payload or contact support."
         );
       }
-      // if (data.errors) {
-      //   const errorMessages = Object.entries(data.errors)
-      //     .map(([field, messages]) => `${field}: ${messages.join(', ')}`)
-      //     .join('\n');
-      //   throw new Error(`Signup failed due to validation errors:\n${errorMessages}`);
-      // }
       throw new Error(data.message || 'Signup failed. Please try again.');
     }
 
     // Check for access_token
-    if (!data.data.access_token) {
+    if (!data.data?.access_token) {
       console.error('Access token missing in response:', data);
       throw new Error('Signup succeeded but no access token was returned. Please contact support.');
     }
@@ -118,10 +137,10 @@ export const signup = async (formData) => {
 
     // Return the response in the desired structure
     return {
-      access_token: data.access_token,
+      access_token: data.data.access_token,
       user,
       message: data.message || 'You have successfully registered',
-      ...data, // Spread other top-level fields (e.g., about_me, company_name, etc.)
+      ...data,
     };
   } catch (error) {
     console.error('Signup error:', error);
@@ -156,7 +175,7 @@ export const resetPassword = async ({ otp, email, password, security_token, veri
   const res = await fetch(API.RESET_PASSWORD, {
     method: 'POST',
     headers: {
-      'Content-Type': 'application/json', 
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       otp,
