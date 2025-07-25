@@ -139,18 +139,18 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   };
 
   // Handle share Live Agent URL
-  const handleShareLiveAgent = () => {
-    if (!agentSlug) {
-      toast.error('Live Agent URL is not available');
-      return;
-    }
-    const url = `${window.location.origin}/liveagent/${agentSlug}`;
-    navigator.clipboard.writeText(url).then(() => {
-      toast.success('Live Agent URL copied to clipboard!');
-    }).catch(() => {
-      toast.error('Failed to copy URL');
-    });
-  };
+  // const handleShareLiveAgent = () => {
+  //   if (!agentSlug) {
+  //     toast.error('Live Agent URL is not available');
+  //     return;
+  //   }
+  //   const url = `${window.location.origin}/liveagent/${agentSlug}`;
+  //   navigator.clipboard.writeText(url).then(() => {
+  //     toast.success('Live Agent URL copied to clipboard!');
+  //   }).catch(() => {
+  //     toast.error('Failed to copy URL');
+  //   });
+  // };
 
   // Handle share Live Agent URL
   const handleShareLiveAgent = () => {
