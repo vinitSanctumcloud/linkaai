@@ -22,6 +22,12 @@ interface FormData {
   password: string;
 }
 
+// Define Errors interface for form validation
+interface Errors {
+  email?: string;
+  password?: string;
+}
+
 // Define stricter type for aiAgentData
 interface AiAgentData {
   has_subscription: boolean;
@@ -30,12 +36,22 @@ interface AiAgentData {
 
 export default function LoginPage() {
   const [formData, setFormData] = useState<FormData>({
-    email: 'sanctumcloud4@gmail.com',
-    password: 'Sun@1122',
+    email: '',
+    password: '',
   });
+  const [errors, setErrors] = useState<Errors>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const { isLoading, error, accessToken, aiAgentData } = useSelector((state: RootState) => state.auth);
+
+  const validateForm = (): Errors => {
+    const newErrors: Errors = {};
+    if (!formData.email) newErrors.email = 'Email is required';
+    else if (!validateEmail(formData.email)) newErrors.email = 'Please enter a valid email address';
+    if (!formData.password) newErrors.password = 'Password is required';
+    return newErrors;
+  };
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -44,9 +60,7 @@ export default function LoginPage() {
 
   // Enforce light theme on mount
   useEffect(() => {
-    // Remove dark class from html element
     document.documentElement.classList.remove('dark');
-    // Optionally reset theme in localStorage if your app uses it
     localStorage.setItem('theme', 'light');
   }, []);
 
@@ -64,7 +78,7 @@ export default function LoginPage() {
       if (!typedAiAgentData.has_subscription) {
         router.push('/pricing');
       } else {
-        toast.success('Welcome back!');
+        toast.success('Welcome back!', { position: 'top-right' });
         router.push('/dashboard');
       }
       router.refresh();
@@ -74,7 +88,7 @@ export default function LoginPage() {
   // Display error toast and clear error
   useEffect(() => {
     if (error) {
-      toast.error(error);
+      toast.error(error, { position: 'top-right', duration: 3000 });
       dispatch(clearError());
     }
   }, [error, dispatch]);
@@ -82,32 +96,18 @@ export default function LoginPage() {
   const handleSubmit = useCallback(
     async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
+      setIsSubmitting(true);
 
-      const { email, password } = formData;
-
-      // Client-side validation
-      if (!email || !password) {
-        setError('Please fill in all fields')
-        setIsLoading(false)
-        toast.error('Please fill in all fields', {
-          position: "top-right",
-          duration: 2000,
-        })
-        return
+      const validationErrors = validateForm();
+      if (Object.keys(validationErrors).length > 0) {
+        setErrors(validationErrors);
+        setIsSubmitting(false);
+        return;
       }
 
-      if (!validateEmail(email)) {
-        setError('Please enter a valid email address')
-        setIsLoading(false)
-        toast.error('Please enter a valid email address', {
-          position: "top-right",
-          duration: 2000,
-        })
-        return
-      }
-
-      // Dispatch login action
-      await dispatch(login({ email, password }));
+      setErrors({});
+      await dispatch(login(formData));
+      setIsSubmitting(false);
     },
     [formData, dispatch]
   );
@@ -115,6 +115,7 @@ export default function LoginPage() {
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: '' }));
   }, []);
 
   return (
@@ -139,41 +140,53 @@ export default function LoginPage() {
             animation-play-state: running;
           }
         }
-        /* Override dark mode styles */
         html.dark [data-login-page] {
           background: linear-gradient(to bottom right, #fef7e6, #ffffff) !important;
           color: #111827 !important;
         }
         html.dark [data-login-page] .card {
-          background: rgba(255, 255, 255, 0.9) !important;
+          background: rgba(255, 255, 255, 0.95) !important;
           color: #111827 !important;
+        }
+        .input-error {
+          border-color: #ef4444 !important;
+        }
+        .input-error:focus {
+          ring-color: #ef4444 !important;
         }
       `}</style>
       <div
         data-login-page
-        className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4 light"
+        className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4 sm:p-6 lg:p-8 light"
+        role="main"
+        aria-labelledby="login-title"
       >
-        <div className="w-full max-w-md">
-          <div className="mb-6">
+        <div className="w-full max-w-md space-y-6">
+          <div className="flex justify-start">
             <Link
               href="/"
-              className="inline-flex items-center text-orange-600 hover:text-orange-700 transition-colors duration-200"
+              className="inline-flex items-center text-orange-600 hover:text-orange-700 transition-colors duration-200 text-sm sm:text-base"
+              aria-label="Back to home page"
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to home
             </Link>
           </div>
 
-          <Card className="card border-0 shadow-2xl bg-white/90 backdrop-blur-sm fade-in">
-            <CardHeader className="text-center">
+          <Card className="card border-0 shadow-2xl bg-white/95 backdrop-blur-sm fade-in">
+            <CardHeader className="text-center space-y-4">
               <div className="flex items-center justify-center">
-                <Image src={logo} alt="Logo" width={128} height={32} className="h-auto" priority />
+                <Image src={logo} alt="Company Logo" width={128} height={32} className="h-auto" priority />
               </div>
-              <CardTitle className="text-2xl font-bold text-gray-900">Welcome back</CardTitle>
-              <CardDescription className="text-gray-600">Sign in to your account to continue</CardDescription>
+              <CardTitle id="login-title" className="text-2xl sm:text-3xl font-bold text-gray-900">
+                Welcome back
+              </CardTitle>
+              <CardDescription className="text-gray-600 text-sm sm:text-base">
+                Sign in to your account to continue
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleSubmit} className="space-y-6" noValidate aria-describedby="form-error">
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-sm font-medium text-gray-700">
                     Email
@@ -185,10 +198,17 @@ export default function LoginPage() {
                     value={formData.email}
                     onChange={handleInputChange}
                     required
-                    className="w-full border-gray-300 transition-colors duration-200 bg-white text-gray-900"
+                    className={`w-full border-gray-300 transition-colors duration-200 bg-white text-gray-900 ${errors.email ? 'input-error' : ''}`}
                     placeholder="Enter your email"
-                    disabled={isLoading}
+                    disabled={isLoading || isSubmitting}
+                    aria-invalid={!!errors.email}
+                    aria-describedby={errors.email ? 'email-error' : undefined}
                   />
+                  {errors.email && (
+                    <p id="email-error" className="text-sm text-red-600" role="alert">
+                      {errors.email}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -202,14 +222,22 @@ export default function LoginPage() {
                     value={formData.password}
                     onChange={handleInputChange}
                     required
-                    className="w-full border-gray-300 transition-colors duration-200 bg-white text-gray-900"
+                    className={`w-full border-gray-300 transition-colors duration-200 bg-white text-gray-900 ${errors.password ? 'input-error' : ''}`}
                     placeholder="Enter your password"
-                    disabled={isLoading}
+                    disabled={isLoading || isSubmitting}
+                    aria-invalid={!!errors.password}
+                    aria-describedby={errors.password ? 'password-error' : undefined}
                   />
+                  {errors.password && (
+                    <p id="password-error" className="text-sm text-red-600" role="alert">
+                      {errors.password}
+                    </p>
+                  )}
                   <div className="text-right">
                     <Link
                       href="/forgot-password"
                       className="text-sm text-orange-600 hover:text-orange-700 transition-colors duration-200"
+                      aria-label="Forgot your password?"
                     >
                       Forgot password?
                     </Link>
@@ -217,17 +245,18 @@ export default function LoginPage() {
                 </div>
 
                 {error && (
-                  <p className="text-sm text-red-600" role="alert">
+                  <p id="form-error" className="text-sm text-red-600" role="alert">
                     {error}
                   </p>
                 )}
 
                 <Button
                   type="submit"
-                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-md transition-colors duration-200"
-                  disabled={isLoading}
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white font-medium py-2 rounded-md transition-colors duration-200 disabled:opacity-50"
+                  disabled={isLoading || isSubmitting}
+                  aria-busy={isLoading || isSubmitting}
                 >
-                  {isLoading ? (
+                  {isLoading || isSubmitting ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Signing in...
@@ -244,6 +273,7 @@ export default function LoginPage() {
                   <Link
                     href="/signup"
                     className="text-orange-600 hover:text-orange-700 font-medium transition-colors duration-200"
+                    aria-label="Sign up for a new account"
                   >
                     Sign up
                   </Link>

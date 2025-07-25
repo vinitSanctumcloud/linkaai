@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useDispatch, useSelector } from 'react-redux'
 import Link from 'next/link'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,9 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Loader2, ArrowLeft, EyeOff, Eye } from 'lucide-react'
 import PublicRoute from './../../components/auth/PublicRoute'
-import { signup } from '@/services/authService'
+import { signup } from '@/store/slices/authSlice' // Import the signup thunk from the auth slice
+import { AppDispatch, RootState } from '@/store' // Adjust the path to your store
+import { clearError } from '@/store/slices/authSlice'
 
 interface FormData {
   first_name: string
@@ -18,7 +21,7 @@ interface FormData {
   email: string
   password: string
   password_confirmation: string
-  user_varient: 'CREATOR' | 'BUSINESS' | ''
+  user_varient: 'CREATOR' | 'BRAND' | ''
   creator_industry: string
   accept_aggrements: boolean
   creator_handle?: string | null
@@ -31,7 +34,9 @@ interface FormErrors {
 
 export default function SignupPage() {
   const router = useRouter()
-  const [isLoading, setIsLoading] = useState(false)
+  const dispatch = useDispatch<AppDispatch>();
+  const isLoading = useSelector((state: RootState) => state.auth.isLoading)
+  const error = useSelector((state: RootState) => state.auth.error)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
@@ -66,8 +71,8 @@ export default function SignupPage() {
       newErrors.accept_aggrements = 'You must accept the agreements'
     if (formData.user_varient === 'CREATOR' && !formData.creator_handle?.trim())
       newErrors.creator_handle = 'Creator handle is required'
-    if (formData.user_varient === 'BUSINESS' && !formData.business_name?.trim())
-      newErrors.business_name = 'Business name is required'
+    if (formData.user_varient === 'BRAND' && !formData.business_name?.trim())
+      newErrors.business_name = 'BRAND name is required'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -82,51 +87,43 @@ export default function SignupPage() {
   const toggleConfirmPasswordVisibility = () => setShowConfirmPassword(!showConfirmPassword)
 
   const handleSubmit = useCallback(
-    async (e: { preventDefault: () => void }) => {
+    async (e: React.FormEvent) => {
       e.preventDefault()
 
-    if (!validateInput()) {
-      // Get the first error message from the errors object, or use a fallback
-      const errorMessage = Object.values(errors)[0] || 'Please fix the form errors before submitting.';
-      toast.error(errorMessage, {
-        position: "top-right",
-        duration: 2000,
-      });
-      return;
-    }
-
-      setIsLoading(true)
+      if (!validateInput()) {
+        const errorMessage = Object.values(errors)[0] || 'Please fix the form errors before submitting.'
+        toast.error(errorMessage, {
+          position: 'top-right',
+          duration: 2000,
+        })
+        return
+      }
 
       try {
-        const result = await signup(formData)
-        console.log('Signup result:', result)
-
-        if (result.data.access_token) {
-          try {
-            localStorage.setItem('accessToken', result.data.access_token)
-            toast.success(result.message || 'Account created successfully!')
-            router.push('/')
-          } catch (storageError) {
-            console.error('Failed to store access token in localStorage:', storageError)
-            toast.error('Account created, but failed to save session. Please try again.')
-          }
-        } else {
-          console.warn('Signup response missing access_token:', result)
-          toast.error(result.message || 'Signup failed: No access token received. Please try again.')
-        }
-      } catch (error) {
-        const errorMessage =
-          error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
-            ? error.message
-            : 'An unexpected error occurred during signup. Please try again.'
-        toast.error(errorMessage)
-        console.error('Signup error:', error)
-      } finally {
-        setIsLoading(false)
+        const result = await dispatch(signup(formData)).unwrap()
+        toast.success(result.message || 'Account created successfully!')
+        router.push('/')
+      } catch (error: any) {
+        const errorMessage = error || 'An unexpected error occurred during signup. Please try again.'
+        toast.error(errorMessage, {
+          position: 'top-right',
+          duration: 2000,
+        })
       }
     },
-    [formData, router, validateInput, errors]
+    [formData, dispatch, router, validateInput, errors]
   )
+
+  // Display error from Redux state if it exists
+  useEffect(() => {
+    if (error) {
+      toast.error(error, {
+        position: 'top-right',
+        duration: 2000,
+      })
+      dispatch(clearError())
+    }
+  }, [error, dispatch])
 
   return (
     <PublicRoute>
@@ -166,7 +163,7 @@ export default function SignupPage() {
                 Create your account
               </CardTitle>
               <CardDescription className="text-gray-600 text-sm sm:text-base">
-                Join thousands of creators and businesses getting paid seamlessly
+                Launch your personalized AI Agent that talks, recommends, and earns for you
               </CardDescription>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 md:p-8">
@@ -207,7 +204,7 @@ export default function SignupPage() {
                       value={formData.last_name}
                       onChange={(e) => handleChange('last_name', e.target.value.trim())}
                       required
-                      className={`w-full border-gray-300  transition-colors duration-200 ${errors.last_name ? 'border-red-500' : ''}`}
+                      className={`w-full border-gray-300 transition-colors duration-200 ${errors.last_name ? 'border-red-500' : ''}`}
                       aria-invalid={!!errors.last_name}
                       aria-describedby={errors.last_name ? 'last_name-error' : undefined}
                     />
@@ -229,7 +226,7 @@ export default function SignupPage() {
                     value={formData.email}
                     onChange={(e) => handleChange('email', e.target.value.trim().toLowerCase())}
                     required
-                    className={`w-full border-gray-300 :ring-0  transition-colors duration-200 ${errors.email ? 'border-red-500' : ''}`}
+                    className={`w-full border-gray-300 transition-colors duration-200 ${errors.email ? 'border-red-500' : ''}`}
                     aria-invalid={!!errors.email}
                     aria-describedby={errors.email ? 'email-error' : undefined}
                   />
@@ -253,7 +250,7 @@ export default function SignupPage() {
                         onChange={(e) => handleChange('password', e.target.value)}
                         required
                         minLength={8}
-                        className={`w-full pr-10 border-gray-300 :ring-0  transition-colors duration-200 ${errors.password ? 'border-red-500' : ''}`}
+                        className={`w-full pr-10 border-gray-300 transition-colors duration-200 ${errors.password ? 'border-red-500' : ''}`}
                         aria-invalid={!!errors.password}
                         aria-describedby={errors.password ? 'password-error' : undefined}
                       />
@@ -289,7 +286,7 @@ export default function SignupPage() {
                         onChange={(e) => handleChange('password_confirmation', e.target.value)}
                         required
                         minLength={8}
-                        className={`w-full pr-10 border-gray-300  transition-colors duration-200 ${errors.password_confirmation ? 'border-red-500' : ''}`}
+                        className={`w-full pr-10 border-gray-300 transition-colors duration-200 ${errors.password_confirmation ? 'border-red-500' : ''}`}
                         aria-invalid={!!errors.password_confirmation}
                         aria-describedby={errors.password_confirmation ? 'password_confirmation-error' : undefined}
                       />
@@ -321,14 +318,15 @@ export default function SignupPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { value: 'CREATOR', label: 'Creator' },
-                      { value: 'BUSINESS', label: 'Business/Brand' },
+                      { value: 'BRAND', label: 'BRAND/Brand' },
                       { value: '', label: 'Just Exploring' },
                     ].map((option) => (
                       <label
                         key={option.value}
-                        className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all duration-200 ${formData.user_varient === option.value
-                          ? 'border-orange-300 bg-orange-50 shadow-sm'
-                          : 'border-gray-200 hover:border-orange-200'
+                        className={`flex items-center space-x-3 p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
+                          formData.user_varient === option.value
+                            ? 'border-orange-300 bg-orange-50 shadow-sm'
+                            : 'border-gray-200 hover:border-orange-200'
                         }`}
                       >
                         <input
@@ -337,7 +335,7 @@ export default function SignupPage() {
                           value={option.value}
                           checked={formData.user_varient === option.value}
                           onChange={(e) => handleChange('user_varient', e.target.value)}
-                          className="h-4 w-4 text-orange-600 border-gray-300 "
+                          className="h-4 w-4 text-orange-600 border-gray-300"
                         />
                         <span className="text-sm font-medium text-gray-700">
                           {option.label}
@@ -347,12 +345,12 @@ export default function SignupPage() {
                   </div>
                 </div>
 
-                {(formData.user_varient === 'CREATOR' || formData.user_varient === 'BUSINESS' || formData.user_varient === '') && (
+                {(formData.user_varient === 'CREATOR' || formData.user_varient === 'BRAND' || formData.user_varient === '') && (
                   <div className="space-y-3 pt-1">
                     {formData.user_varient === 'CREATOR' && (
                       <div className="mt-3">
                         <Label className="text-sm font-medium text-gray-700 block">
-                          Enter your Social handle Name
+                          Enter Social handle Name
                         </Label>
                         <Input
                           type="text"
@@ -370,10 +368,10 @@ export default function SignupPage() {
                         )}
                       </div>
                     )}
-                    {formData.user_varient === 'BUSINESS' && (
+                    {formData.user_varient === 'BRAND' && (
                       <div className="mt-3 grid">
                         <Label className="text-sm font-medium text-gray-700 block">
-                          Business name
+                          Enter Business name
                         </Label>
                         <Input
                           id="business_name"
@@ -400,7 +398,7 @@ export default function SignupPage() {
                     id="accept_aggrements"
                     checked={formData.accept_aggrements}
                     onChange={(e) => handleChange('accept_aggrements', e.target.checked)}
-                    className="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded "
+                    className="mt-1 h-4 w-4 text-orange-600 border-gray-300 rounded"
                     required
                   />
                   <Label htmlFor="accept_aggrements" className="text-xs sm:text-sm text-gray-600">
@@ -429,9 +427,10 @@ export default function SignupPage() {
                 <Button
                   type="submit"
                   disabled={isLoading || !formData.accept_aggrements}
-                  className={`w-full mt-2 py-3 text-sm font-medium text-white rounded-lg transition-all duration-200 ${isLoading || !formData.accept_aggrements
-                    ? 'bg-orange-300 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg'
+                  className={`w-full mt-2 py-3 text-sm font-medium text-white rounded-lg transition-all duration-200 ${
+                    isLoading || !formData.accept_aggrements
+                      ? 'bg-orange-300 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 shadow-md hover:shadow-lg'
                   }`}
                 >
                   {isLoading ? (
