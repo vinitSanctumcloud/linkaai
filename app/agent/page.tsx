@@ -50,7 +50,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import { CopyIcon, Cross2Icon, DotsVerticalIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Toaster } from "@/components/ui/toaster";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+// import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 // Interfaces remain unchanged
 interface ConditionalPrompt {
   id: string;
@@ -745,7 +746,7 @@ export default function AgentBuilderPage() {
         if (response.ok) {
           const data = await response.json();
           console.log(data);
-          const imageUrl = data.data.cdn + data.data.images[0]; // Adjust based on actual API response structure
+          const imageUrl = data.data.cdn + data.data.images[0]; 
           if (!imageUrl) {
             toast.error("No image URL returned from the server.");
             return;
@@ -805,7 +806,8 @@ export default function AgentBuilderPage() {
 
         if (response.ok) {
           const data = await response.json();
-          const videoUrl = data.url; // Adjust based on actual API response structure
+          const videoUrl = data.data.cdn + data.data.video; 
+          console.log(videoUrl);
           if (!videoUrl) {
             toast.error("No video URL returned from the server.");
             return;
@@ -813,8 +815,6 @@ export default function AgentBuilderPage() {
 
           setAgentConfig((prev) => ({
             ...prev,
-            // greetingVideo: videoUrl,
-            // greetingImage: null // Clear image if video is uploaded
             greetingMedia: videoUrl,
             greetingMediaType: "video",
           }));
@@ -1015,18 +1015,18 @@ export default function AgentBuilderPage() {
           //   // greetingVideo: agentConfig.greetingVideo
           // };
 
-            // Skip step 4 logic and directly advance to step 5
-            setProgressData((prev) => ({
-              ...prev,
-              completed_steps: Math.max(prev?.completed_steps || 0, currentStep),
-              next_step: 5,
-              current_status: `Skipped step ${currentStep}`,
-              completed_at: new Date().toISOString(),
-            }));
-            setCurrentStep(5);
-            toast.success(`Step ${currentStep} saved successfully!`);
-            return; // Exit early to avoid executing API call logic
-          // break;
+          // Skip step 4 logic and directly advance to step 5
+          setProgressData((prev) => ({
+            ...prev,
+            completed_steps: Math.max(prev?.completed_steps || 0, currentStep),
+            next_step: 5,
+            current_status: `Skipped step ${currentStep}`,
+            completed_at: new Date().toISOString(),
+          }));
+          setCurrentStep(5);
+          toast.success(`Step ${currentStep} saved successfully!`);
+          return; // Exit early to avoid executing API call logic
+        // break;
 
         case 5:
           if (
@@ -1589,7 +1589,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
               {isLoading ? (
                 <p className="text-sm text-linka-night/60 text-center">Loading links...</p>
               ) : activeTab === "partner" && agentConfig.partnerLinks.length > 0 ? (
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto position-static">
                   <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
                     <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
                       <tr>
@@ -1654,22 +1654,38 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                             </span>
                           </td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleEditLink(index, "partner")}
-                              className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteLink(index, "partner")}
-                              className="text-red-500 hover:text-red-700 text-xs"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                                >
+                                  <DotsVerticalIcon className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent side="bottom"
+                                align="end" className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1">
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                  onClick={() => handlePreviewLink(index)}
+                                >
+                                  Preview
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                  onClick={() => handleRetryLink(index)}
+                                >
+                                  Retry
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                                  onClick={() => handleDeleteLink(index, "partner")}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </td>
                         </tr>
                       ))}
@@ -1696,7 +1712,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                       </tr>
                     </thead>
                     <tbody>
-                      {agentConfig.linkaProMonetizations.map((link, index) => {
+                      {agentConfig.linkaProMonetizations.map((link: LinkaProMonetizationProduct | LinkaProMonetizationBlog | LinkaProMonetizationWebsite, index: number) => {
                         // Determine the URL based on proType
                         let url: string | undefined;
                         if (link.proType === "products") {
@@ -1715,17 +1731,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                             <td className="px-3 py-3 sm:px-6 sm:py-4">
                               {link.category || "Unnamed Link"}
                             </td>
-                            {/* <td className="px-3 py-3 sm:px-6 sm:py-4">
-                              <a
-                                href={url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-linka-carolina-blue hover:underline break-all"
-                              >
-                                {url || "No URL"}
-                              </a>
-                            </td> */}
-                           <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
                               {(() => {
                                 let url: string | undefined;
                                 if (link.proType === "products") {
@@ -1760,73 +1766,39 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                               </span>
                             </td>
                             <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleEditLink(index, "aipro")}
-                                className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                              >
-                                <Edit className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDeleteLink(agentConfig.linkaProMonetizations.indexOf(link), "aipro")}
-                                className="text-red-500 hover:text-red-700 text-xs"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                                  >
+                                    <DotsVerticalIcon className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent side="bottom"
+                                  align="end" className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1">
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                    onClick={() => handleEditLink(index, "aipro")}
+                                  >
+                                    Preview
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                    onClick={() => handleRetryLink(index)}
+                                  >
+                                    Retry
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                                    onClick={() => handleDeleteLink(index, "aipro")}
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             </td>
-                    {/* <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                            >
-                              <DotsVerticalIcon className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1">
-                            <DropdownMenuItem
-                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                              onClick={() => handleEditLink(index, "aipro")}
-                            >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                              onClick={() => handlePreviewLink(index)}
-                            >
-                              <Link2 className="w-4 h-4 mr-2" />
-                              Preview
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                              onClick={() => handleRetryLink(index)}
-                            >
-                              <ArrowRight className="w-4 h-4 mr-2" />
-                              Retry
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                              onClick={() => handleUpdateImage(index)}
-                            >
-                              <Upload className="w-4 h-4 mr-2" />
-                              Update Image
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
-                              onClick={() => handleDeleteLink(index, "aipro")}
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </td> */}
                           </tr>
                         );
                       })}
@@ -2671,11 +2643,11 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
         <Dialog open={isMonetizationModalOpen} onOpenChange={setIsMonetizationModalOpen}>
           <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm rounded-xl" key={agentConfig.linkaProMonetizations.length}>
             <DialogHeader>
-            <DialogTitle className="text-linka-russian-violet">
-              {activeTab === "partner" ? "Primary Recs" : 
-                selectedMonetizationOption === "products" ? "Product Monetization" :
-                selectedMonetizationOption === "blogs" ? "Blog Monetization" :
-                selectedMonetizationOption === "websites" ? "Website Monetization" : "AI Pro Monetization"}
+              <DialogTitle className="text-linka-russian-violet">
+                {activeTab === "partner" ? "Primary Recs" :
+                  selectedMonetizationOption === "products" ? "Product Monetization" :
+                    selectedMonetizationOption === "blogs" ? "Blog Monetization" :
+                      selectedMonetizationOption === "websites" ? "Website Monetization" : "AI Pro Monetization"}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 sm:space-y-6 py-4 sm:py-6">
@@ -3050,15 +3022,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                 </div>
                               </div>
                             )}
-                            {/* Add Delete Button for Each Link */}
-                            {/* <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteLink(agentConfig.linkaProMonetizations.indexOf(link), "aipro")}
-                              className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </Button> */}
                           </CardContent>
                         </Card>
                       ))}
