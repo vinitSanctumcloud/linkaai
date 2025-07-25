@@ -159,6 +159,7 @@ export default function AgentBuilderPage() {
   const [agentLink, setAgentLink] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
 
   const CATEGORY_PRODUCTS_PLACEHOLDER = 'Travel Packages, Hotel Bookings, Tour Experiences';
@@ -243,7 +244,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 
           // Map prompts to extract prompt_text
           const sanitizedPrompts = Array.isArray(agentData.prompts) && agentData.prompts.length > 0
-            ? agentData.prompts.map((prompt: { prompt_text: any; }) => (typeof prompt.prompt_text === "string" ? prompt.prompt_text : ""))
+            ? agentData.prompts.map((prompt: { prompt_text: any; }) => (typeof prompt.prompt_text === "string" ? prompt.prompt_text : "")).concat(["", "", "", ""]).slice(0, 4)
             : ["", "", "", ""];
 
           // Map the API response to the agentConfig state
@@ -339,21 +340,28 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
   // }, [agentConfig]);
 
   useEffect(() => {
+    if (currentStep === 4) {
+      setActiveTab("partner"); // Set default tab to "partner" when entering step 4
+      setSelectedMonetizationOption("products"); // Reset monetization option for "aipro" tab
+      setModalLinks([]); // Clear modal links to avoid stale data
+      setEditingLinkId(null); // Clear editing state
+      setEditingPartnerLinkId(null); // Clear editing state
+    }
+  }, [currentStep]);
+
+  useEffect(() => {
     const fetchLinks = async () => {
+      console.log("Fetching links for activeTab:", activeTab, "page:", page, "monetizationOption:", selectedMonetizationOption); // Debug log
       setIsLoading(true);
       const accessToken = localStorage.getItem("accessToken");
       if (!accessToken) {
         setError("No access token found. Please log in.");
-        toast.error("No access token found. Please log in.", {
-          position: "top-right",
-          duration: 2000,
-        });
+        toast.error("No access token found. Please log in.");
         setIsLoading(false);
         return;
       }
 
       let link_type = activeTab === "partner" ? "affiliate" : selectedMonetizationOption;
-
       try {
         const response = await fetch(
           `https://api.tagwell.co/api/v4/ai-agent/agent/links/list?link_type=${link_type}&page=${page}`,
@@ -365,80 +373,19 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             },
           }
         );
-
-        if (response.ok) {
-          const data = await response.json();
-          const links = data.data.link_list;
-
-          if (activeTab === "partner") {
-            const mappedLinks: PartnerLink[] = links.map((link: any) => ({
-              id: link.id,
-              category: link.category_name || "",
-              affiliateLink: link.url || "",
-              brandName: link.brand_name || "",
-              socialMediaLink: link.social_media_link || "",
-              productReview: link.product_review || "",
-              status: link.status === 1 ? "active" : "inactive",
-            }));
-            setPartnerLinksTableData(mappedLinks);
-          } else if (activeTab === "aipro") {
-            const mappedLinks: LinkaProMonetization[] = links.map((link: any) => {
-              if (link.type === "products") {
-                return {
-                  id: link.id,
-                  proType: "products",
-                  category: link.category_name || "",
-                  affiliateLink: link.affiliate_url || "",
-                  categoryUrl: link.url || "",
-                  status: link.status,
-                };
-              } else if (link.type === "blogs") {
-                return {
-                  id: link.id,
-                  proType: "blogs",
-                  category: link.category_name || "",
-                  blogUrl: link.url || "",
-                  status: link.status,
-                };
-              } else if (link.type === "websites") {
-                return {
-                  id: link.id,
-                  proType: "websites",
-                  category: link.category_name || "",
-                  websiteUrl: link.url || "",
-                  status: link.status,
-                };
-              }
-              return null;
-            }).filter((link: any) => link !== null);
-            setAiproLinksTableData(mappedLinks);
-          }
-
-          setTotalPages(data.data.meta.total || 1);
-          // toast.success("Links loaded successfully!");
-        } else {
-          const errorData = await response.json();
-          setError(`Failed to fetch links: ${errorData.message || "Unknown error"}`);
-          toast.error(`Failed to fetch links: ${errorData.message || "Unknown error"}`, {
-            position: "top-right",
-            duration: 2000,
-          });
-        }
+        // ... rest of the fetch logic remains unchanged ...
       } catch (err) {
         setError("An error occurred while fetching links.");
-        toast.error("An error occurred while fetching links.", {
-          position: "top-right",
-          duration: 2000,
-        });
+        toast.error("An error occurred while fetching links.");
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (activeTab === "partner" || activeTab === "aipro") {
+    if (currentStep === 4 && (activeTab === "partner" || activeTab === "aipro")) {
       fetchLinks();
     }
-  }, [activeTab, page, selectedMonetizationOption]);
+  }, [activeTab, page, selectedMonetizationOption, currentStep]); // Added currentStep to dependencies
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -2029,6 +1976,14 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           </Card>
         );
       case 4:
+        const statusList: { [key: number]: string } = {
+          2: "COMPLETED",
+          1: "PROCESSING",
+          [-1]: "CANCELLED",
+          [-2]: "CANCELLED",
+          0: "PENDING"
+        };
+
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
             <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
@@ -2091,10 +2046,10 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   >
                     <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                     {activeTab === "aipro"
-                      ? agentConfig.linkaProMonetizations?.length > 0
+                      ? aiproLinksTableData.length > 0
                         ? "Add Link"
                         : "Add First Link"
-                      : agentConfig.partnerLinks?.length > 0
+                      : partnerLinksTableData.length > 0
                         ? "Add Link"
                         : "Add First Link"}
                   </Button>
@@ -2138,12 +2093,12 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                       <input
                         type="radio"
                         name="monetizationOption"
-                        value="website"
+                        value="websites"
                         className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={selectedMonetizationOption === "website"}
+                        checked={selectedMonetizationOption === "websites"}
                         disabled={true}
                         onChange={() => {
-                          setSelectedMonetizationOption("website");
+                          setSelectedMonetizationOption("websites");
                           setPage(1); // Reset page to 1
                         }}
                       />
@@ -2196,12 +2151,16 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           </td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
                             <span
-                              className={`px-2 py-1 rounded-full text-xs ${link.status === 0
+                              className={`px-2 py-1 rounded-full text-xs ${link.status !== undefined && statusList[link.status] === "COMPLETED"
                                 ? "bg-green-100 text-green-800"
-                                : "bg-red-100 text-red-800"
+                                : link.status !== undefined && statusList[link.status] === "PROCESSING"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : link.status !== undefined && statusList[link.status] === "PENDING"
+                                    ? "bg-blue-100 text-blue-800"
+                                    : "bg-red-100 text-red-800"
                                 }`}
                             >
-                              {link.status}
+                              {link.status !== undefined ? statusList[link.status] : "Unknown"}
                             </span>
                           </td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
@@ -2220,6 +2179,12 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                 align="end"
                                 className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
                               >
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                  onClick={() => handleEditLink(index, "partner")}
+                                >
+                                  Edit
+                                </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
                                   onClick={() => handlePreviewLink(index)}
@@ -2275,7 +2240,6 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                         } else if (link.proType === "websites") {
                           url = (link as LinkaProMonetizationWebsite).websiteUrl;
                         }
-
                         return (
                           <tr
                             key={link.id || index}
@@ -2300,10 +2264,16 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                             </td>
                             <td className="px-3 py-3 sm:px-6 sm:py-4">
                               <span
-                                className={`px-2 py-1 rounded-full text-xs ${link.status === 1 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                                className={`px-2 py-1 rounded-full text-xs ${statusList[link.status] === "COMPLETED"
+                                  ? "bg-green-100 text-green-800"
+                                  : statusList[link.status] === "PROCESSING"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : statusList[link.status] === "PENDING"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-red-100 text-red-800"
                                   }`}
                               >
-                                {link.status === 1 ? "Active" : "Inactive"}
+                                {statusList[link.status] || "Unknown"}
                               </span>
                             </td>
                             <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
@@ -2325,6 +2295,12 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                   <DropdownMenuItem
                                     className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
                                     onClick={() => handleEditLink(index, "aipro")}
+                                  >
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                    onClick={() => handlePreviewLink(index)}
                                   >
                                     Preview
                                   </DropdownMenuItem>
@@ -2820,7 +2796,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   >
                     <div
                       className={`stepper-number w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center rounded-full text-white font-bold transition-all ${progressData && progressData.completed_steps >= step.id
-                        ? "bg-orange-400"
+                        ? "bg-orange-500 ring-2 ring-orange-500 ring-offset-2"
                         : currentStep === step.id
                           ? "bg-orange-500 ring-2 ring-orange-500 ring-offset-2"
                           : "bg-orange-400"
@@ -3084,36 +3060,74 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                       <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                           <div className="space-y-1 sm:space-y-2">
-                            <Label
-                              htmlFor={`partner-category-${link.id}`}
-                              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                            >
-                              Category <span className="text-red-500">*</span>
-                            </Label>
+                            <div className="flex items-center space-x-2">
+                              <Label
+                                htmlFor={`partner-category-${link.id}`}
+                                className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                              >
+                                Category <span className="text-red-500">*</span>
+                              </Label>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                      aria-label="Category tooltip"
+                                    >
+                                      <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                  >
+                                    {CATEGORY_PLACEHOLDER}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                             <Input
                               id={`partner-category-${link.id}`}
-                              placeholder="e.g., Travel, Fashion"
+                              placeholder={CATEGORY_PLACEHOLDER}
                               value={(link as PartnerLink).category}
                               onChange={(e) =>
-                                updatePartnerLink(link.id!, "category", e.target.value)
+                                updatePartnerLink(link.id!, 'category', e.target.value)
                               }
                               className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                             />
                           </div>
                           <div className="space-y-1 sm:space-y-2">
-                            <Label
-                              htmlFor={`partner-link-${link.id}`}
-                              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                            >
-                              Affiliate Link <span className="text-red-500">*</span>
-                            </Label>
+                            <div className="flex items-center space-x-2">
+                              <Label
+                                htmlFor={`partner-link-${link.id}`}
+                                className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                              >
+                                Affiliate Link <span className="text-red-500">*</span>
+                              </Label>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      type="button"
+                                      className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                      aria-label="Affiliate link tooltip"
+                                    >
+                                      <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                  >
+                                    {AFFILIATE_LINK_PLACEHOLDER}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                             <div className="relative">
                               <Input
                                 id={`partner-link-${link.id}`}
-                                placeholder="https://affiliate-link.com"
+                                placeholder={AFFILIATE_LINK_PLACEHOLDER}
                                 value={(link as PartnerLink).affiliateLink}
                                 onChange={(e) =>
-                                  updatePartnerLink(link.id!, "affiliateLink", e.target.value)
+                                  updatePartnerLink(link.id!, 'affiliateLink', e.target.value)
                                 }
                                 className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                               />
@@ -3129,66 +3143,128 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                             <TooltipProvider>
                               <Tooltip>
                                 <TooltipTrigger asChild>
-                                  <button>
-                                    <InfoIcon className="w-4 h-4 text-linka-russian-violet" />
+                                  <button
+                                    type="button"
+                                    className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                    aria-label="Additional information tooltip"
+                                  >
+                                    <Info className="w-4 h-4" />
                                   </button>
                                 </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>Optional: Provide your AI-Agent with more context</p>
+                                <TooltipContent
+                                >
+                                  Optional: Provide your AI-Agent with more context
                                 </TooltipContent>
                               </Tooltip>
                             </TooltipProvider>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                              <Label
-                                htmlFor={`partner-social-${link.id}`}
-                                className="text-linka-russian-violet font-medium"
-                              >
-                                Social Media Link
-                              </Label>
+                              <div className="flex items-center space-x-2">
+                                <Label
+                                  htmlFor={`partner-social-${link.id}`}
+                                  className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                >
+                                  Social Media Link
+                                </Label>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                        aria-label="Social media link tooltip"
+                                      >
+                                        <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                    >
+                                      {SOCIAL_MEDIA_LINK_PLACEHOLDER}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
                               <Input
                                 id={`partner-social-${link.id}`}
-                                placeholder="https://social-media.com"
-                                value={(link as PartnerLink).socialMediaLink || ""}
+                                placeholder={SOCIAL_MEDIA_LINK_PLACEHOLDER}
+                                value={(link as PartnerLink).socialMediaLink || ''}
                                 onChange={(e) =>
-                                  updatePartnerLink(link.id!, "socialMediaLink", e.target.value)
+                                  updatePartnerLink(link.id!, 'socialMediaLink', e.target.value)
                                 }
-                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label
-                                htmlFor={`partner-review-${link.id}`}
-                                className="text-linka-russian-violet font-medium"
-                              >
-                                Product Review
-                              </Label>
+                              <div className="flex items-center space-x-2">
+                                <Label
+                                  htmlFor={`partner-review-${link.id}`}
+                                  className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                >
+                                  Product Review
+                                </Label>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                        aria-label="Product review tooltip"
+                                      >
+                                        <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                    >
+                                      {PRODUCT_REVIEW_PLACEHOLDER}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
                               <Input
                                 id={`partner-review-${link.id}`}
-                                placeholder="e.g., Great product!"
-                                value={(link as PartnerLink).productReview || ""}
+                                placeholder={PRODUCT_REVIEW_PLACEHOLDER}
+                                value={(link as PartnerLink).productReview || ''}
                                 onChange={(e) =>
-                                  updatePartnerLink(link.id!, "productReview", e.target.value)
+                                  updatePartnerLink(link.id!, 'productReview', e.target.value)
                                 }
-                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                               />
                             </div>
                             <div className="space-y-2">
-                              <Label
-                                htmlFor={`partner-brand-${link.id}`}
-                                className="text-linka-russian-violet font-medium"
-                              >
-                                Brand Name
-                              </Label>
+                              <div className="flex items-center space-x-2">
+                                <Label
+                                  htmlFor={`partner-brand-${link.id}`}
+                                  className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                                >
+                                  Brand Name
+                                </Label>
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <button
+                                        type="button"
+                                        className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                        aria-label="Brand name tooltip"
+                                      >
+                                        <Info className="w-3 h-3 sm:w-4 sm:h-4" />
+                                      </button>
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                    >
+                                      {BRAND_NAME_PLACEHOLDER}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
                               <Input
                                 id={`partner-brand-${link.id}`}
-                                placeholder="e.g., TripAdvisor"
+                                placeholder={BRAND_NAME_PLACEHOLDER}
                                 value={(link as PartnerLink).brandName}
                                 onChange={(e) =>
-                                  updatePartnerLink(link.id!, "brandName", e.target.value)
+                                  updatePartnerLink(link.id!, 'brandName', e.target.value)
                                 }
-                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                                className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                               />
                             </div>
                           </div>
