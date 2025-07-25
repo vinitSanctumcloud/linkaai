@@ -193,7 +193,6 @@ export default function AgentDetails() {
           let chunk = decoder.decode(value);
           assistantText += chunk;
 
-          // Clean the entire accumulated text before rendering
           let cleanedText = assistantText
             .replace(/\[METAID:[^\]]+\]/g, '') // Remove meta IDs
             .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '') // Remove all markdown links
@@ -213,7 +212,6 @@ export default function AgentDetails() {
         }
       }
 
-      // After streaming, update the message one last time (without cursor)
       setMessages((prev) => {
         const updated = [...prev];
         let cleanedText = assistantText
@@ -221,7 +219,7 @@ export default function AgentDetails() {
           .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
           .replace(/Check\s?them\s?out\s?here/gi, '')
           .replace(/\s{2,}/g, ' ')
-          .replace(/(\d+\.\s.*?)(?=\d+\.\s|$)/gs, '$1\n\n') // <-- Add this line!
+          .replace(/(\d+\.\s.*?)(?=\d+\.\s|$)/gs, '$1\n\n')
           .trim();
         updated[updated.length - 1] = {
           text: cleanedText,
@@ -230,7 +228,7 @@ export default function AgentDetails() {
         return updated;
       });
 
-      const metaIdMatches = [...assistantText.matchAll(/\[METAID:([^\]]+)\]/g)];
+      const metaIdMatches = Array.from(assistantText.matchAll(/\[METAID:([^\]]+)\]/g));
       const metaResults: any[] = [];
       for (const match of metaIdMatches) {
         const metaId = match[1];
@@ -251,7 +249,7 @@ export default function AgentDetails() {
       if (metaResults.length > 0) {
         setMessages((prev) => [
           ...prev,
-          { sender: 'meta', metaCards: metaResults }
+          { text: '', sender: 'meta', metaCards: metaResults }
         ]);
       }
     } catch (error) {
