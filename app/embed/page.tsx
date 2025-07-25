@@ -75,7 +75,10 @@ export default function EmbedPage() {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Copied to clipboard!");
+    toast.success("Copied to clipboard!", {
+      position: "top-right",
+      duration: 2000,
+    });
   };
 
   const agentSlug = agentDetails?.ai_agent_slug

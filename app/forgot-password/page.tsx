@@ -48,7 +48,10 @@ export default function ForgotPasswordPage() {
             })
             console.log(result, 'Verification Result')
             if (!result.success) {
-                toast.error('Verification failed. Please check your input and try again.')
+                toast.error('Verification failed. Please check your input and try again.', {
+                    position: "top-right",
+                    duration: 2000,
+                })
             } else {
                 // ✅ Save OTP token and email to localStorage
                 localStorage.setItem('otp_token', result.otp_token)
@@ -59,7 +62,10 @@ export default function ForgotPasswordPage() {
                         <span>Verification code sent to your email!</span>
                         <span className="text-sm text-gray-600">Please check your email for the code.</span>
                     </div>,
-                    { duration: 5000 }
+                    {
+                        position: "top-right",
+                        duration: 2000,
+                    }
                 )
 
                 setTimeout(() => {
@@ -70,7 +76,11 @@ export default function ForgotPasswordPage() {
             toast.error(
                 error instanceof Error
                     ? error.message
-                    : 'An unexpected error occurred. Please try again.'
+                    : 'An unexpected error occurred. Please try again.',
+                {
+                    position: "top-right",
+                    duration: 2000,
+                }
             )
         } finally {
             setIsLoading(false)

@@ -28,7 +28,10 @@ export default function ResetPasswordPage() {
         const storedToken = localStorage.getItem('otp_token')
 
         if (!storedEmail || !storedToken) {
-            toast.error('Missing verification data. Please request a new code.')
+            toast.error('Missing verification data. Please request a new code.', {
+                position: "top-right",
+                duration: 2000,
+            })
             router.push('/forgot-password')
             return
         }
@@ -38,7 +41,10 @@ export default function ResetPasswordPage() {
         const timeoutId = setTimeout(() => {
             localStorage.removeItem('otp_email')
             localStorage.removeItem('otp_token')
-            toast.info('Verification data has expired. Please request a new code.')
+            toast.info('Verification data has expired. Please request a new code.', {
+                position: "top-right",
+                duration: 2000,
+            })
             router.push('/forgot-password')
         }, 30000) // 60 minutes
 
@@ -50,17 +56,26 @@ export default function ResetPasswordPage() {
         e.preventDefault()
 
         if (formData.password.length < 6) {
-            toast.error('Password must be at least 6 characters long')
+            toast.error('Password must be at least 6 characters long', {
+                position: "top-right",
+                duration: 2000,
+            })
             return
         }
 
         if (formData.password !== formData.password_confirmation) {
-            toast.error('Passwords do not match')
+            toast.error('Passwords do not match', {
+                position: "top-right",
+                duration: 2000,
+            })
             return
         }
 
         if (formData.otp.length !== 6) {
-            toast.error('Please enter the 6-digit OTP')
+            toast.error('Please enter the 6-digit OTP', {
+                position: "top-right",
+                duration: 2000,
+            })
             return
         }
 
@@ -75,7 +90,10 @@ export default function ResetPasswordPage() {
                 verify_via: 'email', // Assuming email verification
             })
             if (result.success === false) {
-                toast.error(result.message || 'Login failed. Please check your credentials and try again.')
+                toast.error(result.message || 'Login failed. Please check your credentials and try again.', {
+                    position: "top-right",
+                    duration: 2000,
+                })
             } else {
                 localStorage.removeItem('otp_email') // Clear email from localStorage
                 localStorage.removeItem('otp_token') // Clear OTP token from localStorage
@@ -84,12 +102,18 @@ export default function ResetPasswordPage() {
                         <span>Reset Password SuccessFull!</span>
                         {/* <span className="text-sm text-gray-600">Welcome back to EarnLinks.AI</span> */}
                     </div>,
-                    { duration: 5000 }
+                    {
+                        position: "top-right",
+                        duration: 2000,
+                    }
                 )
                 router.push('/login') // Redirect to dashboard or home page
             }
         } catch (err) {
-            toast.error('Something went wrong. Please try again.')
+            toast.error('Something went wrong. Please try again.', {
+                position: "top-right",
+                duration: 2000,
+            })
         } finally {
             setIsLoading(false)
         }

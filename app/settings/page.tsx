@@ -160,7 +160,7 @@ export default function SettingsPage() {
   const [paymentCardDetails, setPaymentCardDetails] = useState<PaymentMethodResponse | null>(null);
   const [tokendetails, setTokenDetails] = useState<TokenInfo | null>(null);
   const [bookingHistory, setBookingHistory] = useState<BookingHistoryResponse | null>(null);
-  const [password_confirmation , setPassword_confirmation] = useState("")
+  const [password_confirmation, setPassword_confirmation] = useState("")
   const [loading, setLoading] = useState(true);
 
   // === API FUNCTIONS ===
@@ -275,7 +275,10 @@ export default function SettingsPage() {
         setBookingHistory(billingData);
       } catch (error) {
         console.error('Error fetching data:', error);
-        toast.error('An error occurred while fetching data.');
+        toast.error('An error occurred while fetching data.', {
+          position: "top-right",
+          duration: 2000,
+        });
       } finally {
         setLoading(false);
       }
@@ -285,13 +288,13 @@ export default function SettingsPage() {
   }, []);
 
   useEffect(() => {
-  let strength = 0;
-  if (formData.newPassword.length >= 8) strength++;
-  if (/[A-Z]/.test(formData.newPassword)) strength++;
-  if (/[0-9]/.test(formData.newPassword)) strength++;
-  if (/[^A-Za-z0-9]/.test(formData.newPassword)) strength++;
-  setPasswordStrength(strength);
-}, [formData.newPassword]);
+    let strength = 0;
+    if (formData.newPassword.length >= 8) strength++;
+    if (/[A-Z]/.test(formData.newPassword)) strength++;
+    if (/[0-9]/.test(formData.newPassword)) strength++;
+    if (/[^A-Za-z0-9]/.test(formData.newPassword)) strength++;
+    setPasswordStrength(strength);
+  }, [formData.newPassword]);
 
   const handleSave = async () => {
     setIsLoading(true);
@@ -303,7 +306,10 @@ export default function SettingsPage() {
       });
 
       if (response.ok) {
-        toast.success('Settings updated successfully!');
+        toast.success('Settings updated successfully!', {
+          position: "top-right",
+          duration: 2000,
+        });
         // Re-fetch settings to ensure UI reflects the latest data
         const settingsResponse = await fetch('/api/settings', {
           headers: {
@@ -329,10 +335,16 @@ export default function SettingsPage() {
         }
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update settings');
+        toast.error(error.error || 'Failed to update settings', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      toast.error('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -340,7 +352,10 @@ export default function SettingsPage() {
 
   const handleEmailChange = async () => {
     if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-      toast.error('Please enter a valid email address.');
+      toast.error('Please enter a valid email address.', {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
     setIsLoading(true);
@@ -355,13 +370,22 @@ export default function SettingsPage() {
         setIsEmailVerified(false);
         setIsEmailModalOpen(false);
         setNewEmail('');
-        toast.success('Email updated successfully! Please verify your new email.');
+        toast.success('Email updated successfully! Please verify your new email.', {
+          position: "top-right",
+          duration: 2000,
+        });
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update email');
+        toast.error(error.error || 'Failed to update email', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      toast.error('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -369,7 +393,10 @@ export default function SettingsPage() {
 
   const handlePhoneChange = async () => {
     if (!newPhone || !/^\+?[1-9]\d{1,14}$/.test(newPhone)) {
-      toast.error('Please enter a valid phone number.');
+      toast.error('Please enter a valid phone number.', {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
     setIsLoading(true);
@@ -384,13 +411,22 @@ export default function SettingsPage() {
         setIsPhoneVerified(false);
         setIsPhoneModalOpen(false);
         setNewPhone('');
-        toast.success('Phone number updated successfully! Please verify your new phone number.');
+        toast.success('Phone number updated successfully! Please verify your new phone number.', {
+          position: "top-right",
+          duration: 2000,
+        });
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to update phone number');
+        toast.error(error.error || 'Failed to update phone number', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      toast.error('An error occurred. Please try again.');
+      toast.error('An error occurred. Please try again.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -406,13 +442,22 @@ export default function SettingsPage() {
       });
       if (response.ok) {
         setIsEmailVerified(true);
-        toast.success('Verification email sent! Please check your inbox.');
+        toast.success('Verification email sent! Please check your inbox.', {
+          position: "top-right",
+          duration: 2000,
+        });
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to send verification email');
+        toast.error(error.error || 'Failed to send verification email', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      toast.error('Failed to send verification email. Please try again.');
+      toast.error('Failed to send verification email. Please try again.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -428,13 +473,22 @@ export default function SettingsPage() {
       });
       if (response.ok) {
         setIsPhoneVerified(true);
-        toast.success('Verification code sent to your phone!');
+        toast.success('Verification code sent to your phone!', {
+          position: "top-right",
+          duration: 2000,
+        });
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to send verification code');
+        toast.error(error.error || 'Failed to send verification code', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      toast.error('Failed to send verification code. Please try again.');
+      toast.error('Failed to send verification code. Please try again.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -472,9 +526,12 @@ export default function SettingsPage() {
           password_confirmation,
         }),
       });
-      console.log(response,"password")
+      console.log(response, "password")
       if (response.ok) {
-        toast.success('Password updated successfully!');
+        toast.success('Password updated successfully!', {
+          position: "top-right",
+          duration: 2000,
+        });
         setCurrentPassword('');
         setFormData({ ...formData, newPassword: '' });
         setConfirmPassword('');
@@ -502,7 +559,10 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.ok) {
-        toast.success('Agent training reset successfully!');
+        toast.success('Agent training reset successfully!', {
+          position: "top-right",
+          duration: 2000,
+        });
         // Re-fetch settings
         const settingsResponse = await fetch('/api/settings', {
           headers: {
@@ -528,10 +588,16 @@ export default function SettingsPage() {
         }
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to reset agent training');
+        toast.error(error.error || 'Failed to reset agent training', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      toast.error('An error occurred while resetting agent training.');
+      toast.error('An error occurred while resetting agent training.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -545,13 +611,22 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.ok) {
-        toast.success('Chat history cleared successfully!');
+        toast.success('Chat history cleared successfully!', {
+          position: "top-right",
+          duration: 2000,
+        });
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to clear chat history');
+        toast.error(error.error || 'Failed to clear chat history', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      toast.error('An error occurred while clearing chat history.');
+      toast.error('An error occurred while clearing chat history.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -565,14 +640,23 @@ export default function SettingsPage() {
         headers: { 'Content-Type': 'application/json' },
       });
       if (response.ok) {
-        toast.success('Account deletion request sent. You will be logged out.');
+        toast.success('Account deletion request sent. You will be logged out.', {
+          position: "top-right",
+          duration: 2000,
+        });
         window.location.href = '/logout';
       } else {
         const error = await response.json();
-        toast.error(error.error || 'Failed to delete account');
+        toast.error(error.error || 'Failed to delete account', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      toast.error('An error occurred while deleting account.');
+      toast.error('An error occurred while deleting account.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -609,7 +693,7 @@ export default function SettingsPage() {
   const handlePurchaseTokens = async (priceId: number) => {
     setIsLoading(true);
     let payload: PaymentData = { price_id: priceId };
-    if(paymentCardDetails) {
+    if (paymentCardDetails) {
       payload = { ...payload, payment_method_id: paymentCardDetails?.payment_method_id };
     }
 
@@ -626,7 +710,10 @@ export default function SettingsPage() {
       const data = await response.json();
 
       if (response.ok) {
-        toast.success('Tokens purchased successfully!');
+        toast.success('Tokens purchased successfully!', {
+          position: "top-right",
+          duration: 2000,
+        });
         // Optionally, refresh token details to update the UI
         const tokenData = await fetchTokenDetails();
         if (tokenData) {
@@ -634,11 +721,17 @@ export default function SettingsPage() {
           fetchPage(1);
         }
       } else {
-        toast.error(data.error || 'Failed to purchase tokens');
+        toast.error(data.error || 'Failed to purchase tokens', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
       console.error('Error purchasing tokens:', error);
-      toast.error('An error occurred while purchasing tokens. Please try again.');
+      toast.error('An error occurred while purchasing tokens. Please try again.', {
+        position: "top-right",
+        duration: 2000,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -1506,7 +1599,7 @@ export default function SettingsPage() {
                       <Button
                         type="submit"
                         className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
-                        disabled={ passwordStrength < 3 || !currentPassword || !confirmPassword}
+                        disabled={passwordStrength < 3 || !currentPassword || !confirmPassword}
                       >
                         {isLoading ? (
                           <div className="flex items-center justify-center">

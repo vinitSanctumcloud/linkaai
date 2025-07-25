@@ -88,11 +88,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     try {
       await Logout();
       localStorage.clear();
-      toast.success("Logged out successfully");
+      toast.success("Logged out successfully", {
+        position: "top-right",
+        duration: 2000,
+      });
       router.push("/login");
     } catch (error) {
       console.error("Logout failed:", error);
-      toast.error("Failed to log out");
+      toast.error("Failed to log out", {
+        position: "top-right",
+        duration: 2000,
+      });
     }
   };
 
@@ -266,7 +272,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   onClick={(e) => {
                     if (item.comingSoon) {
                       e.preventDefault();
-                      toast.info("This feature is coming soon!");
+                      toast.info("This feature is coming soon!", {
+                        position: "top-right",
+                        duration: 2000,
+                      });
                     }
                   }}
                   className={cn(

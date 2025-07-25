@@ -53,7 +53,10 @@ export default function LoginPage() {
       return aiAgentData.data;
     } catch (apiError) {
       console.error('Error fetching AI agent data:', apiError)
-      toast.error('Failed to fetch AI agent data. Some features may be limited.')
+      toast.error('Failed to fetch AI agent data. Some features may be limited.', {
+        position: "top-right",
+        duration: 2000,
+      })
       return null
     }
   }, [])
@@ -78,14 +81,20 @@ export default function LoginPage() {
       if (!email || !password) {
         setError('Please fill in all fields')
         setIsLoading(false)
-        toast.error('Please fill in all fields')
+        toast.error('Please fill in all fields', {
+          position: "top-right",
+          duration: 2000,
+        })
         return
       }
 
       if (!validateEmail(email)) {
         setError('Please enter a valid email address')
         setIsLoading(false)
-        toast.error('Please enter a valid email address')
+        toast.error('Please enter a valid email address', {
+          position: "top-right",
+          duration: 2000,
+        })
         return
       }
 
@@ -95,7 +104,10 @@ export default function LoginPage() {
 
         if (result?.error) {
           setError(result.error)
-          toast.error(result.error || 'Invalid credentials. Please try again.')
+          toast.error(result.error || 'Invalid credentials. Please try again.', {
+            position: "top-right",
+            duration: 2000,
+          })
           setIsLoading(false)
           return
         }
@@ -104,7 +116,10 @@ export default function LoginPage() {
           const accessToken = result.data.access_token
 
           if (!accessToken) {
-            toast.error('Authentication failed. Please log in again.')
+            toast.error('Authentication failed. Please log in again.', {
+              position: "top-right",
+              duration: 2000,
+            })
             router.push('/login')
             setIsLoading(false)
             return
@@ -119,10 +134,13 @@ export default function LoginPage() {
           // Fetch AI agent data
           const aiAgent = await fetchAiAgentData(accessToken)
 
-          if(!aiAgent.has_subscription) {
+          if (!aiAgent.has_subscription) {
             router.push('/pricing')
           } else {
-            toast.success('Welcome back!')
+            toast.success('Welcome back!', {
+              position: "top-right",
+              duration: 2000,
+            })
             router.push('/dashboard')
           }
           router.refresh()
@@ -130,7 +148,10 @@ export default function LoginPage() {
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
         setError(errorMessage)
-        toast.error(errorMessage)
+        toast.error(errorMessage, {
+          position: "top-right",
+          duration: 2000,
+        })
       } finally {
         setIsLoading(false)
       }
@@ -158,7 +179,7 @@ export default function LoginPage() {
           <Card className="border-0 shadow-2xl">
             <CardHeader className="text-center">
               <div className="flex items-center justify-center mb-4">
-                <img src='./Linklogo.png' alt="" className='w-24'/>
+                <img src='./Linklogo.png' alt="" className='w-24' />
                 <span className="ml-2 text-2xl font-bold text-gray-900">EarnLinks.AI</span>
               </div>
               <CardTitle className="text-2xl">Welcome back</CardTitle>

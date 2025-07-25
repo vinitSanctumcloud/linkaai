@@ -88,7 +88,10 @@ export default function SignupPage() {
     if (!validateInput()) {
       // Get the first error message from the errors object, or use a fallback
       const errorMessage = Object.values(errors)[0] || 'Please fix the form errors before submitting.';
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
@@ -102,22 +105,34 @@ export default function SignupPage() {
         // Store access token in localStorage
         try {
           localStorage.setItem('accessToken', result.data.access_token);
-          toast.success(result.message || 'Account created successfully!');
+          toast.success(result.message || 'Account created successfully!', {
+            position: "top-right",
+            duration: 2000,
+          });
           router.push('/');
         } catch (storageError) {
           console.error('Failed to store access token in localStorage:', storageError);
-          toast.error('Account created, but failed to save session. Please try again.');
+          toast.error('Account created, but failed to save session. Please try again.', {
+            position: "top-right",
+            duration: 2000,
+          });
         }
       } else {
         console.warn('Signup response missing access_token:', result);
-        toast.error(result.message || 'Signup failed: No access token received. Please try again.');
+        toast.error(result.message || 'Signup failed: No access token received. Please try again.', {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
       const errorMessage =
         error && typeof error === 'object' && 'message' in error && typeof error.message === 'string'
           ? error.message
           : 'An unexpected error occurred during signup. Please try again.';
-      toast.error(errorMessage);
+      toast.error(errorMessage, {
+        position: "top-right",
+        duration: 2000,
+      });
       console.error('Signup error:', error);
     } finally {
       setIsLoading(false);
@@ -141,7 +156,7 @@ export default function SignupPage() {
           <Card className="border-0 shadow-lg rounded-xl overflow-hidden bg-white">
             <CardHeader className="text-center space-y-3 px-6 py-8 sm:px-10 sm:py-10 bg-gradient-to-r from-orange-50 to-orange-100">
               <div className="flex items-center justify-center">
-                <img src="./Linklogo.png" alt="" className='h-20 w-24'/>
+                <img src="./Linklogo.png" alt="" className='h-20 w-24' />
                 <span className="ml-3 text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">EarnLinks.AI</span>
               </div>
               <CardTitle className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900">

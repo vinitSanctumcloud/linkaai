@@ -67,7 +67,8 @@ interface PartnerLink {
   brandName?: string;
   socialMediaLink?: string;
   // affiliateimage: string | undefined;
-  status?: "Submitted" | "Hold" | "Processing" | "Complete";
+  // status?: "Submitted" | "Hold" | "Processing" | "Complete";
+  status?: number;
   productReview?: string
 }
 
@@ -110,13 +111,10 @@ interface AgentConfig {
   linkaProMonetizations: LinkaProMonetization[];
   conditionalPrompts: ConditionalPrompt[];
   useConditionalPrompts: boolean;
-  // greetingVideo: string | null
-  // greetingImage: string | null
   greetingTitle: string;
   greeting: string;
   greetingMediaType: string | null;
   greetingMedia: string | null;
-  // linkaProMonetizations: MonetizationLink[];
 }
 
 export default function AgentBuilderPage() {
@@ -130,9 +128,7 @@ export default function AgentBuilderPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
-  const [activeTab, setActiveTab] = useState<"partner" | "aipro" | "paywall">(
-    "partner"
-  );
+  const [activeTab, setActiveTab] = useState<"partner" | "aipro" | "paywall">("partner");
   const [agentConfig, setAgentConfig] = useState<AgentConfig>({
     name: "",
     trainingInstructions: "",
@@ -146,32 +142,27 @@ export default function AgentBuilderPage() {
     greetingMediaType: null,
     greetingMedia: null,
   });
-
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
   const [editingPartnerLinkId, setEditingPartnerLinkId] = useState<string | null>(null);
-
-  // Conditional prompt modal states
   const [isConditionalModalOpen, setIsConditionalModalOpen] = useState(false);
-  const [editingConditionalPrompt, setEditingConditionalPrompt] =
-    useState<ConditionalPrompt | null>(null);
+  const [editingConditionalPrompt, setEditingConditionalPrompt] = useState<ConditionalPrompt | null>(null);
   const [conditionalForm, setConditionalForm] = useState<ConditionalPrompt>({
     id: "",
     mainPrompt: "",
     option1: { label: "", followUps: ["", "", ""] },
     option2: { label: "", followUps: ["", "", ""] },
   });
-
   const [imageError, setImageError] = useState(false);
-
-  // Monetization modal state
   const [isMonetizationModalOpen, setIsMonetizationModalOpen] = useState(false);
-
   const [selectedMonetizationOption, setSelectedMonetizationOption] = useState("products");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [agentLink, setAgentLink] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [modalLinks, setModalLinks] = useState<PartnerLink[] | LinkaProMonetization[]>([]);
+  const [partnerLinksTableData, setPartnerLinksTableData] = useState<PartnerLink[]>([]);
+  const [aiproLinksTableData, setAiproLinksTableData] = useState<LinkaProMonetization[]>([]);
 
   const steps = [
     {
@@ -204,7 +195,10 @@ export default function AgentBuilderPage() {
       const accessToken = localStorage.getItem("accessToken");
       if (!accessToken) {
         setError("No access token found. Please log in.");
-        toast.error("No access token found. Please log in.");
+        toast.error("No access token found. Please log in.", {
+          position: "top-right",
+          duration: 2000,
+        });
         setIsLoading(false);
         return;
       }
@@ -297,11 +291,17 @@ export default function AgentBuilderPage() {
         } else {
           const errorData = await response.json();
           setError(`Failed to fetch agent details: ${errorData.message || "Unknown error"}`);
-          toast.error(`Failed to fetch agent details: ${errorData.message || "Unknown error"}`);
+          toast.error(`Failed to fetch agent details: ${errorData.message || "Unknown error"}`, {
+            position: "top-right",
+            duration: 2000,
+          });
         }
       } catch (err) {
         setError("An error occurred while fetching agent details.");
-        toast.error("An error occurred while fetching agent details.");
+        toast.error("An error occurred while fetching agent details.", {
+          position: "top-right",
+          duration: 2000,
+        });
       } finally {
         setIsLoading(false);
       }
@@ -320,7 +320,10 @@ export default function AgentBuilderPage() {
       const accessToken = localStorage.getItem("accessToken");
       if (!accessToken) {
         setError("No access token found. Please log in.");
-        toast.error("No access token found. Please log in.");
+        toast.error("No access token found. Please log in.", {
+          position: "top-right",
+          duration: 2000,
+        });
         setIsLoading(false);
         return;
       }
@@ -353,10 +356,7 @@ export default function AgentBuilderPage() {
               productReview: link.product_review || "",
               status: link.status === 1 ? "active" : "inactive",
             }));
-            setAgentConfig((prev) => ({
-              ...prev,
-              partnerLinks: mappedLinks,
-            }));
+            setPartnerLinksTableData(mappedLinks);
           } else if (activeTab === "aipro") {
             const mappedLinks: LinkaProMonetization[] = links.map((link: any) => {
               if (link.type === "products") {
@@ -366,7 +366,7 @@ export default function AgentBuilderPage() {
                   category: link.category_name || "",
                   affiliateLink: link.affiliate_url || "",
                   categoryUrl: link.url || "",
-                  status: link.status === 1 ? "active" : "inactive",
+                  status: link.status,
                 };
               } else if (link.type === "blogs") {
                 return {
@@ -374,7 +374,7 @@ export default function AgentBuilderPage() {
                   proType: "blogs",
                   category: link.category_name || "",
                   blogUrl: link.url || "",
-                  status: link.status === 1 ? "active" : "inactive",
+                  status: link.status,
                 };
               } else if (link.type === "websites") {
                 return {
@@ -382,29 +382,30 @@ export default function AgentBuilderPage() {
                   proType: "websites",
                   category: link.category_name || "",
                   websiteUrl: link.url || "",
-                  status: link.status === 1 ? "active" : "inactive",
+                  status: link.status,
                 };
               }
               return null;
             }).filter((link: any) => link !== null);
-            console.log(mappedLinks);
-            setAgentConfig((prev) => ({
-              ...prev,
-              linkaProMonetizations: mappedLinks,
-            }));
+            setAiproLinksTableData(mappedLinks);
           }
 
-          console.log(agentConfig);
           setTotalPages(data.data.meta.total || 1);
-          // toast.success("Affiliate links loaded successfully!");
+          // toast.success("Links loaded successfully!");
         } else {
           const errorData = await response.json();
           setError(`Failed to fetch links: ${errorData.message || "Unknown error"}`);
-          toast.error(`Failed to fetch links: ${errorData.message || "Unknown error"}`);
+          toast.error(`Failed to fetch links: ${errorData.message || "Unknown error"}`, {
+            position: "top-right",
+            duration: 2000,
+          });
         }
       } catch (err) {
         setError("An error occurred while fetching links.");
-        toast.error("An error occurred while fetching links.");
+        toast.error("An error occurred while fetching links.", {
+          position: "top-right",
+          duration: 2000,
+        });
       } finally {
         setIsLoading(false);
       }
@@ -413,24 +414,190 @@ export default function AgentBuilderPage() {
     if (activeTab === "partner" || activeTab === "aipro") {
       fetchLinks();
     }
-  }, [activeTab, page, selectedMonetizationOption]); // Added selectedMonetizationOption
+  }, [activeTab, page, selectedMonetizationOption]);
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      setIsLoading(true);
+      const accessToken = localStorage.getItem("accessToken");
+      if (!accessToken) {
+        setError("No access token found. Please log in.");
+        toast.error("No access token found. Please log in.", {
+          position: "top-right",
+          duration: 2000,
+        });
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch(
+          "https://api.tagwell.co/api/v4/ai-agent/agent/progress",
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          setProgressData(data.data.progress);
+          setCurrentStep(data.data.progress.next_step || 1); // Set current step to next_step from API
+          // toast.success("Progress loaded successfully!");
+        } else {
+          const errorData = await response.json();
+          setError(
+            `Failed to fetch progress: ${errorData.message || "Unknown error"}`
+          );
+          toast.error(
+            `Failed to fetch progress: ${errorData.message || "Unknown error"}`, {
+            position: "top-right",
+            duration: 2000,
+          }
+          );
+        }
+      } catch (err) {
+        setError("An error occurred while fetching progress.");
+        toast.error("An error occurred while fetching progress.", {
+          position: "top-right",
+          duration: 2000,
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProgress();
+  }, []);
+
+  // useEffect(() => {
+  //   if (isMonetizationModalOpen) {
+  //     if (activeTab === "aipro" && !editingLinkId) {
+  //       setAgentConfig((prev) => ({
+  //         ...prev,
+  //         linkaProMonetizations: [],
+  //       }));
+  //       addLinkaProMonetization();
+  //     } else if (activeTab === "partner" && !editingPartnerLinkId) {
+  //       setAgentConfig((prev) => ({
+  //         ...prev,
+  //         partnerLinks: [],
+  //       }));
+  //       addPartnerLink();
+  //     }
+  //   }
+  //   return () => {
+  //     setAgentConfig((prev) => ({
+  //       ...prev,
+  //       linkaProMonetizations: [],
+  //       partnerLinks: [],
+  //     }));
+  //     // Only reset editing states, not the entire link arrays
+  //     setEditingLinkId(null);
+  //     setEditingPartnerLinkId(null);
+  //   };
+  // }, [isMonetizationModalOpen, activeTab, editingLinkId, editingPartnerLinkId]);
+
+  useEffect(() => {
+    console.log("Modal open:", isMonetizationModalOpen, "Active tab:", activeTab);
+    if (isMonetizationModalOpen) {
+      if (activeTab === "partner") {
+        setModalLinks([
+          {
+            id: Date.now().toString(),
+            category: "",
+            affiliateLink: "",
+            brandName: "",
+            socialMediaLink: "",
+            productReview: "",
+            status: 0,
+          },
+        ]);
+        console.log("Initialized modalLinks for partner:", modalLinks);
+      } else if (activeTab === "aipro") {
+        let newLink: LinkaProMonetization;
+        switch (selectedMonetizationOption) {
+          case "products":
+            newLink = {
+              id: Date.now().toString(),
+              proType: "products",
+              category: "",
+              affiliateLink: "",
+              categoryUrl: "",
+              status: 1,
+            };
+            break;
+          case "blogs":
+            newLink = {
+              id: Date.now().toString(),
+              proType: "blogs",
+              category: "",
+              blogUrl: "",
+              status: 1,
+            };
+            break;
+          case "websites":
+            newLink = {
+              id: Date.now().toString(),
+              proType: "websites",
+              category: "",
+              websiteUrl: "",
+              status: 1,
+            };
+            break;
+          default:
+            console.error("Unknown monetization option:", selectedMonetizationOption);
+            toast.error(`Unknown monetization option: ${selectedMonetizationOption}`, {
+              position: "top-right",
+              duration: 2000,
+            });
+            return;
+        }
+        setModalLinks([newLink]);
+        console.log("Initialized modalLinks for aipro:", [newLink]);
+      }
+    } else {
+      setModalLinks([]);
+      console.log("Reset modalLinks on modal close");
+    }
+  }, [isMonetizationModalOpen, activeTab, selectedMonetizationOption]);
+
+  // const handleEditLink = (index: number, type: "partner" | "aipro") => {
+  //   if (type === "partner") {
+  //     const link = agentConfig.partnerLinks[index];
+  //     setAgentConfig((prev) => ({
+  //       ...prev,
+  //       partnerLinks: [link], // Reset to only the link being edited
+  //     }));
+  //     setIsMonetizationModalOpen(true);
+  //     console.log("Editing partner link:", link);
+  //   } else {
+  //     const link = agentConfig.linkaProMonetizations[index];
+  //     setSelectedMonetizationOption(link.proType || "products");
+  //     setAgentConfig((prev) => ({
+  //       ...prev,
+  //       linkaProMonetizations: [link], // Reset to only the link being edited
+  //     }));
+  //     setIsMonetizationModalOpen(true);
+  //     console.log("Editing aipro link:", link);
+  //   }
+  // };
 
   const handleEditLink = (index: number, type: "partner" | "aipro") => {
     if (type === "partner") {
-      const link = agentConfig.partnerLinks[index];
-      setAgentConfig((prev) => ({
-        ...prev,
-        partnerLinks: [link], // Reset to only the link being edited
-      }));
+      const link = partnerLinksTableData[index];
+      setModalLinks([link]);
+      setEditingPartnerLinkId(link.id || null);
       setIsMonetizationModalOpen(true);
       console.log("Editing partner link:", link);
     } else {
-      const link = agentConfig.linkaProMonetizations[index];
+      const link = aiproLinksTableData[index];
       setSelectedMonetizationOption(link.proType || "products");
-      setAgentConfig((prev) => ({
-        ...prev,
-        linkaProMonetizations: [link], // Reset to only the link being edited
-      }));
+      setModalLinks([link]);
+      setEditingLinkId(link.id || null);
       setIsMonetizationModalOpen(true);
       console.log("Editing aipro link:", link);
     }
@@ -438,17 +605,23 @@ export default function AgentBuilderPage() {
 
   const handleDeleteLink = async (index: number, type: "partner" | "aipro") => {
     const linkId = type === "partner"
-      ? agentConfig.partnerLinks[index]?.id
-      : agentConfig.linkaProMonetizations[index]?.id;
+      ? partnerLinksTableData[index]?.id
+      : aiproLinksTableData[index]?.id;
 
     if (!linkId) {
-      toast.error("No ID found for this link.");
+      toast.error("No ID found for this link.", {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
-      toast.error("No access token found. Please log in.");
+      toast.error("No access token found. Please log in.", {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
@@ -465,34 +638,98 @@ export default function AgentBuilderPage() {
       );
 
       if (response.ok) {
-        // Update state to remove the deleted link
-        if (type === "partner") {
-          setAgentConfig((prev) => ({
-            ...prev,
-            partnerLinks: prev.partnerLinks.filter((link) => link.id !== linkId),
-          }));
-          if (agentConfig.partnerLinks.length === 1 && page > 1) {
-            setPage((prev) => prev - 1);
+        // Refetch links to update table data
+        const fetchLinksResponse = await fetch(
+          `https://api.tagwell.co/api/v4/ai-agent/agent/links/list?link_type=${type === "partner" ? "affiliate" : selectedMonetizationOption}&page=${page}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
           }
-          toast.success("Partner link deleted successfully!");
+        );
+
+        if (fetchLinksResponse.ok) {
+          const data = await fetchLinksResponse.json();
+          const links = data.data.link_list;
+
+          if (type === "partner") {
+            const mappedLinks: PartnerLink[] = links.map((link: any) => ({
+              id: link.id,
+              category: link.category_name || "",
+              affiliateLink: link.url || "",
+              brandName: link.brand_name || "",
+              socialMediaLink: link.social_media_link || "",
+              productReview: link.product_review || "",
+              status: link.status === 1 ? "active" : "inactive",
+            }));
+            setPartnerLinksTableData(mappedLinks);
+            if (mappedLinks.length === 0 && page > 1) {
+              setPage((prev) => prev - 1);
+            }
+            toast.success("Partner link deleted successfully!", {
+              position: "top-right",
+              duration: 2000,
+            });
+          } else {
+            const mappedLinks: LinkaProMonetization[] = links.map((link: any) => {
+              if (link.type === "products") {
+                return {
+                  id: link.id,
+                  proType: "products",
+                  category: link.category_name || "",
+                  affiliateLink: link.affiliate_url || "",
+                  categoryUrl: link.url || "",
+                  status: link.status,
+                };
+              } else if (link.type === "blogs") {
+                return {
+                  id: link.id,
+                  proType: "blogs",
+                  category: link.category_name || "",
+                  blogUrl: link.url || "",
+                  status: link.status,
+                };
+              } else if (link.type === "websites") {
+                return {
+                  id: link.id,
+                  proType: "websites",
+                  category: link.category_name || "",
+                  websiteUrl: link.url || "",
+                  status: link.status,
+                };
+              }
+              return null;
+            }).filter((link: any) => link !== null);
+            setAiproLinksTableData(mappedLinks);
+            if (mappedLinks.length === 0 && page > 1) {
+              setPage((prev) => prev - 1);
+            }
+            toast.success("AI Pro monetization link deleted successfully!", {
+              position: "top-right",
+              duration: 2000,
+            });
+          }
         } else {
-          setAgentConfig((prev) => ({
-            ...prev,
-            linkaProMonetizations: prev.linkaProMonetizations.filter(
-              (link) => link.id !== linkId
-            ),
-          }));
-          if (agentConfig.linkaProMonetizations.length === 1 && page > 1) {
-            setPage((prev) => prev - 1);
-          }
-          toast.success("AI Pro monetization link deleted successfully!");
+          const errorData = await fetchLinksResponse.json();
+          toast.error(`Failed to refresh links: ${errorData.message || "Unknown error"}`, {
+            position: "top-right",
+            duration: 2000,
+          });
         }
       } else {
         const errorData = await response.json();
-        toast.error(`Failed to delete link: ${errorData.message || "Unknown error"}`);
+        toast.error(`Failed to delete link: ${errorData.message || "Unknown error"}`, {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (err) {
-      toast.error("An error occurred while deleting the link.");
+      toast.error("An error occurred while deleting the link.", {
+        position: "top-right",
+        duration: 2000,
+      });
       console.error("Error deleting link:", err);
     }
   };
@@ -529,7 +766,10 @@ export default function AgentBuilderPage() {
       !conditionalForm.option1.label.trim() ||
       !conditionalForm.option2.label.trim()
     ) {
-      toast.error("Please fill in all required fields");
+      toast.error("Please fill in all required fields", {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
@@ -547,7 +787,10 @@ export default function AgentBuilderPage() {
       editingConditionalPrompt
         ? "Conditional prompt updated!"
         : "Conditional prompt added!"
-    );
+      , {
+        position: "top-right",
+        duration: 2000,
+      });
   };
 
   const deleteConditionalPrompt = (id: string) => {
@@ -555,7 +798,10 @@ export default function AgentBuilderPage() {
       ...prev,
       conditionalPrompts: prev.conditionalPrompts.filter((p) => p.id !== id),
     }));
-    toast.success("Conditional prompt deleted!");
+    toast.success("Conditional prompt deleted!", {
+      position: "top-right",
+      duration: 2000,
+    });
   };
 
   const updateConditionalForm = (field: string, value: any) => {
@@ -601,25 +847,28 @@ export default function AgentBuilderPage() {
     }));
   };
 
-  const updatePartnerLink = (
-    id: string,
-    field: string,
-    value: string | File | null
-  ) => {
-    setAgentConfig((prevConfig) => ({
-      ...prevConfig,
-      partnerLinks: prevConfig.partnerLinks.map((link) =>
-        link.id === id ? { ...link, [field]: value } : link
-      ),
-    }));
-  };
+  // const updatePartnerLink = (
+  //   id: string,
+  //   field: string,
+  //   value: string | File | null
+  // ) => {
+  //   setAgentConfig((prevConfig) => ({
+  //     ...prevConfig,
+  //     partnerLinks: prevConfig.partnerLinks.map((link) =>
+  //       link.id === id ? { ...link, [field]: value } : link
+  //     ),
+  //   }));
+  // };
 
   const removePartnerLink = (id: string) => {
     setAgentConfig((prev) => ({
       ...prev,
       partnerLinks: prev.partnerLinks.filter((link) => link.id !== id),
     }));
-    toast.success("Partner link removed!");
+    toast.success("Partner link removed!", {
+      position: "top-right",
+      duration: 2000,
+    });
   };
 
   type MonetizationLink = {
@@ -645,9 +894,51 @@ export default function AgentBuilderPage() {
       }
     );
 
+  // const addLinkaProMonetization = () => {
+  //   let newLink: LinkaProMonetization;
+
+  //   switch (selectedMonetizationOption) {
+  //     case "products":
+  //       newLink = {
+  //         id: Date.now().toString(),
+  //         proType: "products",
+  //         category: "",
+  //         affiliateLink: "",
+  //         categoryUrl: "",
+  //         status: 1,
+  //       };
+  //       break;
+  //     case "blogs":
+  //       newLink = {
+  //         id: Date.now().toString(),
+  //         proType: "blogs",
+  //         category: "",
+  //         blogUrl: "",
+  //         status: 1,
+  //       };
+  //       break;
+  //     case "websites":
+  //       newLink = {
+  //         id: Date.now().toString(),
+  //         proType: "websites",
+  //         category: "",
+  //         websiteUrl: "",
+  //         status: 1,
+  //       };
+  //       break;
+  //     default:
+  //       toast.error(`Unknown monetization option: ${selectedMonetizationOption}`);
+  //       return;
+  //   }
+
+  //   setAgentConfig((prev) => ({
+  //     ...prev,
+  //     linkaProMonetizations: [...prev.linkaProMonetizations, newLink],
+  //   }));
+  // };
+
   const addLinkaProMonetization = () => {
     let newLink: LinkaProMonetization;
-
     switch (selectedMonetizationOption) {
       case "products":
         newLink = {
@@ -678,25 +969,48 @@ export default function AgentBuilderPage() {
         };
         break;
       default:
-        toast.error(`Unknown monetization option: ${selectedMonetizationOption}`);
+        toast.error(`Unknown monetization option: ${selectedMonetizationOption}`, {
+          position: "top-right",
+          duration: 2000,
+        });
         return;
     }
-
-    setAgentConfig((prev) => ({
-      ...prev,
-      linkaProMonetizations: [...prev.linkaProMonetizations, newLink],
-    }));
+    setModalLinks((prev: any) => [...prev, newLink]);
   };
+
+  // const updateLinkaProMonetization = (
+  //   id: string,
+  //   field: keyof LinkaProMonetizationProduct | keyof LinkaProMonetizationBlog | keyof LinkaProMonetizationWebsite,
+  //   value: string
+  // ) => {
+  //   setAgentConfig((prev) => ({
+  //     ...prev,
+  //     linkaProMonetizations: prev.linkaProMonetizations.map((link) => link.id === id ? { ...link, [field]: value } : link),
+  //   }));
+  // };
 
   const updateLinkaProMonetization = (
     id: string,
     field: keyof LinkaProMonetizationProduct | keyof LinkaProMonetizationBlog | keyof LinkaProMonetizationWebsite,
     value: string
   ) => {
-    setAgentConfig((prev) => ({
-      ...prev,
-      linkaProMonetizations: prev.linkaProMonetizations.map((link) => link.id === id ? { ...link, [field]: value } : link),
-    }));
+    setModalLinks((prev: any) =>
+      prev.map((link: any) =>
+        link.id === id ? { ...link, [field]: value } : link
+      )
+    );
+  };
+
+  const updatePartnerLink = (
+    id: string,
+    field: string,
+    value: string
+  ) => {
+    setModalLinks((prev: any) =>
+      prev.map((link: any) =>
+        link.id === id ? { ...link, [field]: value } : link
+      )
+    );
   };
 
 
@@ -708,25 +1022,37 @@ export default function AgentBuilderPage() {
     console.log(event);
     const file = event.target.files?.[0];
     if (!file) {
-      toast.error("No file selected.");
+      toast.error("No file selected.", {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
-      toast.error("No access token found. Please log in.");
+      toast.error("No access token found. Please log in.", {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
     if (type === "image") {
       if (!file.type.includes("image")) {
-        toast.error("Please select a valid image file.");
+        toast.error("Please select a valid image file.", {
+          position: "top-right",
+          duration: 2000,
+        });
         return;
       }
 
       const maxSize = 5 * 1024 * 1024; // 5MB for image
       if (file.size > maxSize) {
-        toast.error("Image file size exceeds 5MB limit.");
+        toast.error("Image file size exceeds 5MB limit.", {
+          position: "top-right",
+          duration: 2000,
+        });
         return;
       }
 
@@ -746,9 +1072,12 @@ export default function AgentBuilderPage() {
         if (response.ok) {
           const data = await response.json();
           console.log(data);
-          const imageUrl = data.data.cdn + data.data.images[0]; 
+          const imageUrl = data.data.cdn + data.data.images[0];
           if (!imageUrl) {
-            toast.error("No image URL returned from the server.");
+            toast.error("No image URL returned from the server.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
 
@@ -766,29 +1095,44 @@ export default function AgentBuilderPage() {
           const errorData = await response.json();
           toast.error(
             `Failed to upload image: ${errorData.message || "Unknown error"}`
-          );
+            , {
+              position: "top-right",
+              duration: 2000,
+            });
         }
       } catch (error) {
         console.error("Error uploading image:", error);
         toast.error(
           "An error occurred while uploading the image. Please try again."
-        );
+          , {
+            position: "top-right",
+            duration: 2000,
+          });
       }
     } else if (type === "video") {
       if (!file.type.includes("video")) {
-        toast.error("Please select a valid video file.");
+        toast.error("Please select a valid video file.", {
+          position: "top-right",
+          duration: 2000,
+        });
         return;
       }
 
       const validFormats = ["video/mp4", "video/webm", "video/ogg"];
       if (!validFormats.includes(file.type)) {
-        toast.error("Unsupported video format. Please use MP4, WebM, or OGG.");
+        toast.error("Unsupported video format. Please use MP4, WebM, or OGG.", {
+          position: "top-right",
+          duration: 2000,
+        });
         return;
       }
 
       const maxSize = 10 * 1024 * 1024; // 10MB for video
       if (file.size > maxSize) {
-        toast.error("Video file size exceeds 10MB limit.");
+        toast.error("Video file size exceeds 10MB limit.", {
+          position: "top-right",
+          duration: 2000,
+        });
         return;
       }
 
@@ -806,10 +1150,13 @@ export default function AgentBuilderPage() {
 
         if (response.ok) {
           const data = await response.json();
-          const videoUrl = data.data.cdn + data.data.video; 
+          const videoUrl = data.data.cdn + data.data.video;
           console.log(videoUrl);
           if (!videoUrl) {
-            toast.error("No video URL returned from the server.");
+            toast.error("No video URL returned from the server.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
 
@@ -822,75 +1169,26 @@ export default function AgentBuilderPage() {
         } else {
           const errorData = await response.json();
           toast.error(
-            `Failed to upload video: ${errorData.message || "Unknown error"}`
+            `Failed to upload video: ${errorData.message || "Unknown error"}`, {
+            position: "top-right",
+            duration: 2000,
+          }
           );
         }
       } catch (error) {
         console.error("Error uploading video:", error);
         toast.error(
-          "An error occurred while uploading the video. Please try again."
+          "An error occurred while uploading the video. Please try again.",
+          {
+            position: "top-right",
+            duration: 2000,
+          }
         );
       }
     }
   };
 
-  useEffect(() => {
-    console.log("Modal opened, current linkaProMonetizations:", agentConfig.linkaProMonetizations);
-  }, [isMonetizationModalOpen, agentConfig.linkaProMonetizations]);
-
-  useEffect(() => {
-    console.log("agentConfig.linkaProMonetizations updated:", agentConfig.linkaProMonetizations);
-  }, [agentConfig.linkaProMonetizations]);
-
   const handleSave = async () => {
-    // try {
-    //   setIsSaving(true);
-    //   const response = await fetch("/api/settings", {
-    //     method: "PUT",
-    //     headers: { "Content-Type": "application/json" },
-    //     body: JSON.stringify({
-    //       agentName: agentConfig.name,
-    //       trainingInstructions: agentConfig.trainingInstructions,
-    //       agentPrompts: agentConfig.useConditionalPrompts
-    //         ? []
-    //         : agentConfig.prompts.filter((p) => p.trim()),
-    //       conditionalPrompts: agentConfig.useConditionalPrompts
-    //         ? agentConfig.conditionalPrompts
-    //         : [],
-    //       partnerLinks: agentConfig.partnerLinks.filter(
-    //         (link) => link.affiliateLink.trim() !== ""
-    //       ),
-    //       linkaProMonetizations: agentConfig.linkaProMonetizations.filter(
-    //         (link) => link.mainUrl.trim() !== ""
-    //       ),
-    //       greetingTitle: agentConfig.greetingTitle,
-    //     }),
-    //   });
-
-    //   const data = await response.json();
-
-    //   if (response.ok) {
-    //     const link = `${window.location.origin}/agent/${data.id || data.slug}`;
-    //     setAgentLink(link);
-    //     setIsModalOpen(true);
-
-    //     // Update progress data
-    //     setProgressData((prev) => ({
-    //       ...prev,
-    //       completed_steps: Math.max(prev?.completed_steps || 0, currentStep),
-    //       next_step: currentStep < 5 ? currentStep + 1 : 5,
-    //       current_status: `Saved step ${currentStep}`,
-    //       completed_at: new Date().toISOString(),
-    //     }));
-    //   } else {
-    //     alert(data.message || "Failed to save AI Agent");
-    //   }
-    // } catch (error) {
-    //   alert("An error occurred while saving");
-    //   console.error("Save error:", error);
-    // } finally {
-    //   setIsSaving(false);
-    // }
     console.log("first")
     const link = `abc.com`;
     setAgentLink(link);
@@ -899,13 +1197,19 @@ export default function AgentBuilderPage() {
 
   const nextStep = async () => {
     if (progressData && currentStep > progressData.completed_steps + 1) {
-      toast.error("Please complete the current step before proceeding.");
+      toast.error("Please complete the current step before proceeding.", {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
-      toast.error("No access token found");
+      toast.error("No access token found", {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
@@ -919,11 +1223,17 @@ export default function AgentBuilderPage() {
       switch (currentStep) {
         case 1:
           if (!agentConfig.greetingTitle.trim()) {
-            toast.error("Please provide a greeting title.");
+            toast.error("Please provide a greeting title.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
           if (!agentConfig.greeting.trim()) {
-            toast.error("Please provide a welcome greeting.");
+            toast.error("Please provide a welcome greeting.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
           apiUrl = "https://api.tagwell.co/api/v4/ai-agent/create-agent";
@@ -940,11 +1250,17 @@ export default function AgentBuilderPage() {
 
         case 2:
           if (!agentConfig.name.trim()) {
-            toast.error("Please provide an agent name.");
+            toast.error("Please provide an agent name.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
           if (!agentConfig.trainingInstructions.trim()) {
-            toast.error("Please provide training instructions.");
+            toast.error("Please provide training instructions.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
 
@@ -961,15 +1277,21 @@ export default function AgentBuilderPage() {
             agentConfig.prompts.every((prompt) => !prompt.trim())
           ) {
             toast.error(
-              "Please add at least one non-empty prompt or enable conditional prompts."
-            );
+              "Please add at least one non-empty prompt or enable conditional prompts.",
+              {
+                position: "top-right",
+                duration: 2000,
+              });
             return;
           }
           if (
             agentConfig.useConditionalPrompts &&
             agentConfig.conditionalPrompts.length === 0
           ) {
-            toast.error("Please add at least one conditional prompt.");
+            toast.error("Please add at least one conditional prompt.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
 
@@ -1024,7 +1346,10 @@ export default function AgentBuilderPage() {
             completed_at: new Date().toISOString(),
           }));
           setCurrentStep(5);
-          toast.success(`Step ${currentStep} saved successfully!`);
+          toast.success(`Step ${currentStep} saved successfully!`, {
+            position: "top-right",
+            duration: 2000,
+          });
           return; // Exit early to avoid executing API call logic
         // break;
 
@@ -1033,25 +1358,37 @@ export default function AgentBuilderPage() {
             !agentConfig.greetingTitle.trim() ||
             !agentConfig.greeting.trim()
           ) {
-            toast.error("Please complete Step 1: Greeting Media.");
+            toast.error("Please complete Step 1: Greeting Media.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
           if (!agentConfig.greetingMedia) {
-            toast.error("Please upload either an image or a video in Step 1.");
+            toast.error("Please upload either an image or a video in Step 1.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
           if (
             !agentConfig.name.trim() ||
             !agentConfig.trainingInstructions.trim()
           ) {
-            toast.error("Please complete Step 2: AI Training.");
+            toast.error("Please complete Step 2: AI Training.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
           if (
             !agentConfig.useConditionalPrompts &&
             agentConfig.prompts.every((prompt) => !prompt.trim())
           ) {
-            toast.error("Please add at least one non-empty prompt in Step 3.");
+            toast.error("Please add at least one non-empty prompt in Step 3.", {
+              position: "top-right",
+              duration: 2000,
+            });
             return;
           }
           if (
@@ -1059,7 +1396,10 @@ export default function AgentBuilderPage() {
             agentConfig.conditionalPrompts.length === 0
           ) {
             toast.error(
-              "Please add at least one conditional prompt in Step 3."
+              "Please add at least one conditional prompt in Step 3.", {
+              position: "top-right",
+              duration: 2000,
+            }
             );
             return;
           }
@@ -1090,7 +1430,10 @@ export default function AgentBuilderPage() {
           break;
 
         default:
-          toast.error("Invalid step.");
+          toast.error("Invalid step.", {
+            position: "top-right",
+            duration: 2000,
+          });
           return;
       }
 
@@ -1108,7 +1451,10 @@ export default function AgentBuilderPage() {
           currentStep === 3
             ? "AI Agent saved and published successfully!"
             : `Step ${currentStep} saved successfully!`
-        );
+          , {
+            position: "top-right",
+            duration: 2000,
+          });
         // Update progress data after successful save
         setProgressData((prev) => ({
           ...prev,
@@ -1121,81 +1467,207 @@ export default function AgentBuilderPage() {
       } else {
         const errorData = await response.json();
         toast.error(
-          `Failed to save Step ${currentStep}: ${errorData.message || "Unknown error"}`
+          `Failed to save Step ${currentStep}: ${errorData.message || "Unknown error"}`, {
+          position: "top-right",
+          duration: 2000,
+        }
         );
       }
     } catch (error) {
-      toast.error(`Error saving agent: ${error}`);
-      toast.error("An error occurred while saving. Please try again.");
+      toast.error(`Error saving agent: ${error}`, {
+        position: "top-right",
+        duration: 2000,
+      });
+      toast.error("An error occurred while saving. Please try again.", {
+        position: "top-right",
+        duration: 2000,
+      });
     }
   };
 
-
   const saveMonetization = async () => {
-    // Validate required fields based on selectedMonetizationOption
-    const hasEmptyRequiredFields = agentConfig.linkaProMonetizations.some((link) => {
-      if (link.proType === "products") {
-        return !link.category.trim() || !(link as LinkaProMonetizationProduct).categoryUrl?.trim();
-      } else if (link.proType === "blogs") {
-        return !link.category.trim() || !(link as LinkaProMonetizationBlog).blogUrl?.trim();
-      } else if (link.proType === "websites") {
-        return !link.category.trim() || !(link as LinkaProMonetizationWebsite).websiteUrl?.trim();
+    // Validate required fields
+    const hasEmptyRequiredFields = modalLinks.some((link) => {
+      if (activeTab === "partner") {
+        return (
+          !(link as PartnerLink).category.trim() ||
+          !(link as PartnerLink).brandName?.trim() ||
+          !(link as PartnerLink).affiliateLink.trim()
+        );
+      } else if (activeTab === "aipro") {
+        if ((link as LinkaProMonetization).proType === "products") {
+          return (
+            !link.category.trim() ||
+            !(link as LinkaProMonetizationProduct).categoryUrl?.trim()
+          );
+        } else if ((link as LinkaProMonetization).proType === "blogs") {
+          return (
+            !link.category.trim() ||
+            !(link as LinkaProMonetizationBlog).blogUrl?.trim()
+          );
+        } else if ((link as LinkaProMonetization).proType === "websites") {
+          return (
+            !link.category.trim() ||
+            !(link as LinkaProMonetizationWebsite).websiteUrl?.trim()
+          );
+        }
       }
       return false;
     });
 
     if (hasEmptyRequiredFields) {
       toast.error(
-        `Please fill in all required fields for ${selectedMonetizationOption}`
+        `Please fill in all required fields for ${activeTab === "partner" ? "Primary Recs" : selectedMonetizationOption}`, {
+        position: "top-right",
+        duration: 2000,
+      }
       );
       return;
     }
 
-    // Prepare payload for the API
+    // Prepare payload
     const payload = {
-      links: agentConfig.linkaProMonetizations.map((link) => ({
-        link_type: link.proType,
-        category_name: link.category,
-        affiliate_url: (link as LinkaProMonetizationProduct).affiliateLink || "",
-        main_url:
-          (link as LinkaProMonetizationProduct).categoryUrl ||
-          (link as LinkaProMonetizationBlog).blogUrl ||
-          (link as LinkaProMonetizationWebsite).websiteUrl ||
-          "",
-        brand_name: (link as LinkaProMonetizationProduct).affiliateLink ? link.category : "",
-        social_media_link: "",
-        product_review: "",
-        status: 1
-      })),
+      links: modalLinks.map((link) => {
+        if (activeTab === "partner") {
+          return {
+            link_type: "affiliate",
+            category_name: (link as PartnerLink).category,
+            affiliate_url: (link as PartnerLink).affiliateLink,
+            main_url: (link as PartnerLink).affiliateLink,
+            brand_name: (link as PartnerLink).brandName,
+            social_media_link: (link as PartnerLink).socialMediaLink || "",
+            product_review: (link as PartnerLink).productReview || "",
+            status: (link as PartnerLink).status,
+          };
+        } else {
+          return {
+            link_type: (link as LinkaProMonetization).proType,
+            category_name: link.category,
+            affiliate_url: (link as LinkaProMonetizationProduct).affiliateLink || "",
+            main_url:
+              (link as LinkaProMonetizationProduct).categoryUrl ||
+              (link as LinkaProMonetizationBlog).blogUrl ||
+              (link as LinkaProMonetizationWebsite).websiteUrl ||
+              "",
+            brand_name: (link as LinkaProMonetizationProduct).affiliateLink
+              ? link.category
+              : "",
+            social_media_link: "",
+            product_review: "",
+            status: link.status,
+          };
+        }
+      }),
     };
 
-    // Get access token
     const accessToken = localStorage.getItem("accessToken");
     if (!accessToken) {
-      toast.error("No access token found. Please log in.");
+      toast.error("No access token found. Please log in.", {
+        position: "top-right",
+        duration: 2000,
+      });
       return;
     }
 
     try {
-      const response = await fetch("https://api.tagwell.co/api/v4/ai-agent/add-links", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify(payload),
-      });
+      const response = await fetch(
+        "https://api.tagwell.co/api/v4/ai-agent/add-links",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
       if (response.ok) {
-        setIsMonetizationModalOpen(false);
-        // toast.success("Linka Pro monetization links saved successfully!");
+        // Refetch links to update table data
+        const fetchLinksResponse = await fetch(
+          `https://api.tagwell.co/api/v4/ai-agent/agent/links/list?link_type=${activeTab === "partner" ? "affiliate" : selectedMonetizationOption
+          }&page=${page}`,
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (fetchLinksResponse.ok) {
+          const data = await fetchLinksResponse.json();
+          const links = data.data.link_list;
+
+          if (activeTab === "partner") {
+            const mappedLinks: PartnerLink[] = links.map((link: any) => ({
+              id: link.id,
+              category: link.category_name || "",
+              affiliateLink: link.url || "",
+              brandName: link.brand_name || "",
+              socialMediaLink: link.social_media_link || "",
+              productReview: link.product_review || "",
+              status: link.status === 1 ? "active" : "inactive",
+            }));
+            setPartnerLinksTableData(mappedLinks);
+          } else {
+            const mappedLinks: LinkaProMonetization[] = links.map((link: any) => {
+              if (link.type === "products") {
+                return {
+                  id: link.id,
+                  proType: "products",
+                  category: link.category_name || "",
+                  affiliateLink: link.affiliate_url || "",
+                  categoryUrl: link.url || "",
+                  status: link.status,
+                };
+              } else if (link.type === "blogs") {
+                return {
+                  id: link.id,
+                  proType: "blogs",
+                  category: link.category_name || "",
+                  blogUrl: link.url || "",
+                  status: link.status,
+                };
+              } else if (link.type === "websites") {
+                return {
+                  id: link.id,
+                  proType: "websites",
+                  category: link.category_name || "",
+                  websiteUrl: link.url || "",
+                  status: link.status,
+                };
+              }
+              return null;
+            }).filter((link: any) => link !== null);
+            setAiproLinksTableData(mappedLinks);
+          }
+          setIsMonetizationModalOpen(false);
+          toast.success("Links saved successfully!", {
+            position: "top-right",
+            duration: 2000,
+          });
+        } else {
+          const errorData = await fetchLinksResponse.json();
+          toast.error(`Failed to refresh links: ${errorData.message || "Unknown error"}`, {
+            position: "top-right",
+            duration: 2000,
+          });
+        }
       } else {
         const errorData = await response.json();
-        toast.error(`Failed to save monetization links: ${errorData.message || "Unknown error"}`);
+        toast.error(`Failed to save links: ${errorData.message || "Unknown error"}`, {
+          position: "top-right",
+          duration: 2000,
+        });
       }
     } catch (error) {
-      console.error("Error saving monetization links:", error);
-      toast.error("An error occurred while saving monetization links. Please try again.");
+      console.error("Error saving links:", error);
+      toast.error("An error occurred while saving links. Please try again.", {
+        position: "top-right",
+        duration: 2000,
+      });
     }
   };
 
@@ -1237,7 +1709,10 @@ export default function AgentBuilderPage() {
                           className="w-full h-full object-cover rounded-full"
                           onError={() =>
                             toast.error(
-                              "Error loading video. Please ensure the file is a valid MP4, WebM, or OGG."
+                              "Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.", {
+                              position: "top-right",
+                              duration: 2000,
+                            }
                             )
                           }
                         />
@@ -1247,7 +1722,10 @@ export default function AgentBuilderPage() {
                           alt="Greeting Image"
                           className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                           onError={() =>
-                            toast.error("Error loading greeting image.")
+                            toast.error("Error loading greeting image.", {
+                              position: "top-right",
+                              duration: 2000,
+                            })
                           }
                         />
                       )
@@ -1586,7 +2064,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   </div>
                 )}
               </div>
-              {isLoading ? (
+              {/* {isLoading ? (
                 <p className="text-sm text-linka-night/60 text-center">Loading links...</p>
               ) : activeTab === "partner" && agentConfig.partnerLinks.length > 0 ? (
                 <div className="overflow-x-auto position-static">
@@ -1616,16 +2094,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
                             {link.category || ""}
                           </td>
-                          {/* <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            <a
-                              href={(link as any).categoryUrl || (link as any).blogUrl || (link as any).websiteUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-linka-carolina-blue hover:underline break-all"
-                            >
-                              {(link as any).categoryUrl || (link as any).blogUrl || (link as any).websiteUrl || ""}
-                            </a>
-                          </td> */}
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
                             {(() => {
                               const url = link.affiliateLink;
@@ -1713,7 +2181,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                     </thead>
                     <tbody>
                       {agentConfig.linkaProMonetizations.map((link: LinkaProMonetizationProduct | LinkaProMonetizationBlog | LinkaProMonetizationWebsite, index: number) => {
-                        // Determine the URL based on proType
                         let url: string | undefined;
                         if (link.proType === "products") {
                           url = (link as LinkaProMonetizationProduct).categoryUrl;
@@ -1810,6 +2277,208 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   {activeTab === "partner"
                     ? "No partner links added yet."
                     : "No monetization links added yet."}
+                </p>
+              )} */}
+              {isLoading ? (
+                <p className="text-sm text-linka-night/60 text-center">Loading links...</p>
+              ) : activeTab === "partner" && partnerLinksTableData.length > 0 ? (
+                <div className="overflow-x-auto position-static">
+                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                      <tr>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Category
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          URL
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Status
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {partnerLinksTableData.map((link, index) => (
+                        <tr
+                          key={link.id || index}
+                          className="bg-white border-b hover:bg-linka-alice-blue/10"
+                        >
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || ""}</td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            {link.affiliateLink ? (
+                              <a
+                                href={link.affiliateLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-linka-carolina-blue hover:underline"
+                              >
+                                Affiliate
+                              </a>
+                            ) : (
+                              <span>Affiliate</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs ${link.status === 0
+                                ? "bg-green-100 text-green-800"
+                                : "bg-red-100 text-red-800"
+                                }`}
+                            >
+                              {link.status}
+                            </span>
+                          </td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                                >
+                                  <DotsVerticalIcon className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                side="bottom"
+                                align="end"
+                                className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
+                              >
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                  onClick={() => handlePreviewLink(index)}
+                                >
+                                  Preview
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                  onClick={() => handleRetryLink(index)}
+                                >
+                                  Retry
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                                  onClick={() => handleDeleteLink(index, "partner")}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : activeTab === "aipro" && aiproLinksTableData.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                      <tr>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Category
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          URL
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Status
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aiproLinksTableData.map((link, index) => {
+                        let url: string | undefined;
+                        if (link.proType === "products") {
+                          url = (link as LinkaProMonetizationProduct).categoryUrl;
+                        } else if (link.proType === "blogs") {
+                          url = (link as LinkaProMonetizationBlog).blogUrl;
+                        } else if (link.proType === "websites") {
+                          url = (link as LinkaProMonetizationWebsite).websiteUrl;
+                        }
+
+                        return (
+                          <tr
+                            key={link.id || index}
+                            className="bg-white border-b hover:bg-linka-alice-blue/10"
+                          >
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              {link.category || "Unnamed Link"}
+                            </td>
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              {url ? (
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-linka-carolina-blue hover:underline"
+                                >
+                                  {link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}
+                                </a>
+                              ) : (
+                                <span>{link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              <span
+                                className={`px-2 py-1 rounded-full text-xs ${link.status === 1 ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
+                                  }`}
+                              >
+                                {link.status === 1 ? "Active" : "Inactive"}
+                              </span>
+                            </td>
+                            <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                                  >
+                                    <DotsVerticalIcon className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  side="bottom"
+                                  align="end"
+                                  className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
+                                >
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                    onClick={() => handleEditLink(index, "aipro")}
+                                  >
+                                    Preview
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                    onClick={() => handleRetryLink(index)}
+                                  >
+                                    Retry
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                                    onClick={() => handleDeleteLink(index, "aipro")}
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <p className="text-xs sm:text-sm text-linka-night/60 text-center">
+                  {activeTab === "partner" ? "No partner links added yet." : "No monetization links added yet."}
                 </p>
               )}
               {totalPages > 1 && (
@@ -2123,7 +2792,10 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                               loop
                               playsInline
                               className="w-full h-full object-cover rounded-full"
-                              onError={() => toast.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.")}
+                              onError={() => toast.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.", {
+                                position: "top-right",
+                                duration: 2000,
+                              })}
                             />
                           ) : (
                             <img
@@ -2132,7 +2804,10 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                               onError={() => {
                                 setImageError(true);
-                                toast.error("Error loading greeting image.");
+                                toast.error("Error loading greeting image.", {
+                                  position: "top-right",
+                                  duration: 2000,
+                                });
                               }}
                             />
                           )
@@ -2222,135 +2897,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
         return null;
     }
   };
-
-
-
-  useEffect(() => {
-    const fetchProgress = async () => {
-      setIsLoading(true);
-      const accessToken = localStorage.getItem("accessToken");
-      if (!accessToken) {
-        setError("No access token found. Please log in.");
-        toast.error("No access token found. Please log in.");
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        const response = await fetch(
-          "https://api.tagwell.co/api/v4/ai-agent/agent/progress",
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          const data = await response.json();
-          setProgressData(data.data.progress);
-          setCurrentStep(data.data.progress.next_step || 1); // Set current step to next_step from API
-          // toast.success("Progress loaded successfully!");
-        } else {
-          const errorData = await response.json();
-          setError(
-            `Failed to fetch progress: ${errorData.message || "Unknown error"}`
-          );
-          toast.error(
-            `Failed to fetch progress: ${errorData.message || "Unknown error"}`
-          );
-        }
-      } catch (err) {
-        setError("An error occurred while fetching progress.");
-        toast.error("An error occurred while fetching progress.");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProgress();
-  }, []);
-
-  // // Add new link when modal opens
-  // useEffect(() => {
-  //   if (
-  //     isMonetizationModalOpen &&
-  //     activeTab === "aipro" &&
-  //     agentConfig.linkaProMonetizations.length === 0
-  //   ) {
-  //     addLinkaProMonetization();
-  //   }
-  //   if (
-  //     isMonetizationModalOpen &&
-  //     activeTab === "partner" &&
-  //     agentConfig.partnerLinks.length === 0
-  //   ) {
-  //     addPartnerLink();
-  //   }
-  // }, [
-  //   isMonetizationModalOpen,
-  //   activeTab,
-  //   agentConfig.linkaProMonetizations.length,
-  //   agentConfig.partnerLinks.length,
-  // ]);
-
-  // useEffect(() => {
-  //   if (isMonetizationModalOpen && activeTab === "aipro") {
-  //     // Reset to empty or a single new link only if not editing
-  //     setAgentConfig((prev) => ({
-  //       ...prev,
-  //       linkaProMonetizations: [], // Start with no links
-  //     }));
-  //     // Add a new link if the modal is opened to add a new one
-  //     addLinkaProMonetization();
-  //   }
-  //   // Clean up when modal closes
-  //   return () => {
-  //     if (!isMonetizationModalOpen && activeTab === "aipro") {
-  //       setAgentConfig((prev) => ({
-  //         ...prev,
-  //         linkaProMonetizations: [], // Optional: Clear on close if needed
-  //       }));
-  //     }
-  //   };
-  // }, [isMonetizationModalOpen, activeTab]);
-
-
-  useEffect(() => {
-    if (isMonetizationModalOpen) {
-      if (activeTab === "aipro") {
-        if (!editingLinkId) {
-          setAgentConfig((prev) => ({
-            ...prev,
-            linkaProMonetizations: [],
-          }));
-          addLinkaProMonetization();
-        }
-      } else if (activeTab === "partner") {
-        if (!editingPartnerLinkId) {
-          setAgentConfig((prev) => ({
-            ...prev,
-            partnerLinks: [],
-          }));
-          addPartnerLink();
-        }
-      }
-    }
-    return () => {
-      if (!isMonetizationModalOpen) {
-        setAgentConfig((prev) => ({
-          ...prev,
-          linkaProMonetizations: [],
-          partnerLinks: [],
-        }));
-        setEditingLinkId(null);
-        setEditingPartnerLinkId(null);
-      }
-    };
-  }, [isMonetizationModalOpen, activeTab, editingLinkId, editingPartnerLinkId]);
-
 
   // For Preview action
   const handlePreviewLink = (index: any) => {
@@ -2467,7 +3013,6 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                   <>
                     <Button
                       onClick={handleSave}
-                      // disabled={isSaving || !agentLink} // Added condition to disable if no agentLink
                       className={`px-4 py-2 rounded-md text-white font-medium ${isSaving ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'}`}
                     >
                       {isSaving ? 'Saving...' : 'Save & Publish Agent'}
@@ -2641,155 +3186,143 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
           </DialogContent>
         </Dialog>
         <Dialog open={isMonetizationModalOpen} onOpenChange={setIsMonetizationModalOpen}>
-          <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm rounded-xl" key={agentConfig.linkaProMonetizations.length}>
+          <DialogContent className="sm:max-w-[600px] bg-white/95 backdrop-blur-sm rounded-xl">
             <DialogHeader>
               <DialogTitle className="text-linka-russian-violet">
-                {activeTab === "partner" ? "Primary Recs" :
-                  selectedMonetizationOption === "products" ? "Product Monetization" :
-                    selectedMonetizationOption === "blogs" ? "Blog Monetization" :
-                      selectedMonetizationOption === "websites" ? "Website Monetization" : "AI Pro Monetization"}
+                {activeTab === "partner"
+                  ? "Primary Recs"
+                  : selectedMonetizationOption === "products"
+                    ? "Product Monetization"
+                    : selectedMonetizationOption === "blogs"
+                      ? "Blog Monetization"
+                      : selectedMonetizationOption === "websites"
+                        ? "Website Monetization"
+                        : "AI Pro Monetization"}
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-4 sm:space-y-6 py-4 sm:py-6">
               {activeTab === "partner" ? (
-                // Existing partner links form (unchanged)
                 <div className="space-y-4">
-                  {agentConfig.partnerLinks.length > 0 ? (
-                    <div className="space-y-4">
-                      {agentConfig.partnerLinks.map((link) => (
-                        <Card
-                          key={link.id}
-                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
-                        >
-                          <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
-                              <div className="space-y-1 sm:space-y-2">
-                                <Label
-                                  htmlFor={`partner-category-${link.id}`}
-                                  className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                >
-                                  Category <span className="text-red-500">*</span>
-                                </Label>
-                                <Input
-                                  id={`partner-category-${link.id}`}
-                                  placeholder="e.g., Travel, Fashion"
-                                  value={link.category}
-                                  onChange={(e) =>
-                                    updatePartnerLink(link.id!, "category", e.target.value)
-                                  }
-                                  className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                />
-                              </div>
-                              <div className="space-y-1 sm:space-y-2">
-                                <Label
-                                  htmlFor={`partner-link-${link.id}`}
-                                  className="text-xs sm:text-sm text-linka-russian-violet font-medium"
-                                >
-                                  Affiliate Link <span className="text-red-500">*</span>
-                                </Label>
-                                <div className="relative">
-                                  <Input
-                                    id={`partner-link-${link.id}`}
-                                    placeholder="https://affiliate-link.com"
-                                    value={link.affiliateLink}
-                                    onChange={(e) =>
-                                      updatePartnerLink(link.id!, "affiliateLink", e.target.value)
-                                    }
-                                    className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                  />
-                                  <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
-                                </div>
-                              </div>
+                  {modalLinks.map((link) => (
+                    <Card
+                      key={link.id}
+                      className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
+                    >
+                      <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                          <div className="space-y-1 sm:space-y-2">
+                            <Label
+                              htmlFor={`partner-category-${link.id}`}
+                              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                            >
+                              Category <span className="text-red-500">*</span>
+                            </Label>
+                            <Input
+                              id={`partner-category-${link.id}`}
+                              placeholder="e.g., Travel, Fashion"
+                              value={(link as PartnerLink).category}
+                              onChange={(e) =>
+                                updatePartnerLink(link.id!, "category", e.target.value)
+                              }
+                              className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                            />
+                          </div>
+                          <div className="space-y-1 sm:space-y-2">
+                            <Label
+                              htmlFor={`partner-link-${link.id}`}
+                              className="text-xs sm:text-sm text-linka-russian-violet font-medium"
+                            >
+                              Affiliate Link <span className="text-red-500">*</span>
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id={`partner-link-${link.id}`}
+                                placeholder="https://affiliate-link.com"
+                                value={(link as PartnerLink).affiliateLink}
+                                onChange={(e) =>
+                                  updatePartnerLink(link.id!, "affiliateLink", e.target.value)
+                                }
+                                className="text-xs sm:text-sm h-8 sm:h-9 pl-8 sm:pl-10 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
+                              <LinkIcon className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 w-3 h-3 sm:w-4 sm:h-4 text-linka-dark-orange" />
                             </div>
-
-                            {/* Combined Row 2 & 3: Additional Information */}
-                            <div className="space-y-4">
-                              <div className="flex items-center space-x-2">
-                                <h3 className="text-linka-russian-violet font-semibold text-lg">
-                                  Additional Information
-                                </h3>
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <button>
-                                        <InfoIcon className="w-4 h-4 text-linka-russian-violet" />
-                                      </button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                      <p>Optional: Provide your AI-Agent with more context</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </div>
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                  <Label
-                                    htmlFor={`partner-social-${link.id}`}
-                                    className="text-linka-russian-violet font-medium"
-                                  >
-                                    Social Media Link
-                                  </Label>
-                                  <Input
-                                    id={`partner-social-${link.id}`}
-                                    placeholder="https://social-media.com"
-                                    value={link.socialMediaLink || ""}
-                                    onChange={(e) =>
-                                      updatePartnerLink(link.id!, "socialMediaLink", e.target.value)
-                                    }
-                                    className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label
-                                    htmlFor={`partner-review-${link.id}`}
-                                    className="text-linka-russian-violet font-medium"
-                                  >
-                                    Product Review
-                                  </Label>
-                                  <Input
-                                    id={`partner-review-${link.id}`}
-                                    placeholder="e.g., Great product!"
-                                    value={link.productReview || ""}
-                                    onChange={(e) =>
-                                      updatePartnerLink(link.id!, "productReview", e.target.value)
-                                    }
-                                    className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                  />
-                                </div>
-                                <div className="space-y-2">
-                                  <Label
-                                    htmlFor={`partner-brand-${link.id}`}
-                                    className="text-linka-russian-violet font-medium"
-                                  >
-                                    Brand Name
-                                  </Label>
-                                  <Input
-                                    id={`partner-brand-${link.id}`}
-                                    placeholder="e.g., TripAdvisor"
-                                    value={link.brandName}
-                                    onChange={(e) =>
-                                      updatePartnerLink(link.id!, "brandName", e.target.value)
-                                    }
-                                    className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
-                                  />
-                                </div>
-                              </div>
+                          </div>
+                        </div>
+                        <div className="space-y-4">
+                          <div className="flex items-center space-x-2">
+                            <h3 className="text-linka-russian-violet font-semibold text-lg">
+                              Additional Information
+                            </h3>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <button>
+                                    <InfoIcon className="w-4 h-4 text-linka-russian-violet" />
+                                  </button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Optional: Provide your AI-Agent with more context</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor={`partner-social-${link.id}`}
+                                className="text-linka-russian-violet font-medium"
+                              >
+                                Social Media Link
+                              </Label>
+                              <Input
+                                id={`partner-social-${link.id}`}
+                                placeholder="https://social-media.com"
+                                value={(link as PartnerLink).socialMediaLink || ""}
+                                onChange={(e) =>
+                                  updatePartnerLink(link.id!, "socialMediaLink", e.target.value)
+                                }
+                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
                             </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-6 sm:py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
-                      <LinkIcon className="w-8 h-8 sm:w-12 sm:h-12 text-linka-dark-orange/70 mx-auto mb-3 sm:mb-4" />
-                      <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet mb-1 sm:mb-2">
-                        No Partner Links Added
-                      </h3>
-                      <p className="text-xs sm:text-sm text-linka-night/60 mb-3 sm:mb-4">
-                        Add your first partner link to get started
-                      </p>
-                    </div>
-                  )}
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor={`partner-review-${link.id}`}
+                                className="text-linka-russian-violet font-medium"
+                              >
+                                Product Review
+                              </Label>
+                              <Input
+                                id={`partner-review-${link.id}`}
+                                placeholder="e.g., Great product!"
+                                value={(link as PartnerLink).productReview || ""}
+                                onChange={(e) =>
+                                  updatePartnerLink(link.id!, "productReview", e.target.value)
+                                }
+                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor={`partner-brand-${link.id}`}
+                                className="text-linka-russian-violet font-medium"
+                              >
+                                Brand Name
+                              </Label>
+                              <Input
+                                id={`partner-brand-${link.id}`}
+                                placeholder="e.g., TripAdvisor"
+                                value={(link as PartnerLink).brandName}
+                                onChange={(e) =>
+                                  updatePartnerLink(link.id!, "brandName", e.target.value)
+                                }
+                                className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                   <div className="flex justify-end gap-2 sm:gap-4 mt-3 sm:mt-4">
                     <Button
                       variant="outline"
@@ -2799,61 +3332,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                       Cancel
                     </Button>
                     <Button
-                      onClick={async () => {
-                        const hasEmptyRequiredFields = agentConfig.partnerLinks.some(
-                          (link) =>
-                            !link.category.trim() ||
-                            !link.brandName?.trim() ||
-                            !link.affiliateLink.trim()
-                        );
-                        if (hasEmptyRequiredFields) {
-                          toast.error(
-                            "Please fill in all required fields (Category, Brand Name, Affiliate Link)"
-                          );
-                          return;
-                        }
-                        const payload = {
-                          links: agentConfig.partnerLinks.map((link) => ({
-                            link_type: "affiliate",
-                            category_name: link.category,
-                            affiliate_url: link.affiliateLink,
-                            main_url: link.affiliateLink,
-                            brand_name: link.brandName,
-                            social_media_link: link.socialMediaLink || "",
-                            product_review: link.productReview || "",
-                          })),
-                        };
-                        const accessToken = localStorage.getItem("accessToken");
-                        if (!accessToken) {
-                          toast.error("No access token found. Please log in.");
-                          return;
-                        }
-                        try {
-                          const response = await fetch(
-                            "https://api.tagwell.co/api/v4/ai-agent/add-links",
-                            {
-                              method: "PUT",
-                              headers: {
-                                "Content-Type": "application/json",
-                                Authorization: `Bearer ${accessToken}`,
-                              },
-                              body: JSON.stringify(payload),
-                            }
-                          );
-                          if (response.ok) {
-                            setIsMonetizationModalOpen(false);
-                            // toast.success("Partner links saved successfully!");
-                          } else {
-                            const errorData = await response.json();
-                            toast.error(
-                              `Failed to save partner links: ${errorData.message || "Unknown error"}`
-                            );
-                          }
-                        } catch (error) {
-                          console.error("Error saving partner links:", error);
-                          toast.error("An error occurred while saving partner links. Please try again.");
-                        }
-                      }}
+                      onClick={saveMonetization}
                       className="bg-linka-dark-orange hover:bg-linka-dark-orange/80 transition-transform hover:scale-105 text-xs sm:text-sm h-8 sm:h-9"
                     >
                       <Save className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
@@ -2863,15 +3342,15 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                 </div>
               ) : (
                 <form onSubmit={handleSubmit}>
-                  {agentConfig.linkaProMonetizations.length > 0 ? (
+                  {modalLinks.length > 0 ? (
                     <div className="space-y-4">
-                      {agentConfig.linkaProMonetizations.map((link) => (
+                      {modalLinks.map((link) => (
                         <Card
-                          key={link.id} // Ensure unique key
+                          key={link.id}
                           className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 bg-white/90 rounded-lg shadow-md"
                         >
                           <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4 relative">
-                            {link.proType === "products" && (
+                            {(link as LinkaProMonetization).proType === "products" && (
                               <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                                 <div className="space-y-1 sm:space-y-2">
                                   <Label
@@ -2940,7 +3419,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                 </div>
                               </div>
                             )}
-                            {link.proType === "blogs" && (
+                            {(link as LinkaProMonetization).proType === "blogs" && (
                               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                                 <div className="space-y-1 sm:space-y-2">
                                   <Label
@@ -2981,7 +3460,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                                 </div>
                               </div>
                             )}
-                            {link.proType === "websites" && (
+                            {(link as LinkaProMonetization).proType === "websites" && (
                               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4">
                                 <div className="space-y-1 sm:space-y-2">
                                   <Label
@@ -3035,6 +3514,13 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
                       <p className="text-xs sm:text-sm text-linka-night/60 mb-3 sm:mb-4">
                         Add your first AI Pro monetization link to get started
                       </p>
+                      <Button
+                        onClick={addLinkaProMonetization}
+                        className="bg-linka-dark-orange hover:bg-linka-dark-orange/80 text-xs sm:text-sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add AI Pro Link
+                      </Button>
                     </div>
                   )}
                   <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4 mt-3 sm:mt-4">
@@ -3065,6 +3551,7 @@ You are Sabrina, the CEO of Croissants and Cafes website. You are warm, elegant,
             </div>
           </DialogContent>
         </Dialog>
+
       </div>
     </DashboardLayout >
   );

@@ -269,7 +269,10 @@ Here are some amazing activities and attractions in Monterey:
     if (!userSettings?.voiceEnabled) return
 
     setIsListening(!isListening)
-    toast.info(isListening ? 'Voice input stopped' : 'Voice input started')
+    toast.info(isListening ? 'Voice input stopped' : 'Voice input started', {
+      position: "top-right",
+      duration: 2000,
+    })
   }
 
   const handleLinkClick = async (linkId: string) => {

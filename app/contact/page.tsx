@@ -28,11 +28,17 @@ export default function ContactPage() {
     try {
       // Simulate form submission
       await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.success('Message sent successfully! We\'ll get back to you soon.')
+
+      toast.success('Message sent successfully! We\'ll get back to you soon.', {
+        position: "top-right",
+        duration: 2000,
+      })
       setFormData({ name: '', email: '', subject: '', message: '' })
     } catch (error) {
-      toast.error('Failed to send message. Please try again.')
+      toast.error('Failed to send message. Please try again.', {
+        position: "top-right",
+        duration: 2000,
+      })
     } finally {
       setIsLoading(false)
     }
@@ -41,7 +47,7 @@ export default function ContactPage() {
   return (
     <div className="min-h-screen bg-white">
       <Header />
-      
+
       <div className="container mx-auto max-w-6xl px-4 py-16">
         <div className="text-center mb-16">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">Contact Us</h1>
@@ -104,8 +110,8 @@ export default function ContactPage() {
                   />
                 </div>
 
-                <Button 
-                  type="submit" 
+                <Button
+                  type="submit"
                   className="w-full bg-orange-600 hover:bg-orange-700"
                   disabled={isLoading}
                 >
