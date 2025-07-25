@@ -56,6 +56,11 @@ function getOrCreatePublicId(user_id: number, agent_id: number) {
   return publicId;
 }
 
+// Helper to get localStorage key for chat history
+function getChatHistoryKey(public_id: string) {
+  return `chat_history_${public_id}`;
+}
+
 const AI_AGENT_URL = process.env.NEXT_PUBLIC_AI_AGENT_URL;
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -117,6 +122,32 @@ export default function AgentDetails() {
     fetchAgentDetails();
   }, []);
 
+  // Load chat history on mount
+  useEffect(() => {
+    if (!agentDetails) return;
+    const public_id = getOrCreatePublicId(agentDetails.user_id, agentDetails.id);
+    const key = getChatHistoryKey(public_id);
+    const saved = localStorage.getItem(key);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setMessages(parsed);
+        if (parsed.length > 0) {
+          setShowWelcome(false);
+          setShowPrompts(false);
+        }
+      } catch {}
+    }
+  }, [agentDetails]);
+
+  // Save chat history whenever messages change
+  useEffect(() => {
+    if (!agentDetails) return;
+    const public_id = getOrCreatePublicId(agentDetails.user_id, agentDetails.id);
+    const key = getChatHistoryKey(public_id);
+    localStorage.setItem(key, JSON.stringify(messages));
+  }, [messages, agentDetails]);
+
   // Handle sending a message
   const handleSendMessage = async () => {
     if (!input.trim()) return;
@@ -159,12 +190,22 @@ export default function AgentDetails() {
         const { value, done: readerDone } = await reader.read();
         done = readerDone;
         if (value) {
-          assistantText += decoder.decode(value);
-          // Show typing animation (add a cursor at the end)
+          let chunk = decoder.decode(value);
+          assistantText += chunk;
+
+          // Clean the entire accumulated text before rendering
+          let cleanedText = assistantText
+            .replace(/\[METAID:[^\]]+\]/g, '') // Remove meta IDs
+            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '') // Remove all markdown links
+            .replace(/Check\s?them\s?out\s?here/gi, '') // Remove "Check them out here" text
+            .replace(/\s{2,}/g, ' ') // Remove extra spaces
+            .replace(/(\d+\.\s.*?)(?=\d+\.\s|$)/gs, '\n\n$1\n\n') // Add blank line after each numbered point
+            .trim();
+
           setMessages((prev) => {
             const updated = [...prev];
             updated[updated.length - 1] = {
-              text: assistantText + (done ? '' : '▍'),
+              text: cleanedText + (done ? '' : '▍'),
               sender: 'assistant',
             };
             return updated;
@@ -172,10 +213,16 @@ export default function AgentDetails() {
         }
       }
 
-      // Remove typing cursor when done
+      // After streaming, update the message one last time (without cursor)
       setMessages((prev) => {
         const updated = [...prev];
-        const cleanedText = assistantText.replace(/\[METAID:[^\]]+\]/g, '');
+        let cleanedText = assistantText
+          .replace(/\[METAID:[^\]]+\]/g, '')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
+          .replace(/Check\s?them\s?out\s?here/gi, '')
+          .replace(/\s{2,}/g, ' ')
+          .replace(/(\d+\.\s.*?)(?=\d+\.\s|$)/gs, '$1\n\n') // <-- Add this line!
+          .trim();
         updated[updated.length - 1] = {
           text: cleanedText,
           sender: 'assistant',
@@ -183,7 +230,6 @@ export default function AgentDetails() {
         return updated;
       });
 
-      // Check for [METAID:{id}] pattern after streaming is done
       const metaIdMatches = [...assistantText.matchAll(/\[METAID:([^\]]+)\]/g)];
       const metaResults: any[] = [];
       for (const match of metaIdMatches) {
@@ -331,7 +377,19 @@ export default function AgentDetails() {
                       {/* Render markdown, but hide links */}
                       <ReactMarkdown
                         components={{
-                          a: ({ node, ...props }) => <span style={{ color: '#888' }}>{props.children}</span>,
+                          li: ({ node, ...props }) => (
+                            <li style={{ marginBottom: '1em' }} {...props} />
+                          ),
+                          a: ({ node, ...props }) => (
+                            <a
+                              href={props.href}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: 500 }}
+                            >
+                              {props.children}
+                            </a>
+                          ),
                         }}
                       >
                         {message.text}
@@ -347,24 +405,32 @@ export default function AgentDetails() {
                 {/* Meta cards slider */}
                 {message.sender === 'meta' && message.metaCards && (
                   <div className="w-full py-2">
-                    <div className="flex gap-4 overflow-x-auto px-1 meta-scrollbar-hide">
+                    <div className="flex gap-2 overflow-x-auto px-1 meta-scrollbar-hide">
                       {message.metaCards.map((meta, idx) => (
-                        <div
+                        <a
                           key={meta.metaId || idx}
-                          className="min-w-[150px] max-w-[180px] sm:min-w-[180px] sm:max-w-[200px] bg-white rounded-xl shadow border border-gray-200 flex flex-col items-center p-3"
-                          style={{ flex: '0 0 auto' }}
+                          href={meta.affiliateLink || meta.url || '#'}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="min-w-[140px] max-w-[160px] sm:min-w-[170px] sm:max-w-[190px] bg-white rounded-xl shadow border border-gray-200 flex flex-col items-center p-0 hover:shadow-lg transition-shadow duration-200"
+                          style={{ flex: '0 0 auto', textDecoration: 'none' }}
                         >
-                          <div className="w-[110px] h-[110px] sm:w-[130px] sm:h-[130px] rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
+                          <div className="w-full h-[110px] sm:h-[130px] rounded-t-xl overflow-hidden flex items-center justify-center bg-gray-100">
                             <img
-                              src={meta.image || 'https://via.placeholder.com/110'}
+                              src={meta.image || 'https://via.placeholder.com/160'}
                               alt={meta.title}
                               className="w-full h-full object-cover"
                             />
                           </div>
-                          <div className="mt-2 text-sm sm:text-base font-semibold text-center text-gray-800 line-clamp-2">
-                            {meta.title}
+                          <div className="px-2 py-2 w-full flex flex-col items-center">
+                            <div className="text-xs sm:text-sm font-bold text-gray-900 text-center line-clamp-2">
+                              {meta.title}
+                            </div>
+                            <div className="text-xs text-gray-500 font-medium mt-1 text-center">
+                              {meta.brand}
+                            </div>
                           </div>
-                        </div>
+                        </a>
                       ))}
                     </div>
                   </div>
@@ -446,6 +512,21 @@ export default function AgentDetails() {
           display: none; /* Chrome, Safari, Opera */
           width: 0;
           height: 0;
+        }
+        .meta-scrollbar-hide {
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+        }
+        .meta-scrollbar-hide::-webkit-scrollbar {
+          display: none;
+          width: 0;
+          height: 0;
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
         }
         `}</style>
       </div>

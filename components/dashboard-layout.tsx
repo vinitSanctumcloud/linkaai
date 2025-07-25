@@ -28,6 +28,7 @@ import logoDark from '@/public/logo2.png';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '@/store';
 import { initializeAuthState, logout } from '@/store/slices/authSlice';
+import { fetchAgentDetails } from '@/store/slices/agentSlice'
 import './style.css';
 
 // Define interfaces for type safety
@@ -67,6 +68,10 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   // Initialize auth state on mount
   useEffect(() => {
     dispatch(initializeAuthState());
+  }, [dispatch]);
+
+  useEffect(() => {
+    dispatch(fetchAgentDetails());
   }, [dispatch]);
 
   // Fetch random user profile
