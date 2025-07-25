@@ -249,6 +249,7 @@ export default function AgentDetails() {
             const metaData = await metaRes.json();
             const meta = metaData.data;
             metaResults.push(meta);
+            console.log("metaResults", metaResults);
           }
         } catch (err) {
           // Optionally handle error
@@ -260,22 +261,13 @@ export default function AgentDetails() {
           { text: '', sender: 'meta', metaCards: metaResults }
         ]);
       }
+      
     } catch (error) {
       setMessages((prev) => [
         ...prev,
         { text: 'Error fetching response. Please try again.', sender: 'assistant' },
       ]);
     }
-  };
-
-  // Handle confirmation buttons
-  const handleConfirmation = (response: 'yes' | 'no') => {
-    const confirmationMessage: Message = {
-      text: response === 'yes' ? "Great! I'll provide details about this reel." : "Okay, let me find another reel for you.",
-      sender: 'assistant',
-    };
-    setMessages((prev) => [...prev, confirmationMessage]);
-    setShowConfirmation(false);
   };
 
   // Handle Enter key press
@@ -324,11 +316,21 @@ export default function AgentDetails() {
             <div className="bg-gradient-to-r  p-4 rounded-t-2xl">
               <div className="flex flex-col items-center">
                 <div className="w-48 h-48 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 border-white shadow-md">
-                  <img
-                    src={agentDetails.greeting_media_url || 'https://via.placeholder.com/150'}
-                    alt={agentDetails.agent_name}
-                    className="w-full h-full object-cover"
-                  />
+                  {agentDetails.greeting_media_type === 'video' ? (
+                    <video
+                      src={agentDetails.greeting_media_url}
+                      autoPlay
+                      muted={false} // Enable audio
+                      loop // Play video in a loop
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <img
+                      src={agentDetails.greeting_media_url || 'https://via.placeholder.com/150'}
+                      alt={agentDetails.agent_name || 'Agent Avatar'}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
                 </div>
                 <h2 className="mt-2 text-lg sm:text-xl font-semibold text-black">
                   {agentDetails.agent_name || `Agent`}
@@ -380,11 +382,13 @@ export default function AgentDetails() {
                         : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
                         }`}
                     >
-                      {/* Render markdown, but hide links */}
                       <ReactMarkdown
                         components={{
                           li: ({ node, ...props }) => (
-                            <li style={{ marginBottom: '1em' }} {...props} />
+                            <li style={{ marginBottom: '1em' }} {...props} /> // Add spacing between list items
+                          ),
+                          p: ({ node, ...props }) => (
+                            <p style={{ marginBottom: '1em' }} {...props} /> // Add spacing between paragraphs
                           ),
                           a: ({ node, ...props }) => (
                             <a
@@ -398,13 +402,8 @@ export default function AgentDetails() {
                           ),
                         }}
                       >
-                        {message.text}
+                        {message.text.replace(/(\d+\.\s)/g, '\n$1')}
                       </ReactMarkdown>
-                      {message.image && (
-                        <div className="mt-2 w-full max-w-[120px] sm:max-w-[150px] aspect-[9/16] rounded-lg overflow-hidden">
-                          <img src={message.image} alt="Chat Image" className="w-full h-full object-cover" />
-                        </div>
-                      )}
                     </div>
                   </div>
                 )}
@@ -415,25 +414,44 @@ export default function AgentDetails() {
                       {message.metaCards.map((meta, idx) => (
                         <a
                           key={meta.metaId || idx}
-                          href={meta.affiliateLink || meta.url || '#'}
+                          href={meta.url || '#'}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="min-w-[140px] max-w-[160px] sm:min-w-[170px] sm:max-w-[190px] bg-white rounded-xl shadow border border-gray-200 flex flex-col items-center p-0 hover:shadow-lg transition-shadow duration-200"
                           style={{ flex: '0 0 auto', textDecoration: 'none' }}
                         >
+                          {/* Image */}
                           <div className="w-full h-[110px] sm:h-[130px] rounded-t-xl overflow-hidden flex items-center justify-center bg-gray-100">
                             <img
                               src={meta.image || 'https://via.placeholder.com/160'}
-                              alt={meta.title}
+                              alt={meta.title || 'Image'}
                               className="w-full h-full object-cover"
                             />
                           </div>
+
+                          {/* Title */}
                           <div className="px-2 py-2 w-full flex flex-col items-center">
                             <div className="text-xs sm:text-sm font-bold text-gray-900 text-center line-clamp-2">
-                              {meta.title}
+                              {meta.title || 'No Title Available'}
                             </div>
-                            <div className="text-xs text-gray-500 font-medium mt-1 text-center">
-                              {meta.brand}
+
+                            {/* Description */}
+                            <div className="text-xs text-gray-500 font-medium mt-1 text-center line-clamp-3">
+                              {meta.description || 'No description available.'}
+                            </div>
+
+                            {/* Brand Name with Favicon */}
+                            <div className="flex items-center gap-2 mt-2">
+                              {meta.favicon ? (
+                                <img
+                                  src={meta.favicon}
+                                  alt={meta.brand || 'Brand'}
+                                  className="w-4 h-4"
+                                />
+                              ) : (
+                                <div className="w-4 h-4 bg-gray-200 rounded-full"></div> // Placeholder for missing favicon
+                              )}
+                              <span className="text-xs text-gray-600 font-medium">{meta.brand || 'Unknown Brand'}</span>
                             </div>
                           </div>
                         </a>
@@ -510,6 +528,14 @@ export default function AgentDetails() {
           -webkit-box-orient: vertical;
           overflow: hidden;
         }
+        .line-clamp-3 {
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          font-size: 11px;
+          text-align: left;
+        }
         .meta-scrollbar-hide {
           scrollbar-width: none; /* Firefox */
           -ms-overflow-style: none; /* IE 10+ */
@@ -533,6 +559,7 @@ export default function AgentDetails() {
           -webkit-line-clamp: 2;
           -webkit-box-orient: vertical;
           overflow: hidden;
+          font-size: 12px;
         }
         `}</style>
       </div>

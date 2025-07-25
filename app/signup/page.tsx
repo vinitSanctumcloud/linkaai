@@ -350,7 +350,7 @@ export default function SignupPage() {
                     {formData.user_varient === 'CREATOR' && (
                       <div className="mt-3">
                         <Label className="text-sm font-medium text-gray-700 block">
-                          Enter Social handle Name
+                          Enter Social Media URL
                         </Label>
                         <Input
                           type="text"

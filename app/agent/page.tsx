@@ -1081,6 +1081,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           });
       }
     } else if (type === "video") {
+
       if (!file.type.includes("video")) {
         toast.error("Please select a valid video file.", {
           position: "top-right",
@@ -1098,9 +1099,10 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
         return;
       }
 
-      const maxSize = 10 * 1024 * 1024; // 10MB for video
+      const maxSize = 30 * 1024 * 1024; // 30MB for video
       if (file.size > maxSize) {
-        toast.error("Video file size exceeds 10MB limit.", {
+
+        toast.error("Video file size exceeds 30MB limit.", {
           position: "top-right",
           duration: 2000,
         });
