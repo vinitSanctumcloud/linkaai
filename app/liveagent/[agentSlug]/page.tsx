@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { FaMicrophone } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
+import ReactMarkdown from 'react-markdown';
 
 interface Prompt {
   id: number;
@@ -38,9 +39,25 @@ interface ApiResponse {
 
 interface Message {
   text: string;
-  sender: 'user' | 'assistant';
+  sender: 'user' | 'assistant' | 'meta';
   image?: string;
+  metaCards?: any[];
 }
+
+function getOrCreatePublicId(user_id: number, agent_id: number) {
+  const key = `public_id_${user_id}_${agent_id}`;
+  let publicId = localStorage.getItem(key);
+  if (!publicId) {
+    // Generate a browser-unique ID
+    const uuid = crypto.randomUUID();
+    publicId = `${user_id}-${agent_id}-${uuid}`;
+    localStorage.setItem(key, publicId);
+  }
+  return publicId;
+}
+
+const AI_AGENT_URL = process.env.NEXT_PUBLIC_AI_AGENT_URL;
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 export default function AgentDetails() {
   const [agentDetails, setAgentDetails] = useState<AiAgent | null>(null);
@@ -51,6 +68,7 @@ export default function AgentDetails() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [showPrompts, setShowPrompts] = useState(true);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [metaCards, setMetaCards] = useState<any[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Scroll to the latest message
@@ -72,7 +90,7 @@ export default function AgentDetails() {
     async function fetchAgentDetails() {
       try {
         const response = await fetch(
-          `https://api.tagwell.co/api/v4/ai-agent/get-agent/details/${slug}`,
+          `${API_BASE_URL}/v4/ai-agent/get-agent/details/${slug}`,
           {
             method: 'GET',
             headers: {
@@ -103,21 +121,99 @@ export default function AgentDetails() {
   const handleSendMessage = async () => {
     if (!input.trim()) return;
 
+    const public_id = getOrCreatePublicId(agentDetails?.user_id, agentDetails?.id);
+
     const newMessage: Message = { text: input, sender: 'user' };
-    setMessages([...messages, newMessage]);
+    setMessages((prev) => [...prev, newMessage]);
     setInput('');
     setShowWelcome(false);
     setShowPrompts(false);
 
-    setTimeout(() => {
-      setShowConfirmation(true);
-      const assistantResponse: Message = {
-        text: "Is this the reel you're asking about?",
-        sender: 'assistant',
-        image: 'https://via.placeholder.com/180x320',
-      };
-      setMessages((prev) => [...prev, assistantResponse]);
-    }, 1000);
+    // Add a placeholder for the assistant's streaming response
+    let assistantText = '';
+    setMessages((prev) => [...prev, { text: '', sender: 'assistant' }]);
+
+    try {
+      const response = await fetch(`${AI_AGENT_URL}/api/chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query: input,
+          user_id: agentDetails?.user_id,
+          agent_id: agentDetails?.id,
+          public_id,
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        throw new Error('API request failed');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let done = false;
+
+      while (!done) {
+        const { value, done: readerDone } = await reader.read();
+        done = readerDone;
+        if (value) {
+          assistantText += decoder.decode(value);
+          // Show typing animation (add a cursor at the end)
+          setMessages((prev) => {
+            const updated = [...prev];
+            updated[updated.length - 1] = {
+              text: assistantText + (done ? '' : '▍'),
+              sender: 'assistant',
+            };
+            return updated;
+          });
+        }
+      }
+
+      // Remove typing cursor when done
+      setMessages((prev) => {
+        const updated = [...prev];
+        const cleanedText = assistantText.replace(/\[METAID:[^\]]+\]/g, '');
+        updated[updated.length - 1] = {
+          text: cleanedText,
+          sender: 'assistant',
+        };
+        return updated;
+      });
+
+      // Check for [METAID:{id}] pattern after streaming is done
+      const metaIdMatches = [...assistantText.matchAll(/\[METAID:([^\]]+)\]/g)];
+      const metaResults: any[] = [];
+      for (const match of metaIdMatches) {
+        const metaId = match[1];
+        try {
+          const metaRes = await fetch(`${AI_AGENT_URL}/api/get-meta?id=${metaId}`, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' },
+          });
+          if (metaRes.ok) {
+            const metaData = await metaRes.json();
+            const meta = metaData.data;
+            metaResults.push(meta);
+          }
+        } catch (err) {
+          // Optionally handle error
+        }
+      }
+      if (metaResults.length > 0) {
+        setMessages((prev) => [
+          ...prev,
+          { sender: 'meta', metaCards: metaResults }
+        ]);
+      }
+    } catch (error) {
+      setMessages((prev) => [
+        ...prev,
+        { text: 'Error fetching response. Please try again.', sender: 'assistant' },
+      ]);
+    }
   };
 
   // Handle confirmation buttons
@@ -178,12 +274,12 @@ export default function AgentDetails() {
                 <div className="w-20 h-20 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 border-white shadow-md">
                   <img
                     src={agentDetails.greeting_media_url || 'https://via.placeholder.com/150'}
-                    alt={agentDetails.greeting_title}
+                    alt={agentDetails.agent_name}
                     className="w-full h-full object-cover"
                   />
                 </div>
                 <h2 className="mt-2 text-lg sm:text-xl font-semibold text-black">
-                  {agentDetails.greeting_title || `Hi, I'm ${agentDetails.agent_name}`}
+                  {agentDetails.agent_name || `Agent`}
                 </h2>
                 <p className="text-sm text-gray-500">{agentDetails.welcome_greeting}</p>
               </div>
@@ -213,73 +309,69 @@ export default function AgentDetails() {
           {/* Chat Messages Area */}
           <div className="flex-grow overflow-y-auto p-4 no-scrollbar">
             {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}
-              >
-                {message.sender === 'assistant' && (
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden mr-2">
-                    <img
-                      src={agentDetails.avatar_image_url || 'https://via.placeholder.com/150'}
-                      alt="Assistant"
-                      className="w-full h-full object-cover"
-                    />
+              <React.Fragment key={index}>
+                {/* Normal chat message */}
+                {(message.sender === 'user' || message.sender === 'assistant') && (
+                  <div className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'} mb-4`}>
+                    {message.sender === 'assistant' && (
+                      <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden mr-2">
+                        <img
+                          src={agentDetails.avatar_image_url || 'https://via.placeholder.com/150'}
+                          alt="Assistant"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                    <div
+                      className={`max-w-[70%] rounded-2xl p-3 shadow-md ${message.sender === 'user'
+                        ? 'bg-blue-600 text-white rounded-br-none'
+                        : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
+                        }`}
+                    >
+                      {/* Render markdown, but hide links */}
+                      <ReactMarkdown
+                        components={{
+                          a: ({ node, ...props }) => <span style={{ color: '#888' }}>{props.children}</span>,
+                        }}
+                      >
+                        {message.text}
+                      </ReactMarkdown>
+                      {message.image && (
+                        <div className="mt-2 w-full max-w-[120px] sm:max-w-[150px] aspect-[9/16] rounded-lg overflow-hidden">
+                          <img src={message.image} alt="Chat Image" className="w-full h-full object-cover" />
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
-                <div
-                  className={`max-w-[70%] rounded-2xl p-3 shadow-md ${message.sender === 'user'
-                    ? 'bg-blue-600 text-white rounded-br-none'
-                    : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
-                    }`}
-                >
-                  <p className="text-sm sm:text-base leading-relaxed">{message.text}</p>
-                  {message.image && (
-                    <div className="mt-2 w-full max-w-[120px] sm:max-w-[150px] aspect-[9/16] rounded-lg overflow-hidden">
-                      <img src={message.image} alt="Chat Image" className="w-full h-full object-cover" />
+                {/* Meta cards slider */}
+                {message.sender === 'meta' && message.metaCards && (
+                  <div className="w-full py-2">
+                    <div className="flex gap-4 overflow-x-auto px-1 meta-scrollbar-hide">
+                      {message.metaCards.map((meta, idx) => (
+                        <div
+                          key={meta.metaId || idx}
+                          className="min-w-[150px] max-w-[180px] sm:min-w-[180px] sm:max-w-[200px] bg-white rounded-xl shadow border border-gray-200 flex flex-col items-center p-3"
+                          style={{ flex: '0 0 auto' }}
+                        >
+                          <div className="w-[110px] h-[110px] sm:w-[130px] sm:h-[130px] rounded-lg overflow-hidden flex items-center justify-center bg-gray-100">
+                            <img
+                              src={meta.image || 'https://via.placeholder.com/110'}
+                              alt={meta.title}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="mt-2 text-sm sm:text-base font-semibold text-center text-gray-800 line-clamp-2">
+                            {meta.title}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                )}
+              </React.Fragment>
             ))}
 
-            {/* Confirmation Message */}
-            {showConfirmation && (
-              <div className="flex justify-start mb-4">
-                <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden mr-2">
-                  <img
-                    src={agentDetails.avatar_image_url || 'https://via.placeholder.com/150'}
-                    alt="Assistant"
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="max-w-[70%] bg-white rounded-2xl p-3 shadow-md rounded-bl-none border border-gray-200">
-                  <p className="text-sm sm:text-base leading-relaxed">
-                    Sure! Just to confirm, is this the reel you're asking about?
-                  </p>
-                  <div className="mt-2 w-full max-w-[120px] sm:max-w-[150px] aspect-[9/16] rounded-lg overflow-hidden">
-                    <img
-                      src="https://via.placeholder.com/180x320"
-                      alt="Confirmation Reel"
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <button
-                      onClick={() => handleConfirmation('yes')}
-                      className="bg-blue-600 text-white py-1.5 px-4 rounded-full hover:bg-blue-700 text-sm font-semibold transition-colors duration-200"
-                    >
-                      Yes, that's the one
-                    </button>
-                    <button
-                      onClick={() => handleConfirmation('no')}
-                      className="bg-gray-200 text-gray-900 py-1.5 px-4 rounded-full hover:bg-gray-300 text-sm font-semibold transition-colors duration-200"
-                    >
-                      No, show me others
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
             <div ref={chatEndRef} />
           </div>
 
@@ -326,6 +418,35 @@ export default function AgentDetails() {
             height: 0;
             display: none;
           }
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        @media (max-width: 640px) {
+          .line-clamp-2 {
+            font-size: 0.85rem;
+          }
+        }
+        @media (min-width: 641px) {
+          .line-clamp-2 {
+            font-size: 1rem;
+          }
+        }
+        .line-clamp-2 {
+          display: -webkit-box;
+          -webkit-line-clamp: 2;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+        }
+        .meta-scrollbar-hide {
+          scrollbar-width: none; /* Firefox */
+          -ms-overflow-style: none; /* IE 10+ */
+        }
+        .meta-scrollbar-hide::-webkit-scrollbar {
+          display: none; /* Chrome, Safari, Opera */
+          width: 0;
+          height: 0;
+        }
         `}</style>
       </div>
     </div>
