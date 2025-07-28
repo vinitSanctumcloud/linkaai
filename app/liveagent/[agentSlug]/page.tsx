@@ -320,12 +320,14 @@ export default function AgentDetails() {
                     <video
                       src={agentDetails.greeting_media_url}
                       autoPlay
-                      muted={false} // Enable audio
+                      muted // Enable audio
                       loop // Play video in a loop
                       playsInline
-                      preload="auto"
                       className="w-full h-full object-cover"
-                      onError={(e) => console.error('Video error:', e)} // Log errors
+                      onError={() => console.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.", {
+                        position: "top-right",
+                        duration: 2000,
+                      })}
                     />
                   ) : (
                     <img

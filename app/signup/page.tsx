@@ -318,7 +318,7 @@ export default function SignupPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { value: 'CREATOR', label: 'Creator' },
-                      { value: 'BRAND', label: 'BRAND' },
+                      { value: 'BRAND', label: 'Brand' },
                       { value: '', label: 'Just Exploring' },
                     ].map((option) => (
                       <label

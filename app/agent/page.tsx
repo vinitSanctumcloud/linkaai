@@ -44,7 +44,8 @@ import {
   Globe,
   Smartphone,
   Code,
-  Copy
+  Copy,
+  Trash2Icon
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -812,6 +813,25 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
       });
     }
     setIsConditionalModalOpen(true);
+  };
+
+  const handleRemoveLink = (id: string) => {
+    setModalLinks((prev: any[]) => {
+      const newLinks = prev.filter((link) => link.id !== id);
+      if (newLinks.length === 0) {
+        setIsMonetizationModalOpen(false); // Close modal if no links remain
+        toast.info("All links removed. Modal closed.", {
+          position: "top-right",
+          duration: 2000,
+        });
+      } else {
+        toast.success("Link removed from modal!", {
+          position: "top-right",
+          duration: 2000,
+        });
+      }
+      return newLinks;
+    });
   };
 
   const saveConditionalPrompt = () => {
@@ -1775,7 +1795,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
                     <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
                       {agentConfig.greetingMedia && agentConfig.greetingMediaType ? (
-                        agentConfig.greetingMediaType === "video" ? (
+                       agentConfig.greetingMediaType === "video" ? (
                           <video
                             src={agentConfig.greetingMedia}
                             autoPlay
@@ -2433,29 +2453,68 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           </p>
         )}
         {totalPages > 1 && (
+          // <div className="flex justify-between items-center mt-4">
+          //   <Button
+          //     variant="outline"
+          //     onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+          //     disabled={page === 1}
+          //     className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+          //   >
+          //     <ArrowLeft className="w-4 h-4 mr-2" />
+          //     Previous
+          //   </Button>
+          //   <span className="text-sm text-linka-night">
+          //     Page {page} of {totalPages}
+          //   </span>
+          //   <Button
+          //     variant="outline"
+          //     onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+          //     disabled={page === totalPages}
+          //     className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+          //   >
+          //     Next
+          //     <ArrowRight className="w-4 h-4 ml-2" />
+          //   </Button>
+          // </div>
           <div className="flex justify-between items-center mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-              disabled={page === 1}
-              className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Previous
-            </Button>
-            <span className="text-sm text-linka-night">
-              Page {page} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-              disabled={page === totalPages}
-              className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-            >
-              Next
-              <ArrowRight className="w-4 h-4 ml-2" />
-            </Button>
-          </div>
+  <div className="flex items-center gap-2">
+    <Label className="text-sm text-linka-night">Items per page:</Label>
+    <select
+      value={itemsPerPage}
+      onChange={(e) => {
+        setItemsPerPage(Number(e.target.value));
+        setPage(1); // Reset to first page when items per page changes
+      }}
+      className="border border-linka-alice-blue rounded-md p-1 text-sm"
+    >
+      <option value={5}>5</option>
+      <option value={10}>10</option>
+      <option value={20}>20</option>
+      <option value={50}>50</option>
+    </select>
+  </div>
+  <Button
+    variant="outline"
+    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+    disabled={page === 1}
+    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+  >
+    <ArrowLeft className="w-4 h-4 mr-2" />
+    Previous
+  </Button>
+  <span className="text-sm text-linka-night">
+    Page {page} of {totalPages}
+  </span>
+  <Button
+    variant="outline"
+    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+    disabled={page === totalPages}
+    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+  >
+    Next
+    <ArrowRight className="w-4 h-4 ml-2" />
+  </Button>
+</div>
         )}
         <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
           <div className="flex items-start gap-2">
@@ -3660,11 +3719,6 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                           </button>
                                         </TooltipTrigger>
                                         <TooltipContent
-                                        // className={cn(
-                                        //   'z-50 overflow-hidden rounded-lg border-none bg-white/90 backdrop-blur-sm px-3 py-1.5 text-xs sm:text-sm text-linka-russian-violet shadow-md max-w-80 w-fit',
-                                        //   'animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95'
-                                        // )}
-                                        // sideOffset={5}
                                         >
                                           {WEBSITE_URL_PLACEHOLDER}
                                         </TooltipContent>
@@ -3686,15 +3740,35 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                 </div>
                               </div>
                             )}
-                            {/* Add Delete Button for Each Link */}
-                            {/* <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleDeleteLink(agentConfig.linkaProMonetizations.indexOf(link), "aipro")}
-          className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-xs"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button> */}
+                            <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <button
+                          className="absolute top-2 right-2 text-red-600 hover:text-red-700 p-1 sm:p-2 rounded-full hover:bg-red-50 transition-all duration-200"
+                          aria-label="Remove link"
+                          disabled={modalLinks.length === 1}
+                        >
+                          <Trash2 className={`w-4 h-4 sm:w-5 sm:h-5 ${modalLinks.length === 1 ? 'opacity-50' : ''}`} />
+                        </button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="border-red-100">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-linka-russian-violet">Remove this link?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove the link from the modal. This action cannot be undone until you save or cancel.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel className="border-linka-alice-blue hover:bg-linka-alice-blue">Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleRemoveLink(link.id!)}
+                            className="bg-red-600 hover:bg-red-700 transition-all duration-200"
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Remove Link
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                           </CardContent>
                         </Card>
                       ))}
