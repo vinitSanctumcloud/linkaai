@@ -63,12 +63,12 @@ export default function DashboardPage() {
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <Button
+                {/* <Button
                   asChild
                   className="bg-orange-600 hover:bg-orange-700 text-white mb-3"
                 >
                   <Link href="/pricing">Subscription</Link>
-                </Button>
+                </Button> */}
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white select-text">
                   <span className="bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
                     Good {getTimeOfDay()} ,
@@ -129,7 +129,7 @@ export default function DashboardPage() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 2xl:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
               <StatCard
                 title="Total Chats"
                 value={analytics?.totalViews?.toLocaleString() || "0"}
@@ -165,6 +165,7 @@ export default function DashboardPage() {
                 period="Last 7 days"
                 comingSoon={true}
               /> */}
+              
               <button className="w-full rounded-2xl shadow-sm hover:shadow-md p-4 bg-gradient-to-br from-white to-gray-50 hover:from-white hover:to-gray-100 transition-all duration-200 flex items-center justify-between group border border-gray-100">
                 {/* Text with premium badge */}
                 <div className="flex items-center gap-2">

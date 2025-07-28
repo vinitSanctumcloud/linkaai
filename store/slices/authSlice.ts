@@ -1,5 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { API } from '@/config/api';
+import { resetAgent } from './agentSlice'; // Import resetAgent action
 
 // Define the shape of the auth state
 interface AuthState {
@@ -31,7 +32,6 @@ export const initializeAuthState = createAsyncThunk(
     const parsedAiAgentData = aiAgentData ? JSON.parse(aiAgentData).data : null;
 
     if (accessToken && !parsedAiAgentData) {
-      // If accessToken exists but aiAgentData is missing, fetch it
       await dispatch(fetchAiAgentData(accessToken));
     }
 
@@ -79,17 +79,14 @@ export const signup = createAsyncThunk(
       'password_confirmation',
     ];
 
-    // Validate agreements
     if (!formData.accept_aggrements) {
       return rejectWithValue('You must accept the terms and conditions');
     }
 
-    // Validate password match
     if (formData.password !== formData.password_confirmation) {
       return rejectWithValue('Passwords do not match');
     }
 
-    // Determine additional required fields based on user_varient
     let requiredFields = [...baseRequiredFields];
     if (formData.user_varient === 'CREATOR') {
       requiredFields.push('creator_handle');
@@ -97,14 +94,12 @@ export const signup = createAsyncThunk(
       requiredFields.push('business_name');
     }
 
-    // Validate required fields
     for (const field of requiredFields) {
       if (!formData[field] || formData[field].toString().trim() === '') {
         return rejectWithValue(`Missing or empty required field: ${field}`);
       }
     }
 
-    // Prepare the payload
     const payload = {
       first_name: formData.first_name.trim(),
       last_name: formData.last_name.trim(),
@@ -266,7 +261,7 @@ export const resetPassword = createAsyncThunk(
 );
 
 // 🟢 Async Thunk for Logout
-export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValue }) => {
+export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValue, dispatch }) => {
   try {
     const accessToken = localStorage.getItem('accessToken');
     const response = await fetch(API.LOGOUT, {
@@ -284,6 +279,9 @@ export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValu
     // Clear localStorage
     localStorage.clear();
 
+    // Reset agent slice
+    dispatch(resetAgent());
+
     if (!response.ok) {
       return rejectWithValue(data.message || 'Logout failed');
     }
@@ -293,8 +291,9 @@ export const logout = createAsyncThunk('auth/logout', async (_, { rejectWithValu
       message: data.message || 'Logged out successfully',
     };
   } catch (error) {
-    // Clear localStorage even if the API call fails
+    // Clear localStorage and reset agent slice even if API call fails
     localStorage.clear();
+    dispatch(resetAgent());
     return rejectWithValue(error instanceof Error ? error.message : 'An unexpected error occurred');
   }
 });
@@ -304,7 +303,6 @@ export const fetchAiAgentData = createAsyncThunk(
   'auth/fetchAiAgentData',
   async (accessToken: string, { rejectWithValue }) => {
     try {
-      // Check localStorage first
       const cachedAiAgentData = localStorage.getItem('aiAgentData');
       if (cachedAiAgentData) {
         return JSON.parse(cachedAiAgentData).data;
@@ -341,14 +339,12 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    // Initialize Auth State
     builder.addCase(initializeAuthState.fulfilled, (state, action) => {
       state.accessToken = action.payload.accessToken;
       state.user = action.payload.user;
       state.aiAgentData = action.payload.aiAgentData;
     });
 
-    // Login
     builder
       .addCase(login.pending, (state) => {
         state.isLoading = true;
@@ -366,7 +362,6 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Signup
     builder
       .addCase(signup.pending, (state) => {
         state.isLoading = true;
@@ -384,7 +379,6 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Request Verification
     builder
       .addCase(requestVerification.pending, (state) => {
         state.isLoading = true;
@@ -398,7 +392,6 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Reset Password
     builder
       .addCase(resetPassword.pending, (state) => {
         state.isLoading = true;
@@ -412,7 +405,6 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Logout
     builder
       .addCase(logout.pending, (state) => {
         state.isLoading = true;
@@ -432,7 +424,6 @@ const authSlice = createSlice({
         state.error = action.payload as string;
       });
 
-    // Fetch AI Agent Data
     builder
       .addCase(fetchAiAgentData.pending, (state) => {
         state.isLoading = true;

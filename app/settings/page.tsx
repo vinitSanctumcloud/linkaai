@@ -1056,9 +1056,9 @@ export default function SettingsPage() {
                   </div>
 
                   <p className="text-sm text-gray-500">
-                    Tokens are used for AI-Agent chat  credits, blog scans and product rec expansion
-                    1 Token = 1 Credit
+                    Tokens are used for AI-Agent chat  credits, blog scans and product rec expansion                  
                     </p>
+                  <p className="text-sm text-gray-500"> 1 Token = 1 Credit </p>
                 </CardContent>
               </Card>
 
@@ -1395,7 +1395,7 @@ export default function SettingsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="chatLimit">Limit Visitor Chat Session</Label>
+                    <Label htmlFor="chatLimit">Limit Visitor Chat Sessions</Label>
                     <Input
                       id="chatLimit"
                       type="number"

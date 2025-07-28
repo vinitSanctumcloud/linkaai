@@ -40,42 +40,58 @@ const initialState: AgentState = {
   error: null,
 };
 
-export const fetchAgentDetails = createAsyncThunk('agent/fetchAgentDetails', async () => {
-  const token = localStorage.getItem("accessToken")
-  console.log('Token:', token);
-  const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/get-agent/details', {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-    },
-  });
-  const data = await response.json();
-  console.log('API Response:', data);
-  if (!response.ok) {
-    throw new Error('Failed to fetch agent details');
+export const fetchAgentDetails = createAsyncThunk<AiAgent, void, { rejectValue: string }>(
+  'agent/fetchAgentDetails',
+  async (_, { rejectWithValue }) => {
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        return rejectWithValue('No access token found');
+      }
+      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/get-agent/details', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      const data = await response.json();
+      if (!response.ok) {
+        return rejectWithValue(data.message || `HTTP error! Status: ${response.status}`);
+      }
+      if (!data.data?.ai_agent) {
+        return rejectWithValue('No agent data in response');
+      }
+      return data.data.ai_agent;
+    } catch (error: any) {
+      return rejectWithValue(error.message || 'Failed to fetch agent details');
+    }
   }
-  return data.data.ai_agent;
-});
+);
 
 const agentSlice = createSlice({
   name: 'agent',
   initialState,
-  reducers: {},
+  reducers: {
+    resetAgent: () => initialState, // Reset to initialState
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchAgentDetails.pending, (state) => {
         state.status = 'loading';
+        state.error = null;
       })
       .addCase(fetchAgentDetails.fulfilled, (state, action: PayloadAction<AiAgent>) => {
         state.status = 'succeeded';
         state.agent = action.payload;
+        state.error = null;
       })
       .addCase(fetchAgentDetails.rejected, (state, action) => {
         state.status = 'failed';
-        state.error = action.error.message || 'Failed to fetch agent details';
+        state.error = action.payload || 'Failed to fetch agent details';
       });
   },
 });
 
+export const { resetAgent } = agentSlice.actions;
 export default agentSlice.reducer;

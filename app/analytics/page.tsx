@@ -831,15 +831,6 @@ export default function AnalyticsPage() {
               className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6"
             >
               <StatCard
-                title="Total Clicks"
-                value={analyticsData?.summary.totalClicks?.toLocaleString() || "0"}
-                icon={<MousePointerClick className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />}
-                color="blue"
-                change="+8.2%"
-                period="from last period"
-                secondaryText={`${(((analyticsData?.summary.totalClicks || 0) / (analyticsData?.summary.totalViews || 1)) * 100).toFixed(1)}% CTR`}
-              />
-              <StatCard
                 title="Total Chats"
                 value={analyticsData?.summary.totalViews?.toLocaleString() || "0"}
                 icon={<Users className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 dark:text-purple-400" />}
@@ -847,6 +838,15 @@ export default function AnalyticsPage() {
                 change="+15.7%"
                 period="from last period"
                 secondaryText={`${analyticsData?.summary.avgSessionDuration} avg. session`}
+              />
+              <StatCard
+                title="Total Clicks"
+                value={analyticsData?.summary.totalClicks?.toLocaleString() || "0"}
+                icon={<MousePointerClick className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 dark:text-blue-400" />}
+                color="blue"
+                change="+8.2%"
+                period="from last period"
+                secondaryText={`${(((analyticsData?.summary.totalClicks || 0) / (analyticsData?.summary.totalViews || 1)) * 100).toFixed(1)}% CTR`}
               />
             </motion.div>
 
@@ -1140,13 +1140,14 @@ function ActivityItem({
       color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
     },
     view: {
-      label: "Chat",
+      label: "Chats",
       icon: <Users className="w-4 h-4 text-purple-500" strokeWidth={2} />,
       color: "bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400",
     },
     conversion: {
       label: "Conversion",
-      icon: <DollarSign className="w-4 h-4 text-green-500" strokeWidth={2} />,
+      icon: <MousePointerClick className="w-4 h-4 text-blue-500" strokeWidth={2} />,
+      // icon: <DollarSign className="w-4 h-4 text-green-500" strokeWidth={2} />,
       color: "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400",
     },
   };

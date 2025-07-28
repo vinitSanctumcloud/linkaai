@@ -203,6 +203,9 @@ export default function AgentBuilderPage() {
 
 # EXAMPLE  
 You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented, and passionate about helping travelers discover hidden gems, book the best hotels, and optimize their trips. Your tone is professional yet approachable, ensuring users feel guided—not overwhelmed—by choices.`;
+  const PRIMARY_RECS = "Just add your category and affiliate links — that’s all it takes to have your AI understand your style and make recommendations on your behalf.xeFor additional context, you can include product reviews & social media links.Your AI agent will then make smart, personalized recommendations and engage your audience’s questions around the clock — helping you earn effortlessly."  
+  const SMART_RECS = "Expand Beyond your primary recs! Your AI agent doesn’t just respond — it proactively expands your product and brand recommendations based on your content. Whether it’s a blog, website, or a single affiliate link, Linka Pro helps you scale revenue with intelligent suggestions that track and attribute commissions to you automatically.Monetize effortlessly — your Linka agent learns your content and sells smarter, so you don’t have to."  
+
   const [modalLinks, setModalLinks] = useState<PartnerLink[] | LinkaProMonetization[]>([]);
   const [partnerLinksTableData, setPartnerLinksTableData] = useState<PartnerLink[]>([]);
   const [aiproLinksTableData, setAiproLinksTableData] = useState<LinkaProMonetization[]>([]);
@@ -1998,416 +2001,431 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           </Card>
         );
       case 4:
+        // Use the status_list from the API response
         const statusList: { [key: number]: string } = {
           2: "COMPLETED",
           1: "PROCESSING",
           [-1]: "CANCELLED",
-          [-2]: "CANCELLED",
-          0: "PENDING"
+          [-2]: "ONHOLD",
+          0: "PENDING",
         };
 
-        return (
-          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
-            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
-              <div className="space-y-1">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
-                  <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-linka-dark-orange" />
-                  Monetization Options
-                </CardTitle>
-                <p className="text-xs sm:text-sm text-linka-night/70 font-light">
-                  Choose how you want to customize & monetize your AI-agent
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
-                <Button
-                  variant={activeTab === "partner" ? "default" : "outline"}
-                  onClick={() => setActiveTab("partner")}
-                  className={`text-xs sm:text-sm ${activeTab === "partner"
-                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                    } transition-all duration-300 hover:scale-105`}
-                >
-                  Primary Recs
-                </Button>
-                <Button
-                  variant={activeTab === "aipro" ? "default" : "outline"}
-                  onClick={() => setActiveTab("aipro")}
-                  className={`text-xs sm:text-sm ${activeTab === "aipro"
-                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                    } transition-all duration-300 hover:scale-105`}
-                >
-                  Smart Recs
-                </Button>
-                <Button
-                  variant={activeTab === "paywall" ? "default" : "outline"}
+        // Status color mapping for consistent UI
+        const statusStyles: { [key: string]: string } = {
+          COMPLETED: "bg-green-100 text-green-800",
+          PROCESSING: "bg-yellow-100 text-yellow-800",
+          PENDING: "bg-blue-100 text-blue-800",
+          CANCELLED: "bg-red-100 text-red-800",
+          ONHOLD: "bg-gray-100 text-gray-800",
+        };
+
+  return (
+    <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
+      <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+        <div className="space-y-1">
+          <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
+            <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-linka-dark-orange" />
+            Monetization Options
+          </CardTitle>
+          <p className="text-xs sm:text-sm text-linka-night/70 font-light">
+            Choose how you want to customize & monetize your AI-agent
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
+          <Button
+            variant={activeTab === "partner" ? "default" : "outline"}
+            onClick={() => setActiveTab("partner")}
+            className={`text-xs sm:text-sm ${
+              activeTab === "partner"
+                ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            } transition-all duration-300 hover:scale-105`}
+          >
+            Primary Recs
+          </Button>
+          <Button
+            variant={activeTab === "aipro" ? "default" : "outline"}
+            onClick={() => setActiveTab("aipro")}
+            className={`text-xs sm:text-sm ${
+              activeTab === "aipro"
+                ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            } transition-all duration-300 hover:scale-105`}
+          >
+            Smart Recs
+          </Button>
+          <Button
+            variant={activeTab === "paywall" ? "default" : "outline"}
+            disabled={true}
+            onClick={() => setActiveTab("paywall")}
+            className={`text-xs sm:text-sm ${
+              activeTab === "paywall"
+                ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            } transition-all duration-300 hover:scale-105`}
+          >
+            Linka Paywall (Coming Soon)
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-6 sm:space-y-8">
+        <div className="space-y-2">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+            <div className="flex-grow min-w-0">
+              <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-linka-carolina-blue" />
+                {activeTab === "aipro" ? "Smart Recs" : "Primary Recs"}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        type="button"
+                        className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                        aria-label="Agent name tooltip"
+                      >
+                        <Info className="w-5 h-5" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>{activeTab === "aipro" ? SMART_RECS : PRIMARY_RECS}</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </h3>
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setIsMonetizationModalOpen(true)}
+              className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02] whitespace-nowrap flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 text-xs sm:text-sm"
+            >
+              <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              {activeTab === "aipro"
+                ? aiproLinksTableData.length > 0
+                  ? "Add Link"
+                  : "Add First Link"
+                : partnerLinksTableData.length > 0
+                ? "Add Link"
+                : "Add First Link"}
+            </Button>
+          </div>
+          <p className="text-xs text-linka-night/60 mt-1">
+            {activeTab === "aipro"
+              ? "Smarter Recommendations. Scaled Earnings."
+              : "Your AI-Agent will make Personalized Recommendations based on your primary recs."}
+          </p>
+          {activeTab === "aipro" && (
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-3 sm:mt-4">
+              <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                <input
+                  type="radio"
+                  name="monetizationOption"
+                  value="products"
+                  className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                  checked={selectedMonetizationOption === "products"}
+                  onChange={() => {
+                    setSelectedMonetizationOption("products");
+                    setPage(1); // Reset page to 1
+                  }}
+                />
+                Product Expansion
+              </label>
+              <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                <input
+                  type="radio"
+                  name="monetizationOption"
+                  value="blogs"
+                  className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                  checked={selectedMonetizationOption === "blogs"}
+                  onChange={() => {
+                    setSelectedMonetizationOption("blogs");
+                    setPage(1); // Reset page to 1
+                  }}
+                />
+                Blog Monetization
+              </label>
+              <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                <input
+                  type="radio"
+                  name="monetizationOption"
+                  value="websites"
+                  className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                  checked={selectedMonetizationOption === "websites"}
                   disabled={true}
-                  onClick={() => setActiveTab("paywall")}
-                  className={`text-xs sm:text-sm ${activeTab === "paywall"
-                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                    } transition-all duration-300 hover:scale-105`}
-                >
-                  Linka Paywall (Coming Soon)
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-6 sm:space-y-8">
-              <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-                  <div className="flex-grow min-w-0">
-                    <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                      <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-linka-carolina-blue" />
-                      {activeTab === "aipro" ? "Smart Recs" : "Primary Recs"}
-                    </h3>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => setIsMonetizationModalOpen(true)}
-                    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02] whitespace-nowrap flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 text-xs sm:text-sm"
+                  onChange={() => {
+                    setSelectedMonetizationOption("websites");
+                    setPage(1); // Reset page to 1
+                  }}
+                />
+                Website Monetization (coming soon)
+              </label>
+            </div>
+          )}
+        </div>
+        {isLoading ? (
+          <p className="text-sm text-linka-night/60 text-center">Loading links...</p>
+        ) : activeTab === "partner" && partnerLinksTableData.length > 0 ? (
+          <div className="overflow-x-auto position-static">
+            <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+              <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                <tr>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Category
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    URL
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Status
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {partnerLinksTableData.map((link, index) => (
+                  <tr
+                    key={link.id || index}
+                    className="bg-white border-b hover:bg-linka-alice-blue/10"
                   >
-                    <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                    {activeTab === "aipro"
-                      ? aiproLinksTableData.length > 0
-                        ? "Add Link"
-                        : "Add First Link"
-                      : partnerLinksTableData.length > 0
-                        ? "Add Link"
-                        : "Add First Link"}
-                  </Button>
-                </div>
-                <p className="text-xs text-linka-night/60 mt-1">
-                  {activeTab === "aipro"
-                    ? "Smarter Recommendations. Scaled Earnings."
-                    : "Your AI-Agent will make Personalized Recommendations based on your primary recs."}
-                </p>
-                {activeTab === "aipro" && (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-3 sm:mt-4">
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="products"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={selectedMonetizationOption === "products"}
-                        onChange={() => {
-                          setSelectedMonetizationOption("products");
-                          setPage(1); // Reset page to 1
-                        }}
-                      />
-                      Product Expansion
-                    </label>
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="blogs"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={selectedMonetizationOption === "blogs"}
-                        onChange={() => {
-                          setSelectedMonetizationOption("blogs");
-                          setPage(1); // Reset page to 1
-                        }}
-                      />
-                      Blog Monetization
-                    </label>
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="websites"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={selectedMonetizationOption === "websites"}
-                        disabled={true}
-                        onChange={() => {
-                          setSelectedMonetizationOption("websites");
-                          setPage(1); // Reset page to 1
-                        }}
-                      />
-                      Website Monetization (coming soon)
-                    </label>
-                  </div>
-                )}
-              </div>
-              {isLoading ? (
-                <p className="text-sm text-linka-night/60 text-center">Loading links...</p>
-              ) : activeTab === "partner" && partnerLinksTableData.length > 0 ? (
-                <div className="overflow-x-auto position-static">
-                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
-                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-                      <tr>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Category
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          URL
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Status
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {partnerLinksTableData.map((link, index) => (
-                        <tr
-                          key={link.id || index}
-                          className="bg-white border-b hover:bg-linka-alice-blue/10"
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || ""}</td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
+                      {link.affiliateLink ? (
+                        <a
+                          href={link.affiliateLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-linka-carolina-blue hover:underline"
                         >
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || ""}</td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            {link.affiliateLink ? (
-                              <a
-                                href={link.affiliateLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-linka-carolina-blue hover:underline"
-                              >
-                                Affiliate
-                              </a>
-                            ) : (
-                              <span>Affiliate</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            <span
-                              className={`px-2 py-1 rounded-full text-xs ${link.status !== undefined && statusList[link.status] === "COMPLETED"
-                                ? "bg-green-100 text-green-800"
-                                : link.status !== undefined && statusList[link.status] === "PROCESSING"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : link.status !== undefined && statusList[link.status] === "PENDING"
-                                    ? "bg-blue-100 text-blue-800"
-                                    : "bg-red-100 text-red-800"
-                                }`}
-                            >
-                              {link.status !== undefined ? statusList[link.status] : "Unknown"}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                                >
-                                  <DotsVerticalIcon className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                side="bottom"
-                                align="end"
-                                className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
-                              >
-                                <DropdownMenuItem
-                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                  onClick={() => handleEditLink(index, "partner")}
-                                >
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                  onClick={() => handlePreviewLink(index)}
-                                >
-                                  Preview
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                  onClick={() => handleRetryLink(index)}
-                                >
-                                  Retry
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
-                                  onClick={() => handleDeleteLink(index, "partner")}
-                                >
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : activeTab === "aipro" && aiproLinksTableData.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
-                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-                      <tr>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Category
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          URL
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Status
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {aiproLinksTableData.map((link, index) => {
-                        let url: string | undefined;
-                        if (link.proType === "products") {
-                          url = (link as LinkaProMonetizationProduct).categoryUrl;
-                        } else if (link.proType === "blogs") {
-                          url = (link as LinkaProMonetizationBlog).blogUrl;
-                        } else if (link.proType === "websites") {
-                          url = (link as LinkaProMonetizationWebsite).websiteUrl;
-                        }
-                        return (
-                          <tr
-                            key={link.id || index}
-                            className="bg-white border-b hover:bg-linka-alice-blue/10"
+                          Affiliate
+                        </a>
+                      ) : (
+                        <span>Affiliate</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs ${
+                          statusStyles[statusList[link.status !== undefined ? link.status : 0]] ||
+                          "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {statusList[link.status !== undefined ? link.status : 0] || "Unknown"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
                           >
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
-                              {link.category || "Unnamed Link"}
-                            </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
-                              {url ? (
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-linka-carolina-blue hover:underline"
-                                >
-                                  {link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}
-                                </a>
-                              ) : (
-                                <span>{link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
-                              <span
-                                className={`px-2 py-1 rounded-full text-xs ${statusList[link.status] === "COMPLETED"
-                                  ? "bg-green-100 text-green-800"
-                                  : statusList[link.status] === "PROCESSING"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : statusList[link.status] === "PENDING"
-                                      ? "bg-blue-100 text-blue-800"
-                                      : "bg-red-100 text-red-800"
-                                  }`}
-                              >
-                                {statusList[link.status] || "Unknown"}
-                              </span>
-                            </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                                  >
-                                    <DotsVerticalIcon className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  side="bottom"
-                                  align="end"
-                                  className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
-                                >
-                                  <DropdownMenuItem
-                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                    onClick={() => handleEditLink(index, "aipro")}
-                                  >
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                    onClick={() => handlePreviewLink(index)}
-                                  >
-                                    Preview
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                    onClick={() => handleRetryLink(index)}
-                                  >
-                                    Retry
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
-                                    onClick={() => handleDeleteLink(index, "aipro")}
-                                  >
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-xs sm:text-sm text-linka-night/60 text-center">
-                  {activeTab === "partner" ? "No partner links added yet." : "No monetization links added yet."}
-                </p>
-              )}
-              {totalPages > 1 && (
-                <div className="flex justify-between items-center mt-4">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={page === 1}
-                    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Previous
-                  </Button>
-                  <span className="text-sm text-linka-night">
-                    Page {page} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={page === totalPages}
-                    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                  >
-                    Next
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              )}
-              <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
-                <div className="flex items-start gap-2">
-                  <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
-                  <div>
-                    <p className="text-xs font-medium text-linka-russian-violet mb-1">
-                      Pro Tips:
-                    </p>
-                    <ul className="text-xs text-linka-night/60 space-y-1">
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>Test all links before sharing</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>Ensure affiliate links are valid and trackable</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>Provide detailed product reviews to enhance user trust</span>
-                      </li>
-                      <li className="flex items-start gap-1.5">
-                        <span>•</span>
-                        <span>Upload high-quality images to enhance visual appeal</span>
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        );
+                            <DotsVerticalIcon className="w-4 h-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          side="bottom"
+                          align="end"
+                          className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
+                        >
+                          <DropdownMenuItem
+                            className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                            onClick={() => handleEditLink(index, "partner")}
+                          >
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                            onClick={() => handlePreviewLink(index)}
+                          >
+                            Preview
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                            onClick={() => handleRetryLink(index)}
+                          >
+                            Retry
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                            onClick={() => handleDeleteLink(index, "partner")}
+                          >
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : activeTab === "aipro" && aiproLinksTableData.length > 0 ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+              <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                <tr>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Category
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    URL
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Status
+                  </th>
+                  <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {aiproLinksTableData.map((link, index) => {
+                  let url: string | undefined;
+                  if (link.proType === "products") {
+                    url = (link as LinkaProMonetizationProduct).categoryUrl;
+                  } else if (link.proType === "blogs") {
+                    url = (link as LinkaProMonetizationBlog).blogUrl;
+                  } else if (link.proType === "websites") {
+                    url = (link as LinkaProMonetizationWebsite).websiteUrl;
+                  }
+                  return (
+                    <tr
+                      key={link.id || index}
+                      className="bg-white border-b hover:bg-linka-alice-blue/10"
+                    >
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || "Unnamed Link"}</td>
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
+                        {url ? (
+                          <a
+                            href={url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-linka-carolina-blue hover:underline"
+                          >
+                            {link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}
+                          </a>
+                        ) : (
+                          <span>{link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}</span>
+                        )}
+                      </td>
+                      <td className="px-3 py-3 sm:px-6 sm:py-4">
+                        <span
+                          className={`px-2 py-1 rounded-full text-xs ${
+                            statusStyles[statusList[link.status !== undefined ? link.status : 0]] ||
+                            "bg-gray-100 text-gray-800"
+                          }`}
+                        >
+                          {statusList[link.status !== undefined ? link.status : 0] || "Unknown"}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                            >
+                              <DotsVerticalIcon className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent
+                            side="bottom"
+                            align="end"
+                            className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
+                          >
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                              onClick={() => handleEditLink(index, "aipro")}
+                            >
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                              onClick={() => handlePreviewLink(index)}
+                            >
+                              Preview
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                              onClick={() => handleRetryLink(index)}
+                            >
+                              Retry
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                              onClick={() => handleDeleteLink(index, "aipro")}
+                            >
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="text-xs sm:text-sm text-linka-night/60 text-center">
+            {activeTab === "partner" ? "No partner links added yet." : "No monetization links added yet."}
+          </p>
+        )}
+        {totalPages > 1 && (
+          <div className="flex justify-between items-center mt-4">
+            <Button
+              variant="outline"
+              onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+              disabled={page === 1}
+              className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Previous
+            </Button>
+            <span className="text-sm text-linka-night">
+              Page {page} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={page === totalPages}
+              className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+            >
+              Next
+              <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </div>
+        )}
+        <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
+          <div className="flex items-start gap-2">
+            <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
+              <ul className="text-xs text-linka-night/60 space-y-1">
+                <li className="flex items-start gap-1.5">
+                  <span>•</span>
+                  <span>Test all links before sharing</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span>•</span>
+                  <span>Ensure affiliate links are valid and trackable</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span>•</span>
+                  <span>Provide detailed product reviews to enhance user trust</span>
+                </li>
+                <li className="flex items-start gap-1.5">
+                  <span>•</span>
+                  <span>Upload high-quality images to enhance visual appeal</span>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
 
       case 3:
         return (
