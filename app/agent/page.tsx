@@ -281,7 +281,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               brandName: link.brand_name || "",
               socialMediaLink: link.social_media_link || "",
               productReview: link.product_review || "",
-              status: link.status === 1 ? "active" : "inactive",
+              status: link.status,
             })) || [],
             linkaProMonetizations: agentData.linka_pro_monetizations?.map((link: any) => {
               if (link.type === "products") {
@@ -395,7 +395,67 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             },
           }
         );
-        // ... rest of the fetch logic remains unchanged ...
+        if (response.ok) {
+          const data = await response.json();
+          const links = data.data.link_list;
+          const total = data.data.meta.total || 0; // Total number of links
+          const limit = itemsPerPage; // Items per page
+          setTotalPages(Math.ceil(total / limit)); // Calculate total pages
+
+          if (activeTab === "partner") {
+            const mappedLinks: PartnerLink[] = links.map((link: any) => ({
+              id: link.id,
+              category: link.category_name || "",
+              affiliateLink: link.url || "",
+              brandName: link.brand_name || "",
+              socialMediaLink: link.social_media_link || "",
+              productReview: link.product_review || "",
+              status: link.status,
+            }));
+            setPartnerLinksTableData(mappedLinks);
+          } else if (activeTab === "aipro") {
+            const mappedLinks: LinkaProMonetization[] = links.map((link: any) => {
+              if (link.type === "products") {
+                return {
+                  id: link.id,
+                  proType: "products",
+                  category: link.category_name || "",
+                  affiliateLink: link.affiliate_url || "",
+                  categoryUrl: link.url || "",
+                  status: link.status,
+                };
+              } else if (link.type === "blogs") {
+                return {
+                  id: link.id,
+                  proType: "blogs",
+                  category: link.category_name || "",
+                  blogUrl: link.url || "",
+                  status: link.status,
+                };
+              } else if (link.type === "websites") {
+                return {
+                  id: link.id,
+                  proType: "websites",
+                  category: link.category_name || "",
+                  websiteUrl: link.url || "",
+                  status: link.status,
+                };
+              }
+              return null;
+            }).filter((link: any) => link !== null);
+            setAiproLinksTableData(mappedLinks);
+          }
+
+          // setTotalPages(data.data.meta.total || 1);
+          // toast.success("Links loaded successfully!");
+        } else {
+          const errorData = await response.json();
+          setError(`Failed to fetch links: ${errorData.message || "Unknown error"}`);
+          toast.error(`Failed to fetch links: ${errorData.message || "Unknown error"}`, {
+            position: "top-right",
+            duration: 2000,
+          });
+        }
       } catch (err) {
         setError("An error occurred while fetching links.");
         toast.error("An error occurred while fetching links.");
@@ -407,7 +467,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
     if (currentStep === 4 && (activeTab === "partner" || activeTab === "aipro")) {
       fetchLinks();
     }
-  }, [activeTab, page, selectedMonetizationOption, currentStep]); // Added currentStep to dependencies
+  }, [activeTab, page, selectedMonetizationOption, currentStep, itemsPerPage]);
 
   useEffect(() => {
     const fetchProgress = async () => {
@@ -655,8 +715,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               brandName: link.brand_name || "",
               socialMediaLink: link.social_media_link || "",
               productReview: link.product_review || "",
-              status: link.status === 1 ? "active" : "inactive",
+              status: link.status,
             }));
+            
             setPartnerLinksTableData(mappedLinks);
             if (mappedLinks.length === 0 && page > 1) {
               setPage((prev) => prev - 1);
@@ -1487,7 +1548,6 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
       if (activeTab === "partner") {
         return (
           !(link as PartnerLink).category.trim() ||
-          !(link as PartnerLink).brandName?.trim() ||
           !(link as PartnerLink).affiliateLink.trim()
         );
       } else if (activeTab === "aipro") {
@@ -1604,7 +1664,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               brandName: link.brand_name || "",
               socialMediaLink: link.social_media_link || "",
               productReview: link.product_review || "",
-              status: link.status === 1 ? "active" : "inactive",
+              status: link.status,
             }));
             setPartnerLinksTableData(mappedLinks);
           } else {
@@ -2227,12 +2287,12 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           align="end"
                           className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
                         >
-                          <DropdownMenuItem
+                          {/* <DropdownMenuItem
                             className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
                             onClick={() => handleEditLink(index, "partner")}
                           >
                             Edit
-                          </DropdownMenuItem>
+                          </DropdownMenuItem> */}
                           <DropdownMenuItem
                             className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
                             onClick={() => handlePreviewLink(index)}
@@ -2334,12 +2394,12 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                             align="end"
                             className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
                           >
-                            <DropdownMenuItem
+                            {/* <DropdownMenuItem
                               className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
                               onClick={() => handleEditLink(index, "aipro")}
                             >
                               Edit
-                            </DropdownMenuItem>
+                            </DropdownMenuItem> */}
                             <DropdownMenuItem
                               className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
                               onClick={() => handlePreviewLink(index)}
