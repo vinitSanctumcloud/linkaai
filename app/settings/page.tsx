@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { DashboardLayout } from '@/components/dashboard-layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,8 +10,11 @@ import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Ci
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
-import { parse, format, isValid } from 'date-fns';
+import { format, isValid } from 'date-fns';
 import { API } from '@/config/api';
+import { useDispatch, useSelector } from 'react-redux';
+import { AppDispatch, RootState } from '@/store';
+import { initializeAuthState } from '@/store/slices/authSlice';
 
 function safeFormatDate(dateInput: string | number | Date, formatString = 'PP') {
   const date = new Date(dateInput);
@@ -60,7 +63,7 @@ interface Subscription {
 }
 
 interface PaymentMethodResponse {
-  payment_method_id: string; // Added payment_method_id
+  payment_method_id: string;
   brand: string;
   last_4: string;
   expiry_month: number;
@@ -121,7 +124,7 @@ interface BookingHistoryResponse {
 
 interface PaymentData {
   price_id: number;
-  payment_method_id?: string; // Optional property
+  payment_method_id?: string;
 }
 
 export default function SettingsPage() {
@@ -140,12 +143,10 @@ export default function SettingsPage() {
     chatLimit: 0,
   });
   const [avatarPreview, setAvatarPreview] = useState<string>('');
-  const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [isPhoneModalOpen, setIsPhoneModalOpen] = useState(false);
-  const [email, setEmail] = useState('user@example.com');
-  const [phone, setPhone] = useState('+1 234-567-8900');
-  const [isEmailVerified, setIsEmailVerified] = useState(true);
-  const [isPhoneVerified, setIsPhoneVerified] = useState(false);
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState('');
+  const [email_verified, setIsEmailVerified] = useState(false);
+  const [phone_number_verified, setIsPhoneVerified] = useState(false);
   const [newEmail, setNewEmail] = useState('');
   const [newPhone, setNewPhone] = useState('');
   const [showCurrent, setShowCurrent] = useState(false);
@@ -160,8 +161,61 @@ export default function SettingsPage() {
   const [paymentCardDetails, setPaymentCardDetails] = useState<PaymentMethodResponse | null>(null);
   const [tokendetails, setTokenDetails] = useState<TokenInfo | null>(null);
   const [bookingHistory, setBookingHistory] = useState<BookingHistoryResponse | null>(null);
-  const [password_confirmation, setPassword_confirmation] = useState("")
+  const [password_confirmation, setPassword_confirmation] = useState("");
   const [loading, setLoading] = useState(true);
+  const [otpEmail, setOtpEmail] = useState('');
+  const [otpPhone, setOtpPhone] = useState('');
+  const [emailSecurityToken, setEmailSecurityToken] = useState('');
+  const [phoneSecurityToken, setPhoneSecurityToken] = useState('');
+  const [showEmailOtpModal, setShowEmailOtpModal] = useState(false);
+  const [showPhoneOtpModal, setShowPhoneOtpModal] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const dispatch = useDispatch<AppDispatch>();
+  const { aiAgentData, user } = useSelector((state: RootState) => state.auth);
+
+  // Initialize auth state only once on mount
+  useEffect(() => {
+    dispatch(initializeAuthState());
+  }, [dispatch]);
+
+  // Sync local states with Redux user state
+  useEffect(() => {
+    if (user) {
+      const userEmail = user.email || '';
+      const userPhone = user.phone_number || '';
+      const userEmailVerified = user.email_verified || false;
+      const userPhoneVerified = user.phone_number_verified || false;
+
+      // Only update states if they differ to prevent infinite loop
+      if (
+        email !== userEmail ||
+        phone !== userPhone ||
+        email_verified !== userEmailVerified ||
+        phone_number_verified !== userPhoneVerified
+      ) {
+        setEmail(userEmail);
+        setPhone(userPhone);
+        setIsEmailVerified(userEmailVerified);
+        setIsPhoneVerified(userPhoneVerified);
+
+        // Update localStorage
+        localStorage.setItem('user', JSON.stringify({
+          email: userEmail,
+          phone_number: userPhone,
+          email_verified: userEmailVerified,
+          phone_number_verified: userPhoneVerified,
+        }));
+      }
+    } else {
+      // Fallback to localStorage if user is not yet loaded
+      const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      setEmail(storedUser.email || '');
+      setPhone(storedUser.phone_number || '');
+      setIsEmailVerified(storedUser.email_verified || false);
+      setIsPhoneVerified(storedUser.phone_number_verified || false);
+    }
+  }, [user, email, phone, email_verified, phone_number_verified]);
 
   // === API FUNCTIONS ===
   const fetchSubscriptionDetails = async () => {
@@ -175,11 +229,7 @@ export default function SettingsPage() {
       });
 
       const data = await res.json();
-      if (data.data.subscription) {
-        return data.data.subscription;
-      } else {
-        return null;
-      }
+      return data.data.subscription || null;
     } catch (error) {
       console.error('Failed to fetch subscription details:', error);
       return null;
@@ -205,9 +255,8 @@ export default function SettingsPage() {
           expiry_month: data.data.payment_method.card.expiry_month,
           expiry_year: data.data.payment_method.card.expiry_year,
         };
-      } else {
-        return null;
       }
+      return null;
     } catch (error) {
       console.error('Failed to fetch payment details:', error);
       return null;
@@ -225,11 +274,7 @@ export default function SettingsPage() {
       });
 
       const data = await res.json();
-      if (data.message === 'Success') {
-        return data.data;
-      } else {
-        return null;
-      }
+      return data.message === 'Success' ? data.data : null;
     } catch (error) {
       console.error('Failed to fetch token details:', error);
       return null;
@@ -247,17 +292,14 @@ export default function SettingsPage() {
       });
 
       const data = await res.json();
-      if (data.message === 'Success') {
-        return data.data;
-      } else {
-        return null;
-      }
+      return data.message === 'Success' ? data.data : null;
     } catch (error) {
       console.error('Failed to fetch billing history:', error);
       return null;
     }
   };
 
+  // Fetch initial data
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
@@ -287,6 +329,7 @@ export default function SettingsPage() {
     fetchData();
   }, []);
 
+  // Password strength checker
   useEffect(() => {
     let strength = 0;
     if (formData.newPassword.length >= 8) strength++;
@@ -310,7 +353,6 @@ export default function SettingsPage() {
           position: "top-right",
           duration: 2000,
         });
-        // Re-fetch settings to ensure UI reflects the latest data
         const settingsResponse = await fetch('/api/settings', {
           headers: {
             'Content-Type': 'application/json',
@@ -350,142 +392,216 @@ export default function SettingsPage() {
     }
   };
 
-  const handleEmailChange = async () => {
-    if (!newEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)) {
-      toast.error('Please enter a valid email address.', {
-        position: "top-right",
-        duration: 2000,
-      });
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/change-email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: newEmail }),
-      });
-      if (response.ok) {
-        setEmail(newEmail);
-        setIsEmailVerified(false);
-        setIsEmailModalOpen(false);
-        setNewEmail('');
-        toast.success('Email updated successfully! Please verify your new email.', {
-          position: "top-right",
-          duration: 2000,
-        });
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to update email', {
-          position: "top-right",
-          duration: 2000,
-        });
-      }
-    } catch (error) {
-      toast.error('An error occurred. Please try again.', {
-        position: "top-right",
-        duration: 2000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handlePhoneChange = async () => {
-    if (!newPhone || !/^\+?[1-9]\d{1,14}$/.test(newPhone)) {
-      toast.error('Please enter a valid phone number.', {
-        position: "top-right",
-        duration: 2000,
-      });
-      return;
-    }
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/change-phone', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone: newPhone }),
-      });
-      if (response.ok) {
-        setPhone(newPhone);
-        setIsPhoneVerified(false);
-        setIsPhoneModalOpen(false);
-        setNewPhone('');
-        toast.success('Phone number updated successfully! Please verify your new phone number.', {
-          position: "top-right",
-          duration: 2000,
-        });
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to update phone number', {
-          position: "top-right",
-          duration: 2000,
-        });
-      }
-    } catch (error) {
-      toast.error('An error occurred. Please try again.', {
-        position: "top-right",
-        duration: 2000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const handleVerifyEmail = async () => {
+    if (!newEmail && !email) {
+      toast.error('Please enter an email address', {
+        position: "top-right",
+        duration: 2000,
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await fetch('/api/verify-email', {
+      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/settings/email', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          email: newEmail || email,
+          verify_via: 'email'
+        })
       });
+      const data = await response.json();
+
       if (response.ok) {
-        setIsEmailVerified(true);
-        toast.success('Verification email sent! Please check your inbox.', {
+        setEmailSecurityToken(data?.data?.otp_token);
+        setShowEmailOtpModal(true);
+        toast.success('Verification OTP sent to your email!', {
           position: "top-right",
           duration: 2000,
         });
       } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to send verification email', {
+        toast.error(data.error || 'Failed to initiate email verification', {
           position: "top-right",
           duration: 2000,
         });
       }
     } catch (error) {
-      toast.error('Failed to send verification email. Please try again.', {
+      console.error('Error initiating email verification:', error);
+      toast.error('An error occurred while sending email OTP.', {
         position: "top-right",
         duration: 2000,
       });
-    } finally {
-      setIsLoading(false);
     }
+    setIsLoading(false);
   };
 
   const handleVerifyPhone = async () => {
+    const phoneValue = inputRef.current?.value?.trim();
+
+    if (!phoneValue) {
+      toast.error('Please enter a phone number', {
+        position: "top-right",
+        duration: 2000,
+      });
+      return;
+    }
+
     setIsLoading(true);
     try {
-      const response = await fetch('/api/verify-phone', {
+      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/settings/phone', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          country_code: '+91',
+          phone_number: phoneValue,
+          verify_via: 'phone',
+        }),
       });
+
+      const data = await response.json();
+
       if (response.ok) {
-        setIsPhoneVerified(true);
-        toast.success('Verification code sent to your phone!', {
+        setPhone(phoneValue);
+        setPhoneSecurityToken(data?.data?.otp_token);
+        setShowPhoneOtpModal(true);
+        toast.success('Verification OTP sent to your phone!', {
           position: "top-right",
           duration: 2000,
         });
       } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to send verification code', {
+        toast.error(data.error || 'Failed to initiate phone verification', {
           position: "top-right",
           duration: 2000,
         });
       }
     } catch (error) {
-      toast.error('Failed to send verification code. Please try again.', {
+      console.error('Error initiating phone verification:', error);
+      toast.error('An error occurred while sending phone OTP.', {
+        position: "top-right",
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEmailOtpSubmit = async () => {
+    if (otpEmail.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP', {
+        position: "top-right",
+        duration: 2000,
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/settings/verifyOtpForEmail', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          otp: otpEmail,
+          security_token: emailSecurityToken,
+          verify_via: 'email'
+        })
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsEmailVerified(true);
+        setShowEmailOtpModal(false);
+        setOtpEmail('');
+        const updatedEmail = newEmail || email;
+        setEmail(updatedEmail);
+        localStorage.setItem('user', JSON.stringify({
+          email: updatedEmail,
+          phone_number: phone,
+          email_verified: true,
+          phone_number_verified,
+        }));
+        // Re-initialize auth state to sync with server
+        dispatch(initializeAuthState());
+        toast.success('Email verified successfully!', {
+          position: "top-right",
+          duration: 2000,
+        });
+      } else {
+        toast.error(data.error || 'Invalid OTP. Please try again.', {
+          position: "top-right",
+          duration: 2000,
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying email OTP:', error);
+      toast.error('An error occurred while verifying email OTP.', {
+        position: "top-right",
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePhoneOtpSubmit = async () => {
+    if (otpPhone.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP', {
+        position: "top-right",
+        duration: 2000,
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/settings/verifyOtpForPhone', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          otp: otpPhone,
+          security_token: phoneSecurityToken,
+          verify_via: 'phone'
+        })
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setIsPhoneVerified(true);
+        setShowPhoneOtpModal(false);
+        setOtpPhone('');
+        localStorage.setItem('user', JSON.stringify({
+          email,
+          phone_number: phone,
+          email_verified,
+          phone_number_verified: true,
+        }));
+        // Re-initialize auth state to sync with server
+        dispatch(initializeAuthState());
+        toast.success('Phone verified successfully!', {
+          position: "top-right",
+          duration: 2000,
+        });
+      } else {
+        toast.error(data.error || 'Invalid OTP. Please try again.', {
+          position: "top-right",
+          duration: 2000,
+        });
+      }
+    } catch (error) {
+      console.error('Error verifying phone OTP:', error);
+      toast.error('An error occurred while verifying phone OTP.', {
         position: "top-right",
         duration: 2000,
       });
@@ -526,7 +642,7 @@ export default function SettingsPage() {
           password_confirmation,
         }),
       });
-      console.log(response, "password")
+
       if (response.ok) {
         toast.success('Password updated successfully!', {
           position: "top-right",
@@ -563,7 +679,6 @@ export default function SettingsPage() {
           position: "top-right",
           duration: 2000,
         });
-        // Re-fetch settings
         const settingsResponse = await fetch('/api/settings', {
           headers: {
             'Content-Type': 'application/json',
@@ -644,6 +759,7 @@ export default function SettingsPage() {
           position: "top-right",
           duration: 2000,
         });
+        localStorage.removeItem('user'); // Clear user data on deletion
         window.location.href = '/logout';
       } else {
         const error = await response.json();
@@ -689,7 +805,6 @@ export default function SettingsPage() {
     fetchPage(nextPage);
   };
 
-  // Add this function inside the SettingsPage component, before the return statement
   const handlePurchaseTokens = async (priceId: number) => {
     setIsLoading(true);
     let payload: PaymentData = { price_id: priceId };
@@ -714,7 +829,6 @@ export default function SettingsPage() {
           position: "top-right",
           duration: 2000,
         });
-        // Optionally, refresh token details to update the UI
         const tokenData = await fetchTokenDetails();
         if (tokenData) {
           setTokenDetails(tokenData);
@@ -739,6 +853,7 @@ export default function SettingsPage() {
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://earnlinks.ai';
   const chatUrl = formData.customUrl ? `${baseUrl}/chat/${formData.customUrl}` : '';
+
 
   return (
     <DashboardLayout>
@@ -792,27 +907,30 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-700">{email}</p>
-                    <span className={`text-sm font-medium ${isEmailVerified ? 'text-green-600' : 'text-red-600'}`}>
-                      {isEmailVerified ? 'Verified' : 'Not Verified'}
+                    <p className="text-sm text-gray-700">{email || 'No email provided'}</p>
+                    <span className={`text-sm font-medium ${email_verified ? 'text-green-600' : 'text-red-600'}`}>
+                      {email_verified ? 'Verified' : 'Not Verified'}
                     </span>
                   </div>
                   <div className="flex space-x-3">
-                    {!isEmailVerified && (
-                      <Button
-                        className="bg-green-600 hover:bg-green-700"
-                        onClick={handleVerifyEmail}
-                        disabled={isLoading}
-                      >
-                        Verify Now
-                      </Button>
+                    {!email_verified && (
+                      <>
+                        <Input
+                          type="email"
+                          placeholder="Enter email address"
+                          value={newEmail}
+                          onChange={(e) => setNewEmail(e.target.value)}
+                          className="max-w-xs border px-2 py-1 rounded"
+                        />
+                        <Button
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={handleVerifyEmail}
+                          disabled={isLoading || (!newEmail && !email)}
+                        >
+                          {isLoading ? 'Sending...' : 'Verify Now'}
+                        </Button>
+                      </>
                     )}
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsEmailModalOpen(true)}
-                    >
-                      Change Email
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -824,64 +942,74 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-700">{phone}</p>
-                    <span className={`text-sm font-medium ${isPhoneVerified ? 'text-green-600' : 'text-red-600'}`}>
-                      {isPhoneVerified ? 'Verified' : 'Not Verified'}
+                    <p className="text-sm text-gray-700">{phone || 'No phone number provided'}</p>
+                    <span className={`text-sm font-medium ${phone_number_verified ? 'text-green-600' : 'text-red-600'}`}>
+                      {phone_number_verified ? 'Verified' : 'Not Verified'}
                     </span>
                   </div>
                   <div className="flex space-x-3">
-                    {!isPhoneVerified && (
-                      <Button
-                        className="bg-green-600 hover:bg-green-700"
-                        onClick={handleVerifyPhone}
-                        disabled={isLoading}
-                      >
-                        Verify Now
-                      </Button>
+                    {!phone_number_verified && (
+                      <>
+                        <Input
+                          type="tel"
+                          placeholder="Enter phone number"
+                          ref={inputRef}
+                          className="max-w-xs border px-2 py-1 rounded"
+                        />
+                        <Button
+                          className="bg-green-600 hover:bg-green-700"
+                          onClick={handleVerifyPhone}
+                          disabled={isLoading}
+                        >
+                          {isLoading ? 'Sending...' : 'Verify Now'}
+                        </Button>
+                      </>
                     )}
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsPhoneModalOpen(true)}
-                    >
-                      Change Phone
-                    </Button>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Email Change Modal */}
-            {isEmailModalOpen && (
+            {/* Email OTP Modal */}
+            {showEmailOtpModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <Card className="border-0 shadow-lg w-full max-w-md">
                   <CardHeader>
-                    <CardTitle>Change Email</CardTitle>
-                    <CardDescription>Enter your new email address</CardDescription>
+                    <CardTitle>Verify Email</CardTitle>
+                    <CardDescription>Enter the 6-digit OTP sent to your email</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="newEmail">New Email</Label>
+                      <Label htmlFor="otpEmail">OTP</Label>
                       <Input
-                        id="newEmail"
-                        type="email"
-                        value={newEmail}
-                        onChange={(e) => setNewEmail(e.target.value)}
-                        placeholder="Enter new email"
+                        id="otpEmail"
+                        type="text"
+                        value={otpEmail}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setOtpEmail(value);
+                        }}
+                        placeholder="Enter 6-digit OTP"
+                        maxLength={6}
+                        className="text-center tracking-widest"
                       />
                     </div>
                     <div className="flex justify-end space-x-3">
                       <Button
                         variant="outline"
-                        onClick={() => setIsEmailModalOpen(false)}
+                        onClick={() => {
+                          setShowEmailOtpModal(false);
+                          setOtpEmail('');
+                        }}
                       >
                         Cancel
                       </Button>
                       <Button
-                        className="bg-orange-600 hover:bg-orange-700"
-                        onClick={handleEmailChange}
-                        disabled={isLoading}
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={handleEmailOtpSubmit}
+                        disabled={isLoading || otpEmail.length !== 6}
                       >
-                        {isLoading ? 'Saving...' : 'Save'}
+                        {isLoading ? 'Verifying...' : 'Verify'}
                       </Button>
                     </div>
                   </CardContent>
@@ -889,38 +1017,46 @@ export default function SettingsPage() {
               </div>
             )}
 
-            {/* Phone Change Modal */}
-            {isPhoneModalOpen && (
+            {/* Phone OTP Modal */}
+            {showPhoneOtpModal && (
               <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <Card className="border-0 shadow-lg w-full max-w-md">
                   <CardHeader>
-                    <CardTitle>Change Phone</CardTitle>
-                    <CardDescription>Enter your new phone number</CardDescription>
+                    <CardTitle>Verify Phone</CardTitle>
+                    <CardDescription>Enter the 6-digit OTP sent to your phone</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
-                      <Label htmlFor="newPhone">New Phone Number</Label>
+                      <Label htmlFor="otpPhone">OTP</Label>
                       <Input
-                        id="newPhone"
-                        type="tel"
-                        value={newPhone}
-                        onChange={(e) => setNewPhone(e.target.value)}
-                        placeholder="Enter new phone number"
+                        id="otpPhone"
+                        type="text"
+                        value={otpPhone}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+                          setOtpPhone(value);
+                        }}
+                        placeholder="Enter 6-digit OTP"
+                        maxLength={6}
+                        className="text-center tracking-widest"
                       />
                     </div>
                     <div className="flex justify-end space-x-3">
                       <Button
                         variant="outline"
-                        onClick={() => setIsPhoneModalOpen(false)}
+                        onClick={() => {
+                          setShowPhoneOtpModal(false);
+                          setOtpPhone('');
+                        }}
                       >
                         Cancel
                       </Button>
                       <Button
-                        className="bg-orange-600 hover:bg-orange-700"
-                        onClick={handlePhoneChange}
-                        disabled={isLoading}
+                        className="bg-green-600 hover:bg-green-700"
+                        onClick={handlePhoneOtpSubmit}
+                        disabled={isLoading || otpPhone.length !== 6}
                       >
-                        {isLoading ? 'Saving...' : 'Save'}
+                        {isLoading ? 'Verifying...' : 'Verify'}
                       </Button>
                     </div>
                   </CardContent>
@@ -930,9 +1066,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="subscription" className="space-y-8">
-            {/* Three Boxes in Single Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Subscription Status Box */}
               <Card className="border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-semibold text-gray-800 flex items-center gap-2">
@@ -957,10 +1091,8 @@ export default function SettingsPage() {
                     </div>
                   </CardTitle>
                 </CardHeader>
-
                 <CardContent className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* First Column */}
                     <div className="space-y-4">
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Plan Name</p>
@@ -968,14 +1100,12 @@ export default function SettingsPage() {
                           {subscription?.product.product_name || 'N/A'}
                         </p>
                       </div>
-
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Subscription Type</p>
                         <p className="text-base font-medium text-gray-800 capitalize">
                           {subscription?.subscription_type || 'N/A'}
                         </p>
                       </div>
-
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Plan Billing</p>
                         <p className="text-base font-medium text-gray-800">
@@ -987,8 +1117,6 @@ export default function SettingsPage() {
                         </p>
                       </div>
                     </div>
-
-                    {/* Second Column */}
                     <div className="space-y-4">
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Start Date</p>
@@ -998,7 +1126,6 @@ export default function SettingsPage() {
                             : 'N/A'}
                         </p>
                       </div>
-
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Next Billing</p>
                         <p className="text-base font-medium text-gray-800">
@@ -1007,7 +1134,6 @@ export default function SettingsPage() {
                             : 'N/A'}
                         </p>
                       </div>
-
                       <div>
                         <p className="text-sm text-gray-500 mb-1">Platform</p>
                         <p className="text-base font-medium text-gray-800">
@@ -1016,7 +1142,6 @@ export default function SettingsPage() {
                       </div>
                     </div>
                   </div>
-
                   <div className="pt-4">
                     <a
                       href={subscription?.hosted_invoice_url}
@@ -1029,7 +1154,6 @@ export default function SettingsPage() {
                   </div>
                 </CardContent>
               </Card>
-              {/* Token Balance Box */}
               <Card className="border-0 shadow-lg rounded-2xl p-4">
                 <CardHeader>
                   <CardTitle className="text-xl font-bold text-gray-800">Tokens / Credits</CardTitle>
@@ -1039,8 +1163,6 @@ export default function SettingsPage() {
                     <p className="text-4xl font-bold text-green-600">{tokendetails?.tokenBalance}</p>
                     <p className="text-lg text-gray-800 font-semibold">/ {tokendetails?.totalTokenPurchase}</p>
                   </div>
-
-                  {/* Progress Bar */}
                   <div className="w-full bg-gray-200 rounded-full h-3">
                     <div
                       className="bg-green-500 h-3 rounded-full transition-all duration-300"
@@ -1054,15 +1176,12 @@ export default function SettingsPage() {
                       }}
                     ></div>
                   </div>
-
                   <p className="text-sm text-gray-500">
                     Tokens are used for AI-Agent chat  credits, blog scans and product rec expansion                  
                     </p>
                   <p className="text-sm text-gray-500"> 1 Token = 1 Credit </p>
                 </CardContent>
               </Card>
-
-              {/* Billing Details Box */}
               <Card className="border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg font-semibold text-gray-800">Payment Method</CardTitle>
@@ -1087,7 +1206,6 @@ export default function SettingsPage() {
                       </p>
                     </div>
                   </div>
-
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Card Ending</p>
                     <div className="flex items-center gap-2">
@@ -1097,7 +1215,6 @@ export default function SettingsPage() {
                       </p>
                     </div>
                   </div>
-
                   <div>
                     <p className="text-sm text-gray-500 mb-1">Expires</p>
                     <p className="text-base font-medium text-gray-800">
@@ -1108,7 +1225,6 @@ export default function SettingsPage() {
                         : 'MM/YY'}
                     </p>
                   </div>
-
                   <div className="pt-2">
                     <Button
                       variant="outline"
@@ -1121,8 +1237,6 @@ export default function SettingsPage() {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Token Purchase Section */}
             <Card className="border border-gray-200 rounded-lg shadow-sm">
               <CardHeader className="border-b border-gray-200">
                 <CardTitle className="text-lg font-semibold text-gray-800">Purchase More Tokens</CardTitle>
@@ -1131,7 +1245,7 @@ export default function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   {tokendetails?.products?.plans?.map((plan: TokenPlan, index: number) => {
                     const perToken = (plan.amount / plan.token).toFixed(2);
-                    const isPopular = index === 1; // mark second plan as "POPULAR" by default
+                    const isPopular = index === 1;
 
                     return (
                       <div
@@ -1153,9 +1267,7 @@ export default function SettingsPage() {
                           <p className="text-xs text-gray-500">${perToken} per token</p>
                           <Button
                             className="w-full mt-2 bg-yellow-400 hover:bg-yellow-500 text-white"
-                            onClick={() =>
-                              handlePurchaseTokens(plan.id) // Replace with dynamic payment_method_id if available
-                            }
+                            onClick={() => handlePurchaseTokens(plan.id)}
                             disabled={isLoading}
                           >
                             {isLoading ? (
@@ -1174,13 +1286,10 @@ export default function SettingsPage() {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Billing History Section */}
             <Card className="border border-gray-100 shadow-sm rounded-xl overflow-hidden">
               <CardHeader className="border-b border-gray-100">
                 <CardTitle className="text-lg font-semibold text-gray-800">Billing History</CardTitle>
               </CardHeader>
-
               <CardContent className="p-0">
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200">
@@ -1266,8 +1375,6 @@ export default function SettingsPage() {
                     </tbody>
                   </table>
                 </div>
-
-                {/* Pagination Footer */}
                 <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 gap-4">
                   <div className="text-sm text-gray-500">
                     Showing{' '}
@@ -1285,7 +1392,6 @@ export default function SettingsPage() {
                     </span>{' '}
                     of <span className="font-medium">{bookingHistory?.meta?.total ?? 0}</span> entries
                   </div>
-
                   <div className="flex gap-1">
                     <Button
                       variant="outline"
@@ -1296,7 +1402,6 @@ export default function SettingsPage() {
                     >
                       Previous
                     </Button>
-
                     {Array.from({
                       length: Math.ceil((bookingHistory?.meta?.total ?? 0) / (bookingHistory?.meta?.limit ?? 1)),
                     }).map((_, index) => (
@@ -1304,14 +1409,12 @@ export default function SettingsPage() {
                         key={index}
                         variant="outline"
                         size="sm"
-                        className={`border-gray-300 ${bookingHistory?.meta?.current_page === index + 1 ? 'bg-gray-100' : ''
-                          }`}
+                        className={`border-gray-300 ${bookingHistory?.meta?.current_page === index + 1 ? 'bg-gray-100' : ''}`}
                         onClick={() => fetchPage(index + 1)}
                       >
                         {index + 1}
                       </Button>
                     ))}
-
                     <Button
                       variant="outline"
                       size="sm"
@@ -1356,7 +1459,6 @@ export default function SettingsPage() {
                       Primary color used for buttons, accents, and interactive elements.
                     </p>
                   </div>
-
                   <div className="space-y-2">
                     <Label>Color Preview</Label>
                     <div
@@ -1367,8 +1469,6 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Custom URL + Limit Session Field Side by Side */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="customUrl">Custom URL</Label>
@@ -1393,7 +1493,6 @@ export default function SettingsPage() {
                       </p>
                     )}
                   </div>
-
                   <div className="space-y-2">
                     <Label htmlFor="chatLimit">Limit Visitor Chat Sessions</Label>
                     <Input
@@ -1421,7 +1520,6 @@ export default function SettingsPage() {
                 <CardDescription>Manage your account details and security settings</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Account Features */}
                 <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
                   <h3 className="font-medium text-orange-900 mb-2">Account Features</h3>
                   <div className="space-y-2 text-sm text-orange-700">
@@ -1447,10 +1545,7 @@ export default function SettingsPage() {
                     </div>
                   </div>
                 </div>
-
-                {/* Side by side sections */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* Enhanced Password Change Section */}
                   <div className="border border-gray-200 rounded-2xl p-8 bg-white shadow-lg hover:shadow-xl transition-shadow duration-300">
                     <div className="flex items-center gap-4 mb-8">
                       <div className="p-3 rounded-full bg-blue-100 transition-colors duration-200">
@@ -1461,7 +1556,6 @@ export default function SettingsPage() {
                         <p className="text-sm text-gray-600 mt-1">Keep your account secure with a strong password</p>
                       </div>
                     </div>
-
                     <form className="space-y-6" onSubmit={handlePasswordChange}>
                       <div className="space-y-3">
                         <Label
@@ -1495,7 +1589,6 @@ export default function SettingsPage() {
                           </button>
                         </div>
                       </div>
-
                       <div className="space-y-3">
                         <Label htmlFor="newPassword" className="text-sm font-medium text-gray-900">
                           New Password
@@ -1522,8 +1615,7 @@ export default function SettingsPage() {
                           {[1, 2, 3, 4].map((i) => (
                             <div
                               key={i}
-                              className={`h-1.5 rounded-full transition-colors duration-200 ${passwordStrength >= i ? 'bg-green-500' : 'bg-gray-200'
-                                }`}
+                              className={`h-1.5 rounded-full transition-colors duration-200 ${passwordStrength >= i ? 'bg-green-500' : 'bg-gray-200'}`}
                             ></div>
                           ))}
                         </div>
@@ -1562,7 +1654,6 @@ export default function SettingsPage() {
                           </li>
                         </ul>
                       </div>
-
                       <div className="space-y-3">
                         <Label
                           htmlFor="confirmPassword"
@@ -1583,7 +1674,7 @@ export default function SettingsPage() {
                             onChange={(e) => {
                               setConfirmPassword(e.target.value);
                               setConfirmPasswordError('');
-                              setPassword_confirmation(e.target.value)
+                              setPassword_confirmation(e.target.value);
                             }}
                           />
                           <button
@@ -1596,7 +1687,6 @@ export default function SettingsPage() {
                           </button>
                         </div>
                       </div>
-
                       <Button
                         type="submit"
                         className="w-full h-12 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-all duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
@@ -1613,8 +1703,6 @@ export default function SettingsPage() {
                       </Button>
                     </form>
                   </div>
-
-                  {/* Comprehensive Danger Zone Section */}
                   <div className="border border-gray-200 rounded-lg p-6 bg-white">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-3 rounded-full bg-red-50">
@@ -1625,9 +1713,7 @@ export default function SettingsPage() {
                         <p className="text-sm text-gray-500">Critical actions with permanent consequences</p>
                       </div>
                     </div>
-
                     <div className="space-y-6">
-                      {/* Reset Options */}
                       <div className="border-t pt-4">
                         <h4 className="font-medium text-gray-900 mb-2">Reset Options</h4>
                         <div className="space-y-3">
@@ -1661,8 +1747,6 @@ export default function SettingsPage() {
                           </div>
                         </div>
                       </div>
-
-                      {/* Account Deletion */}
                       <div className="border-t pt-4">
                         <h4 className="font-medium text-gray-900 mb-2">Delete Account</h4>
                         <p className="text-sm text-gray-600 mb-3">
