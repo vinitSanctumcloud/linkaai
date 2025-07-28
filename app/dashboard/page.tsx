@@ -63,12 +63,12 @@ export default function DashboardPage() {
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                {/* <Button
+                <Button
                   asChild
                   className="bg-orange-600 hover:bg-orange-700 text-white mb-3"
                 >
                   <Link href="/pricing">Subscription</Link>
-                </Button> */}
+                </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white select-text">
                   <span className="bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
                     Good {getTimeOfDay()} ,
