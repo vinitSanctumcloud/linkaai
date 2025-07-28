@@ -122,6 +122,7 @@ interface AgentConfig {
   greetingMediaType: string | null;
   greetingMedia: string | null;
   ai_agent_slug: string | null;
+  avatar: string | null;
 }
 
 export default function AgentBuilderPage() {
@@ -148,6 +149,7 @@ export default function AgentBuilderPage() {
     greeting: "",
     greetingMediaType: null,
     greetingMedia: null,
+    avatar: null,
     ai_agent_slug: ""
   });
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
@@ -171,6 +173,66 @@ export default function AgentBuilderPage() {
   const [totalPages, setTotalPages] = useState(1);
 
   const [siteDomain, setSiteDomain] = useState('');
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) {
+      toast.error('No file selected.');
+      return;
+    }
+
+    // Validate file type and size
+    const validImageTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validImageTypes.includes(file.type)) {
+      toast.error('Please upload a valid image (JPEG, PNG, GIF, or WebP).');
+      return;
+    }
+
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error('File size exceeds 5MB limit.');
+      return;
+    }
+
+    // Create FormData
+    const formData = new FormData();
+    formData.append('images[]', file);
+    formData.append('upload_path', 'ai-agent/avatars'); // Adjust path as needed
+
+    try {
+      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/upload/image', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          // Replace with your actual API key or token
+          'Authorization': 'Bearer YOUR_TAGWELL_API_KEY',
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to upload image.');
+      }
+
+      const data = await response.json();
+      // Assuming API returns the image URL in data.url or similar
+      const imageUrl = data.data.cdn + data.data.images[0];
+          if (!imageUrl) {
+            toast.error("No image URL returned from the server.", {
+              position: "top-right",
+              duration: 2000,
+            });
+            return;
+          }
+
+      // Update agentConfig with the uploaded image URL
+      setAgentConfig((prev) => ({ ...prev, avatar: imageUrl }));
+      toast.success('Avatar uploaded successfully!');
+    } catch (error) {
+      console.error('Avatar upload error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to upload avatar.');
+    }
+  };
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -273,6 +335,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           setAgentConfig({
             // ...agentData,
             name: agentData.agent_name || "",
+            avatar: agentData.avatar_image_url || "",
             trainingInstructions: agentData.training_instructions || "",
             prompts: sanitizedPrompts,
             partnerLinks: agentData.partner_links?.map((link: any) => ({
@@ -1313,9 +1376,16 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             });
             return;
           }
+          if (!agentConfig.avatar?.trim()) {
+            toast.error("Please provide a Avatar.", {
+              position: "top-right",
+              duration: 2000,
+            });
+            return;
+          }
           apiUrl = "https://api.tagwell.co/api/v4/ai-agent/create-agent";
           payload = {
-            avatar_image_url: null,
+            avatar_image_url: agentConfig.avatar,
             greeting_title: agentConfig.greetingTitle,
             welcome_greeting: agentConfig.greeting,
             greeting_media_url:
@@ -1777,7 +1847,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   </p>
                 </div>
               </CardHeader>
-              <CardContent className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
+              {/* <CardContent className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
                 <div className="flex flex-col items-center w-full">
                   <div className="flex items-center gap-2 mb-3 sm:mb-4">
                     <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet">
@@ -1793,6 +1863,18 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                     </Tooltip>
                   </div>
                   <div className="relative group w-full max-w-[12rem] sm:max-w-[14rem]">
+                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+                    {agentConfig.avatar ? (
+                      <img
+                        src={agentConfig.avatar}
+                        alt="Agent Avatar"
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                        onError={() => toast.error("Error loading avatar image.")}
+                      />
+                    ) : (
+                      <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+                    )}
+                </div>
                     <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
                       {agentConfig.greetingMedia && agentConfig.greetingMediaType ? (
                        agentConfig.greetingMediaType === "video" ? (
@@ -1976,7 +2058,251 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                     </p>
                   </div>
                 </div>
-              </CardContent>
+              </CardContent> */}
+              <CardContent className="px-4 sm:px-6 pb-6 sm:pb-8 space-y-6 sm:space-y-8">
+  <div className="flex flex-col items-center w-full">
+    <div className="flex items-center gap-2 mb-3 sm:mb-4">
+      <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet">
+        AI Agent Greeting
+      </h3>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Upload visuals to represent your AI agent's avatar and greeting.</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+    <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
+      {/* Avatar Preview */}
+      <div className="relative group w-full md:w-1/2 max-w-[12rem] sm:max-w-[14rem]">
+        <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+          {agentConfig.avatar ? (
+            <img
+              src={agentConfig.avatar}
+              alt="Agent Avatar"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+              onError={() => toast.error("Error loading avatar image.")}
+            />
+          ) : (
+            <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+          )}
+        </div>
+        <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
+          <div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleAvatarUpload}
+              className="hidden"
+              id="avatar-upload"
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label
+                  htmlFor="avatar-upload"
+                  className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                >
+                  <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                  <span className="text-xs font-medium hidden sm:inline">Avatar</span>
+                  <span className="sr-only">Upload avatar image</span>
+                </label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Upload an image (max 5MB) for your AI's avatar.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      </div>
+      {/* Greeting Media Preview */}
+      <div className="relative group w-full md:w-1/2 max-w-[12rem] sm:max-w-[14rem]">
+        <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+          {agentConfig.greetingMedia && agentConfig.greetingMediaType ? (
+            agentConfig.greetingMediaType === "video" ? (
+              <video
+                src={agentConfig.greetingMedia}
+                autoPlay
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover rounded-full"
+                onError={() =>
+                  toast.error(
+                    "Error loading video. Please ensure the file is a valid MP4, WebM, or OGG."
+                  )
+                }
+              />
+            ) : (
+              <img
+                src={agentConfig.greetingMedia}
+                alt="Greeting Image"
+                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                onError={() => toast.error("Error loading greeting image.")}
+              />
+            )
+          ) : (
+            <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+          )}
+        </div>
+        <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
+          <div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleGreetingMediaUpload(e, "image")}
+              className="hidden"
+              id="greeting-image-upload"
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label
+                  htmlFor="greeting-image-upload"
+                  className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                >
+                  <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                  <span className="text-xs font-medium hidden sm:inline">Image</span>
+                  <span className="sr-only">Upload greeting image</span>
+                </label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Upload an image (max 5MB) for your AI's greeting.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+          <div>
+            <input
+              type="file"
+              accept="video/*"
+              onChange={(e) => handleGreetingMediaUpload(e, "video")}
+              className="hidden"
+              id="greeting-video-upload"
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <label
+                  htmlFor="greeting-video-upload"
+                  className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                >
+                  <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                  <span className="text-xs font-medium hidden sm:inline">Video</span>
+                  <span className="sr-only">Upload greeting video</span>
+                </label>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Upload a video (max 10MB, MP4/WebM/OGG) for your AI's greeting.</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p className="text-xs text-linka-night/60 mt-3 sm:mt-5 font-medium text-center">
+      Upload an image (max 5MB) for avatar or an image/video (max 5MB/10MB, MP4/WebM/OGG) for greeting
+    </p>
+  </div>
+
+  <div className="space-y-2 sm:space-y-3">
+    <div className="flex items-center gap-2">
+      <Label
+        htmlFor="greeting-title"
+        className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base"
+      >
+        Greeting Title{" "}
+        <span className="text-xs text-linka-dark-orange">(Max 50 chars)</span>
+      </Label>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Example: Hi, I'm Sabrina</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+    <input
+      id="greeting-title"
+      type="text"
+      placeholder="Example: Hi I'm { Your Name }"
+      value={agentConfig.greetingTitle || ""}
+      onChange={(e) => handleInputChange("greetingTitle", e.target.value)}
+      maxLength={50}
+      className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
+    />
+    <div className="flex justify-between items-center">
+      <p className="text-xs text-linka-night/50 italic">Pro tip: Keep it short and engaging</p>
+      <span
+        className={`text-xs ${agentConfig.greetingTitle?.length === 50 ? "text-red-400" : "text-linka-night/50"}`}
+      >
+        {agentConfig.greetingTitle?.length || 0}/50
+      </span>
+    </div>
+  </div>
+
+  <div className="space-y-2 sm:space-y-3">
+    <div className="flex items-center gap-2">
+      <Label
+        htmlFor="greeting"
+        className="text-linka-russian-violet font-medium flex items-center gap-1 text-sm sm:text-base"
+      >
+        Opening Greeting{" "}
+        <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
+      </Label>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Example: I can help you find the coolest places in NYC to visit!</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+    <Textarea
+      id="greeting"
+      placeholder="Example: I can help you find the coolest places in NYC to visit!"
+      value={agentConfig.greeting}
+      onChange={(e) => handleInputChange("greeting", e.target.value)}
+      rows={3}
+      maxLength={120}
+      className="w-full px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base text-linka-night border border-linka-alice-blue rounded-xl focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 transition-all duration-300 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 bg-white/80 backdrop-blur-sm"
+    />
+    <div className="flex justify-between items-center">
+      <p className="text-xs text-linka-night/50 italic">Pro tip: Keep it relevant to your expertise</p>
+      <span
+        className={`text-xs ${agentConfig.greeting?.length === 120 ? "text-red-400" : "text-linka-night/50"}`}
+      >
+        {agentConfig.greeting?.length || 0}/120
+      </span>
+    </div>
+  </div>
+
+  <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-4 sm:p-5 border border-linka-alice-blue/80 overflow-hidden relative">
+    <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
+    <div className="flex items-center gap-2 mb-2 sm:mb-3">
+      <p className="text-xs text-linka-night/60 font-medium uppercase tracking-wider">
+        Live Preview
+      </p>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>Preview how your AI's greeting will appear to users.</p>
+        </TooltipContent>
+      </Tooltip>
+    </div>
+    <div className="text-center space-y-2 sm:space-y-3 relative z-10">
+      <h4 className="text-lg sm:text-xl md:text-2xl font-medium text-linka-russian-violet animate-in fade-in">
+        {agentConfig.greetingTitle || "Hi I'm Your AI"}
+      </h4>
+      <p className="text-base sm:text-lg md:text-xl font-semibold text-linka-night/90 animate-in fade-in delay-100">
+        {agentConfig.greeting ||
+          "I can help you find the coolest places in NYC to visit!"}
+      </p>
+    </div>
+  </div>
+</CardContent>
             </Card>
           </TooltipProvider>
         );
