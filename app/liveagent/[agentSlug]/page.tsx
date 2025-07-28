@@ -322,7 +322,10 @@ export default function AgentDetails() {
                       autoPlay
                       muted={false} // Enable audio
                       loop // Play video in a loop
+                      playsInline
+                      preload="auto"
                       className="w-full h-full object-cover"
+                      onError={(e) => console.error('Video error:', e)} // Log errors
                     />
                   ) : (
                     <img
