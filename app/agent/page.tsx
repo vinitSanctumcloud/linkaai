@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,7 +40,11 @@ import {
   InfoIcon,
   LinkIcon,
   Link2,
-  Info
+  Info,
+  Globe,
+  Smartphone,
+  Code,
+  Copy
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -51,6 +55,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CopyIcon, Cross2Icon, DotsVerticalIcon, OpenInNewWindowIcon } from '@radix-ui/react-icons';
 import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
 // import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 // Interfaces remain unchanged
 interface ConditionalPrompt {
@@ -115,6 +120,7 @@ interface AgentConfig {
   greeting: string;
   greetingMediaType: string | null;
   greetingMedia: string | null;
+  ai_agent_slug: string | null;
 }
 
 export default function AgentBuilderPage() {
@@ -141,6 +147,7 @@ export default function AgentBuilderPage() {
     greeting: "",
     greetingMediaType: null,
     greetingMedia: null,
+    ai_agent_slug: ""
   });
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
   const [editingPartnerLinkId, setEditingPartnerLinkId] = useState<string | null>(null);
@@ -161,6 +168,17 @@ export default function AgentBuilderPage() {
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [totalPages, setTotalPages] = useState(1);
+
+  const [siteDomain, setSiteDomain] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const origin = window.location.origin; // e.g., https://example.com
+      setSiteDomain(origin);
+    }
+  }, []);
+
+  // console.log(siteDomain, "domaim")
 
   const CATEGORY_PRODUCTS_PLACEHOLDER = 'Travel Packages, Hotel Bookings, Tour Experiences';
   const CATEGORY_URL_PLACEHOLDER = 'https://www.tripadvisor.com/TravelDeals';
@@ -236,9 +254,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             Authorization: `Bearer ${accessToken}`,
           },
         });
-
         if (response.ok) {
           const data = await response.json();
+          console.log(data.data.ai_agent.ai_agent_slug, "fd")
           const agentData = data.data.ai_agent;
           // console.log("agentData :: ", agentData);
 
@@ -308,6 +326,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             greeting: agentData.welcome_greeting || "",
             greetingMediaType: agentData.greeting_media_type || null,
             greetingMedia: agentData.greeting_media_url || null,
+            ai_agent_slug: agentData.ai_agent_slug || ""
           });
 
           // console.log("agentConfig :: ", agentConfig);
@@ -1163,7 +1182,8 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 
   const handleSave = async () => {
     console.log("first")
-    const link = `abc.com`;
+    const link = `${siteDomain}/liveagent/${agentConfig?.ai_agent_slug}`;
+    // const link = `abc.coom`;
     setAgentLink(link);
     setIsModalOpen(true)
   };
@@ -3654,205 +3674,227 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 }
 
 const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: () => void }) => {
-  const [copied, setCopied] = useState(false);
+  const [copiedShare, setCopiedShare] = useState(false);
+  const [copiedIframe, setCopiedIframe] = useState(false);
+  const [copiedWidget, setCopiedWidget] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(true);
-  const [showParticles, setShowParticles] = useState(false);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(agentLink);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+  const iframeCode = `<iframe src="${agentLink}" width="100%" height="600" frameborder="0"></iframe>`;
+  const widgetCode = `
+<script>
+  (function() {
+    var script = document.createElement('script');
+    script.src = '${agentLink}/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+  })();
+</script>
+`;
+
+  const handleCopy = useCallback(async (text: string, type: 'share' | 'iframe' | 'widget') => {
+    try {
+      await navigator.clipboard.writeText(text);
+      if (type === 'share') setCopiedShare(true);
+      if (type === 'iframe') setCopiedIframe(true);
+      if (type === 'widget') setCopiedWidget(true);
+      setCopyError(null);
+      setTimeout(() => {
+        if (type === 'share') setCopiedShare(false);
+        if (type === 'iframe') setCopiedIframe(false);
+        if (type === 'widget') setCopiedWidget(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Copy failed:', err);
+      setCopyError('Failed to copy to clipboard. Please try again.');
+      setTimeout(() => setCopyError(null), 2000);
+    }
+  }, []);
 
   const handleOpenChange = (open: boolean) => {
     if (!open) {
       setIsOpen(false);
-      setTimeout(onClose, 500); // Increased for smoother exit animation
+      setTimeout(onClose, 500);
     }
   };
 
-  useEffect(() => {
-    setShowParticles(true);
-    const timer = setTimeout(() => setShowParticles(false), 2000); // Extended duration
-    return () => clearTimeout(timer);
-  }, []);
-
   return (
-    <>
-      <AnimatePresence>
-        {showParticles && <CelebrationParticles />}
-      </AnimatePresence>
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent className="max-w-[95vw] sm:max-w-[625px] p-0 overflow-auto bg-gray-100 rounded-xl w-[calc(100vw-20px)]">
+        <div className="bg-white rounded-xl shadow-lg w-full max-w-full">
+          <DialogHeader className="flex flex-row justify-between items-start p-2 sm:p-4 pb-2 sm:pb-4 border-b border-gray-200">
+            <DialogTitle className="text-sm sm:text-2xl font-bold text-gray-900 flex items-center font-sans">
+              <span className="inline-block mr-1 sm:mr-2">🎉</span>
+              Your AI-Agent is Live!
+            </DialogTitle>
+          </DialogHeader>
 
-      <Dialog open={isOpen} onOpenChange={handleOpenChange}>
-        <DialogContent className="sm:max-w-[625px] p-0 overflow-hidden">
-          <motion.div
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -50, scale: 0.9 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200, duration: 0.4 }}
-          >
-            <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
-              <DialogHeader className="flex-row justify-between items-start p-6 pb-4 border-b">
-                <motion.div
-                  initial={{ scale: 0.8, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ delay: 0.2, type: 'spring', damping: 15 }}
+          <div className="px-2 sm:px-4 pb-2 sm:pb-4 mt-5">
+            <Tabs defaultValue="share" className="w-full mx-auto ">
+              <TabsList className="grid grid-cols-1 sm:grid-cols-3 gap-1 p-1 bg-gray-200/50 rounded-lg shadow-sm">
+                <TabsTrigger
+                  value="share"
+                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-blue-100 hover:text-blue-700 font-medium"
+                  aria-label="Share URL Tab"
                 >
-                  <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center">
-                    <motion.span
-                      animate={{
-                        rotate: [0, 15, -15, 0, 10, -10, 0],
-                        scale: [1, 1.2, 1, 1.1, 1]
-                      }}
-                      transition={{
-                        duration: 1.2,
-                        times: [0, 0.2, 0.4, 0.6, 0.8, 0.9, 1],
-                        ease: 'easeInOut'
-                      }}
-                      className="inline-block mr-2"
-                    >
-                      🎉
-                    </motion.span>
-                    Your AI-Agent is Live!
-                  </DialogTitle>
-                </motion.div>
-              </DialogHeader>
+                  <Smartphone className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">Share URL</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="iframe"
+                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-blue-100 hover:text-blue-700 font-medium"
+                  aria-label="Iframe Tab"
+                >
+                  <Globe className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">Iframe</span>
+                </TabsTrigger>
+                <TabsTrigger
+                  value="widget"
+                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-blue-100 hover:text-blue-700 font-medium"
+                  aria-label="Widget Tab"
+                >
+                  <Code className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" />
+                  <span className="truncate">Widget</span>
+                </TabsTrigger>
+              </TabsList>
 
-              <div className="p-6">
-                <motion.p
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.3, duration: 0.5, ease: 'easeOut' }}
-                  className="text-gray-600 mb-6"
-                >
-                  Share your agent and earn seamlessly
-                </motion.p>
-
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.4, duration: 0.5, ease: 'easeOut' }}
-                  className="mb-6"
-                >
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Agent Link</label>
-                  <div className="flex rounded-md shadow-sm">
-                    <input
-                      type="text"
-                      readOnly
-                      value={agentLink}
-                      className="flex-1 min-w-0 block w-full px-3 py-2 rounded-l-md border border-gray-300 sm:text-sm outline-none focus:outline-none focus:ring-0 focus:border-gray-300"
-                    />
-                    <motion.button
-                      onClick={handleCopy}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      className="inline-flex items-center px-4 py-2 border border-l-0 border-gray-300 rounded-r-md bg-green-600 text-white font-medium hover:bg-green-700 outline-none focus:outline-none focus:ring-0"
-                    >
-                      {copied ? (
-                        <motion.span
-                          initial={{ scale: 0.8 }}
-                          animate={{ scale: 1 }}
-                          transition={{ type: 'spring', stiffness: 300 }}
-                        >
-                          Copied!
-                        </motion.span>
-                      ) : (
-                        <>
-                          <CopyIcon className="w-4 h-4 mr-2" />
-                          Copy
-                        </>
-                      )}
-                    </motion.button>
+              <TabsContent value="iframe" className="mt-2 sm:mt-4">
+                <div className="space-y-1 sm:space-y-3">
+                  <div>
+                    <h3 className="font-medium text-gray-900 text-xs sm:text-base mb-1 font-sans">
+                      Simple Iframe Embed
+                    </h3>
+                    <p className="text-gray-600 text-[10px] sm:text-sm font-sans">
+                      Basic iframe code that you can paste directly into your HTML.
+                    </p>
                   </div>
-                </motion.div>
+                  <div className="relative flex items-center">
+                    <Textarea
+                      value={iframeCode}
+                      readOnly
+                      rows={3}
+                      className="font-mono text-[10px] sm:text-sm p-1 sm:p-3 pr-8 sm:pr-12 w-full rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+                      aria-label="Iframe embed code"
+                    />
+                    <div className="absolute top-1 right-1 flex items-center space-x-1 sm:space-x-2">
+                      <Button
+                        onClick={() => handleCopy(iframeCode, 'iframe')}
+                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-0"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Copy iframe code"
+                      >
+                        <Copy className="h-3 w-3 sm:h-5 sm:w-5" />
+                      </Button>
+                      {copiedIframe && (
+                        <span className="text-[10px] sm:text-sm text-green-600 font-medium truncate">
+                          Copied!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
 
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5, duration: 0.5, ease: 'easeOut' }}
-                  className="flex justify-end space-x-3"
-                >
-                  <motion.button
-                    onClick={() => handleOpenChange(false)}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                  >
-                    Close
-                  </motion.button>
-                  <motion.a
-                    href={agentLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="px-4 py-2 border border-transparent rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 inline-flex items-center"
-                  >
-                    <OpenInNewWindowIcon className="w-4 h-4 mr-2" />
-                    Open Agent
-                  </motion.a>
-                </motion.div>
-              </div>
-            </div>
-          </motion.div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-};
+              <TabsContent value="widget" className="mt-2 sm:mt-4">
+                <div className="space-y-1 sm:space-y-3">
+                  <div>
+                    <h3 className="font-medium text-gray-900 text-xs sm:text-base mb-1 font-sans">
+                      JavaScript Widget
+                    </h3>
+                    <p className="text-gray-600 text-[10px] sm:text-sm font-sans">
+                      Dynamic widget that loads asynchronously and is more flexible.
+                    </p>
+                  </div>
+                  <div className="relative flex items-center">
+                    <Textarea
+                      value={widgetCode}
+                      readOnly
+                      rows={4}
+                      className="font-mono text-[10px] sm:text-sm p-1 sm:p-3 pr-8 sm:pr-12 w-full rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+                      aria-label="Widget script code"
+                    />
+                    <div className="absolute top-1 right-1 flex items-center space-x-1 sm:space-x-2">
+                      <Button
+                        onClick={() => handleCopy(widgetCode, 'widget')}
+                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-0"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Copy widget code"
+                      >
+                        <Copy className="h-3 w-3 sm:h-5 sm:w-5" />
+                      </Button>
+                      {copiedWidget && (
+                        <span className="text-[10px] sm:text-sm text-green-600 font-medium truncate">
+                          Copied!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
 
-const CelebrationParticles = () => {
-  const particles = Array.from({ length: 50 }).map((_, i) => {
-    const size = Math.random() * 12 + 6;
-    const colors = [
-      'from-yellow-400 to-pink-500',
-      'from-blue-400 to-purple-500',
-      'from-green-400 to-blue-500'
-    ];
-    const color = colors[Math.floor(Math.random() * colors.length)];
+              <TabsContent value="share" className="mt-2 sm:mt-4">
+                <div className="space-y-1 sm:space-y-3">
+                  <div>
+                    <h3 className="font-medium text-gray-900 text-xs sm:text-base mb-1 font-sans">
+                      Share Chat Link
+                    </h3>
+                    <p className="text-gray-600 text-[10px] sm:text-sm font-sans">
+                      Copy and share this URL to let others chat with your AI agent.
+                    </p>
+                  </div>
+                  <div className="relative flex items-center">
+                    <div
+                      onClick={() => handleCopy(agentLink, 'share')}
+                      className="font-mono text-[10px] sm:text-sm p-1 sm:p-3 pr-8 sm:pr-12 border border-gray-300 rounded-md cursor-pointer hover:bg-gray-50 flex items-center overflow-hidden bg-white shadow-sm flex-1"
+                      aria-label="Share URL"
+                    >
+                      <span className="truncate">{agentLink}</span>
+                    </div>
+                    <div className="absolute top-1 right-1 flex items-center space-x-1 sm:space-x-2">
+                      <Button
+                        onClick={() => handleCopy(agentLink, 'share')}
+                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-0"
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Copy share URL"
+                      >
+                        <Copy className="h-3 w-3 sm:h-5 sm:w-5" />
+                      </Button>
+                      {copiedShare && (
+                        <span className="text-[10px] sm:text-sm text-green-600 font-medium truncate">
+                          Copied!
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          </div>
 
-    return (
-      <motion.div
-        key={i}
-        className={`absolute rounded-full bg-gradient-to-br ${color}`}
-        style={{
-          width: `${size}px`,
-          height: `${size}px`,
-          left: `${Math.random() * 100}%`,
-          top: `${Math.random() * 100}%`,
-        }}
-        initial={{
-          y: -100,
-          x: Math.random() * 200 - 100,
-          opacity: 0.8,
-          scale: 0
-        }}
-        animate={{
-          y: [0, Math.random() * 200 + 100],
-          x: [0, Math.random() * 200 - 100],
-          opacity: [0.8, 0],
-          scale: [1, Math.random() * 0.5],
-          rotate: [0, Math.random() * 720 - 360]
-        }}
-        transition={{
-          duration: 2,
-          delay: Math.random() * 0.8,
-          ease: 'easeOut',
-          times: [0, 0.7, 1]
-        }}
-      />
-    );
-  });
-
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="fixed inset-0 pointer-events-none z-[60]"
-    >
-      {particles}
-    </motion.div>
+          <div className="flex justify-end space-x-2 p-2 sm:p-4 pt-0">
+            <button
+              onClick={() => handleOpenChange(false)}
+              className="px-2 sm:px-4 py-1 sm:py-2 border border-gray-300 rounded-md bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-xs shadow-sm"
+              aria-label="Close dialog"
+            >
+              Close
+            </button>
+            <a
+              href={agentLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-2 sm:px-4 py-1 sm:py-2 border border-transparent rounded-md bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 inline-flex items-center text-xs shadow-sm"
+              aria-label="Open agent in new tab"
+            >
+              <OpenInNewWindowIcon className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
+              Open Agent
+            </a>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };

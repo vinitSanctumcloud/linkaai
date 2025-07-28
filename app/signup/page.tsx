@@ -143,7 +143,7 @@ export default function SignupPage() {
         }
       `}</style>
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-white flex items-center justify-center p-4 sm:p-6 lg:p-8">
-        <div className="w-full max-w-2xl space-y-6">
+        <div className="w-full max-w-3xl space-y-6">
           <div className="flex items-center">
             <Link
               href="/"
@@ -318,7 +318,7 @@ export default function SignupPage() {
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {[
                       { value: 'CREATOR', label: 'Creator' },
-                      { value: 'BRAND', label: 'BRAND/Brand' },
+                      { value: 'BRAND', label: 'BRAND' },
                       { value: '', label: 'Just Exploring' },
                     ].map((option) => (
                       <label
@@ -371,7 +371,7 @@ export default function SignupPage() {
                     {formData.user_varient === 'BRAND' && (
                       <div className="mt-3 grid">
                         <Label className="text-sm font-medium text-gray-700 block">
-                          Enter Business name
+                          Enter Brand name
                         </Label>
                         <Input
                           id="business_name"

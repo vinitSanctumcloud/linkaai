@@ -110,12 +110,12 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Live Agent item for the footer
   const agentSlug = agentDetails?.ai_agent_slug;
-  const liveAgentItem: NavItem = {
-    name: 'Live Agent',
-    href: agentSlug ? `/liveagent/${agentSlug}` : '#',
-    icon: User,
-    target: '_blank',
-  };
+  // const liveAgentItem: NavItem = {
+  //   name: 'Live Agent',
+  //   href: agentSlug ? `/liveagent/${agentSlug}` : '#',
+  //   icon: User,
+  //   target: '_blank',
+  // };
 
   // Toggle dark mode
   const toggleDarkMode = () => {
@@ -473,14 +473,14 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             )}
 
-            <div
+            {/* <div
               className={cn(
                 'flex items-center px-1 py-2.5 rounded-lg',
                 'text-gray-700 dark:text-gray-300',
                 'hover:bg-gray-100 dark:hover:bg-gray-700',
-                pathname === liveAgentItem.href
-                  ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300'
-                  : '',
+                // pathname === liveAgentItem.href
+                //   ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300'
+                //   : '',
                 'transition-colors duration-200'
               )}
             >
@@ -499,7 +499,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                   }
                 },
               })}
-            </div>
+            </div> */}
 
             <button
               onClick={toggleDarkMode}
