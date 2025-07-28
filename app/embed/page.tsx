@@ -48,6 +48,15 @@ export default function EmbedPage() {
   const [isCopied, setIsCopied] = useState(false);
   const { agent: agentDetails, status, error } = useSelector((state: RootState) => state.agents);
 
+  const [siteDomain, setSiteDomain] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const origin = window.location.origin; // e.g., https://example.com
+      setSiteDomain(origin);
+    }
+  }, []);
+
   useEffect(() => {
     dispatch(fetchAgentDetails());
   }, [dispatch]);
@@ -83,11 +92,11 @@ export default function EmbedPage() {
 
   const agentSlug = agentDetails?.ai_agent_slug
 
-  const baseUrl =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://earnlinks.ai";
-  const chatUrl = `${process.env.NEXT_PUBLIC_SITE_URL}/liveagent/${agentSlug}`
+  // const baseUrl =
+  //   typeof window !== "undefined"
+  //     ? window.location.origin
+  //     : "https://earnlinks.ai";
+  const chatUrl = `${siteDomain}/liveagent/${agentSlug}`
 
   const iframeCode = `<iframe 
   src="${chatUrl}" 
