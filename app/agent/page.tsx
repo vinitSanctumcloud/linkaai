@@ -4040,29 +4040,32 @@ const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: ()
               <TabsList className="grid grid-cols-1 sm:grid-cols-3 gap-1 p-1 bg-gray-200/50 rounded-lg shadow-sm">
                 <TabsTrigger
                   value="share"
-                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-blue-100 hover:text-blue-700 font-medium"
+                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-orange-100 hover:text-orange-700 font-medium"
                   aria-label="Share URL Tab"
                 >
                   <Smartphone className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" />
                   <span className="truncate">Share URL</span>
                 </TabsTrigger>
+
                 <TabsTrigger
                   value="iframe"
-                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-blue-100 hover:text-blue-700 font-medium"
+                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-orange-100 hover:text-orange-700 font-medium"
                   aria-label="Iframe Tab"
                 >
                   <Globe className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" />
                   <span className="truncate">Iframe</span>
                 </TabsTrigger>
+
                 <TabsTrigger
                   value="widget"
-                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-blue-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-blue-100 hover:text-blue-700 font-medium"
+                  className="py-1 sm:py-2 text-[10px] sm:text-sm flex items-center justify-center rounded-md data-[state=active]:bg-orange-500 data-[state=active]:text-white data-[state=active]:shadow-md hover:bg-orange-100 hover:text-orange-700 font-medium"
                   aria-label="Widget Tab"
                 >
                   <Code className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2 flex-shrink-0" />
                   <span className="truncate">Widget</span>
                 </TabsTrigger>
               </TabsList>
+
 
               <TabsContent value="iframe" className="mt-2 sm:mt-4">
                 <div className="space-y-1 sm:space-y-3">
@@ -4079,13 +4082,13 @@ const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: ()
                       value={iframeCode}
                       readOnly
                       rows={3}
-                      className="font-mono text-[10px] sm:text-sm p-1 sm:p-3 pr-8 sm:pr-12 w-full rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+                      className="font-mono text-[10px] sm:text-sm p-1 sm:p-3 pr-8 sm:pr-12 w-full rounded-md border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white shadow-sm"
                       aria-label="Iframe embed code"
                     />
                     <div className="absolute top-1 right-1 flex items-center space-x-1 sm:space-x-2">
                       <Button
                         onClick={() => handleCopy(iframeCode, 'iframe')}
-                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-0"
+                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-blue-50 hover:bg-blue-100 text-orange-600 focus:outline-none focus:ring-0"
                         variant="ghost"
                         size="sm"
                         aria-label="Copy iframe code"
@@ -4117,13 +4120,13 @@ const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: ()
                       value={widgetCode}
                       readOnly
                       rows={4}
-                      className="font-mono text-[10px] sm:text-sm p-1 sm:p-3 pr-8 sm:pr-12 w-full rounded-md border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
+                      className="font-mono text-[10px] sm:text-sm p-1 sm:p-3 pr-8 sm:pr-12 w-full rounded-md border border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-blue-500 bg-white shadow-sm"
                       aria-label="Widget script code"
                     />
                     <div className="absolute top-1 right-1 flex items-center space-x-1 sm:space-x-2">
                       <Button
                         onClick={() => handleCopy(widgetCode, 'widget')}
-                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-0"
+                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-orange-50 hover:bg-orange-100 text-orange-600 focus:outline-none focus:ring-0"
                         variant="ghost"
                         size="sm"
                         aria-label="Copy widget code"
@@ -4161,7 +4164,7 @@ const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: ()
                     <div className="absolute top-1 right-1 flex items-center space-x-1 sm:space-x-2">
                       <Button
                         onClick={() => handleCopy(agentLink, 'share')}
-                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-blue-50 hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-0"
+                        className="h-6 w-6 sm:h-9 sm:w-9 p-0 bg-orange-50 hover:bg-orange-100 text-orange-600 focus:outline-none focus:ring-0"
                         variant="ghost"
                         size="sm"
                         aria-label="Copy share URL"
@@ -4183,7 +4186,7 @@ const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: ()
           <div className="flex justify-end space-x-2 p-2 sm:p-4 pt-0">
             <button
               onClick={() => handleOpenChange(false)}
-              className="px-2 sm:px-4 py-1 sm:py-2 border border-gray-300 rounded-md bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-xs shadow-sm"
+              className="px-2 sm:px-4 py-1 sm:py-2 border border-gray-300 rounded-md bg-white text-gray-700 font-medium hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 text-xs shadow-sm"
               aria-label="Close dialog"
             >
               Close
@@ -4192,7 +4195,7 @@ const AgentSaveModal = ({ agentLink, onClose }: { agentLink: string; onClose: ()
               href={agentLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="px-2 sm:px-4 py-1 sm:py-2 border border-transparent rounded-md bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 inline-flex items-center text-xs shadow-sm"
+              className="px-2 sm:px-4 py-1 sm:py-2 border border-transparent rounded-md bg-gradient-to-r from-orange-400 to-orange-700 text-white font-medium hover:from-orange-700 hover:to-orange-800 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 inline-flex items-center text-xs shadow-sm"
               aria-label="Open agent in new tab"
             >
               <OpenInNewWindowIcon className="w-3 h-3 sm:w-5 sm:h-5 mr-1 sm:mr-2" />
