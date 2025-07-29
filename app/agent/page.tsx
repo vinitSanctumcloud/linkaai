@@ -342,8 +342,7 @@ export default function AgentBuilderPage() {
   const BRAND_NAME_PLACEHOLDER = 'TripAdvisor';
   const AGENT_NAME_PLACEHOLDER = 'Sofia - Travel Consultant, Alex - Booking Specialist, Jamie - Customer Support';
   const TRAINING_INSTRUCTIONS_PLACEHOLDER = `# PERSONA
-- **Role:** Digital Travel Concierge  
-- **Tone & Personality:** Friendly, knowledgeable, and enthusiastic about travel  
+  - **Role:** Digital Travel Concierge\n- **Tone & Personality:** Friendly, knowledgeable, and enthusiastic about travel  
 
 # INSTRUCTIONS  
 - **Specialization:** Hotel recommendations, itinerary planning, travel deals  
@@ -351,7 +350,15 @@ export default function AgentBuilderPage() {
 
 # EXAMPLE  
 You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented, and passionate about helping travelers discover hidden gems, book the best hotels, and optimize their trips. Your tone is professional yet approachable, ensuring users feel guided—not overwhelmed—by choices.`;
-  const PRIMARY_RECS = "Just add your category and affiliate links — that’s all it takes to have your AI understand your style and make recommendations on your behalf.xeFor additional context, you can include product reviews & social media links.Your AI agent will then make smart, personalized recommendations and engage your audience’s questions around the clock — helping you earn effortlessly."
+  
+// const TRAINING_INSTRUCTIONS_PLACEHOLDER = (
+//   <>
+//     Line 1<br />
+//     Line 2<br />
+//     Line 3
+//   </>
+// );
+const PRIMARY_RECS = "Just add your category and affiliate links — that’s all it takes to have your AI understand your style and make recommendations on your behalf.xeFor additional context, you can include product reviews & social media links.Your AI agent will then make smart, personalized recommendations and engage your audience’s questions around the clock — helping you earn effortlessly."
   const SMART_RECS = "Expand Beyond your primary recs! Your AI agent doesn’t just respond — it proactively expands your product and brand recommendations based on your content. Whether it’s a blog, website, or a single affiliate link, Linka Pro helps you scale revenue with intelligent suggestions that track and attribute commissions to you automatically.Monetize effortlessly — your Linka agent learns your content and sells smarter, so you don’t have to."
 
   const [modalLinks, setModalLinks] = useState<PartnerLink[] | LinkaProMonetization[]>([]);
@@ -1807,14 +1814,23 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet">
                 AI Agent Greeting
               </h3>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Upload visuals to represent your AI agent's avatar and greeting.</p>
-                </TooltipContent>
-              </Tooltip>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                          aria-label="Agent name tooltip"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                      >
+                        <p>Upload visuals to represent your AI agent's avatar and greeting.</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
             </div>
             <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
               {/* Avatar Preview */}
@@ -1854,7 +1870,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           <span className="sr-only">Upload avatar image</span>
                         </label>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent className="whitespace-pre-line">
                         <p>Upload an image (max 5MB) for your AI's avatar.</p>
                       </TooltipContent>
                     </Tooltip>
@@ -1914,7 +1930,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           <span className="sr-only">Upload greeting image</span>
                         </label>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent className="whitespace-pre-line">
                         <p>Upload an image (max 5MB) for your AI's greeting.</p>
                       </TooltipContent>
                     </Tooltip>
@@ -1938,7 +1954,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           <span className="sr-only">Upload greeting video</span>
                         </label>
                       </TooltipTrigger>
-                      <TooltipContent>
+                      <TooltipContent className="whitespace-pre-line">
                         <p>Upload a video (max 10MB, MP4/WebM/OGG) for your AI's greeting.</p>
                       </TooltipContent>
                     </Tooltip>
@@ -1960,14 +1976,23 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                 Greeting Title{" "}
                 <span className="text-xs text-linka-dark-orange">(Max 50 chars)</span>
               </Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Example: Hi, I'm Sabrina</p>
-                </TooltipContent>
-              </Tooltip>
+                <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                          aria-label="Agent name tooltip"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                      >
+                        <p>Example: Hi, I'm Sabrina</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
             </div>
             <input
               id="greeting-title"
@@ -1997,14 +2022,23 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                 Opening Greeting{" "}
                 <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
               </Label>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Example: I can help you find the coolest places in NYC to visit!</p>
-                </TooltipContent>
-              </Tooltip>
+                <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                          aria-label="Agent name tooltip"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                      >
+                       <p>Example: I can help you find the coolest places in NYC to visit!</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
             </div>
             <Textarea
               id="greeting"
@@ -2035,7 +2069,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                 <TooltipTrigger asChild>
                   <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent className="whitespace-pre-line">
                   <p>Preview how your AI's greeting will appear to users.</p>
                 </TooltipContent>
               </Tooltip>
@@ -2087,7 +2121,6 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                         </button>
                       </TooltipTrigger>
                       <TooltipContent
-
                       >
                         {AGENT_NAME_PLACEHOLDER}
                       </TooltipContent>
@@ -2130,7 +2163,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                         </button>
                       </TooltipTrigger>
                       <TooltipContent
-
+                        className="whitespace-pre-line"
                       >
                         {TRAINING_INSTRUCTIONS_PLACEHOLDER}
                       </TooltipContent>
@@ -2237,7 +2270,8 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                               <Info className="w-5 h-5" />
                             </button>
                           </TooltipTrigger>
-                          <TooltipContent>{activeTab === "aipro" ? SMART_RECS : PRIMARY_RECS}</TooltipContent>
+                          <TooltipContent className="whitespace-pre-line">
+                            <p> {activeTab === "aipro" ? SMART_RECS : PRIMARY_RECS} </p></TooltipContent>
                         </Tooltip>
                       </TooltipProvider>
                     </h3>
@@ -3295,7 +3329,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                       <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                     </button>
                                   </TooltipTrigger>
-                                  <TooltipContent>
+                                  <TooltipContent className="whitespace-pre-line">
                                     {CATEGORY_PLACEHOLDER}
                                   </TooltipContent>
                                 </Tooltip>
@@ -3336,7 +3370,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                       <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                     </button>
                                   </TooltipTrigger>
-                                  <TooltipContent>
+                                  <TooltipContent className="whitespace-pre-line">
                                     {AFFILIATE_LINK_PLACEHOLDER}
                                   </TooltipContent>
                                 </Tooltip>
@@ -3370,7 +3404,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                     <Info className="w-4 h-4" />
                                   </button>
                                 </TooltipTrigger>
-                                <TooltipContent>
+                                <TooltipContent className="whitespace-pre-line">
                                   Optional: Provide your AI-Agent with more context
                                 </TooltipContent>
                               </Tooltip>
@@ -3396,7 +3430,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                         <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                       </button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
+                                    <TooltipContent className="whitespace-pre-line">
                                       {SOCIAL_MEDIA_LINK_PLACEHOLDER}
                                     </TooltipContent>
                                   </Tooltip>
@@ -3429,7 +3463,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                         <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                       </button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
+                                    <TooltipContent className="whitespace-pre-line">
                                       {PRODUCT_REVIEW_PLACEHOLDER}
                                     </TooltipContent>
                                   </Tooltip>
@@ -3462,7 +3496,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                         <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                       </button>
                                     </TooltipTrigger>
-                                    <TooltipContent>
+                                    <TooltipContent className="whitespace-pre-line">
                                       {BRAND_NAME_PLACEHOLDER}
                                     </TooltipContent>
                                   </Tooltip>
@@ -3537,7 +3571,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                             <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                           </button>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="whitespace-pre-line">
                                           {CATEGORY_PRODUCTS_PLACEHOLDER}
                                         </TooltipContent>
                                       </Tooltip>
@@ -3578,7 +3612,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                             <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                           </button>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="whitespace-pre-line">
                                           {AFFILIATE_LINK_PLACEHOLDER}
                                         </TooltipContent>
                                       </Tooltip>
@@ -3614,7 +3648,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                             <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                           </button>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="whitespace-pre-line">
                                           {CATEGORY_URL_PLACEHOLDER}
                                         </TooltipContent>
                                       </Tooltip>
@@ -3654,7 +3688,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                             <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                           </button>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="whitespace-pre-line">
                                           {CATEGORY_BLOGS_PLACEHOLDER}
                                         </TooltipContent>
                                       </Tooltip>
@@ -3695,7 +3729,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                             <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                           </button>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="whitespace-pre-line">
                                           {BLOG_POST_URL_PLACEHOLDER}
                                         </TooltipContent>
                                       </Tooltip>
@@ -3735,7 +3769,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                             <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                           </button>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="whitespace-pre-line">
                                           {CATEGORY_WEBSITES_PLACEHOLDER}
                                         </TooltipContent>
                                       </Tooltip>
@@ -3776,7 +3810,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                             <Info className="w-3 h-3 sm:w-4 sm:h-4" />
                                           </button>
                                         </TooltipTrigger>
-                                        <TooltipContent>
+                                        <TooltipContent className="whitespace-pre-line">
                                           {WEBSITE_URL_PLACEHOLDER}
                                         </TooltipContent>
                                       </Tooltip>
