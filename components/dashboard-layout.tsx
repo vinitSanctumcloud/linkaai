@@ -393,19 +393,11 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <Image
                 src={darkMode ? logoDark : logo}
                 alt="Linka logo"
-                width={36}
-                height={36}
+                width={darkMode ? 100 : 120}
+                height={darkMode ? 100 : 120}
                 className="rounded-full flex-shrink-0"
                 priority
               />
-              <span
-                className={cn(
-                  'text-lg font-semibold truncate',
-                  isMobile ? 'opacity-100' : 'hidden lg:inline lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200'
-                )}
-              >
-                Your Brand
-              </span>
             </Link>
             {isMobile && (
               <Button

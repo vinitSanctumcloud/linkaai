@@ -338,7 +338,7 @@ export default function AgentDetails() {
                   )}
                 </div>
                 <h2 className="mt-2 text-lg sm:text-xl font-semibold text-black">
-                  {agentDetails.agent_name || `Agent`}
+                  {agentDetails.greeting_title || `Agent`}
                 </h2>
                 <p className="text-sm text-gray-500">{agentDetails.welcome_greeting}</p>
               </div>

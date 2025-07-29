@@ -348,7 +348,7 @@ export default function EmbedPage() {
                   </div>
                 </div>
 
-                {chatUrl && (
+                {/* {chatUrl && (
                   <div className="pt-4">
                     <Label className="text-sm sm:text-base">
                       Your Chat URL
@@ -383,7 +383,7 @@ export default function EmbedPage() {
                       </div>
                     </div>
                   </div>
-                )}
+                )} */}
               </CardContent>
             </Card>
             {/* Integration Tips Card */}
@@ -424,7 +424,7 @@ export default function EmbedPage() {
                     Live Preview
                   </CardTitle>
                   <CardDescription className="text-sm sm:text-base text-gray-600">
-                    See exactly how your chat widget will appear to users
+                    See exactly how your AI Agent will appear to users
                   </CardDescription>
                 </div>
               </CardHeader>

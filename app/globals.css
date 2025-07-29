@@ -152,9 +152,9 @@
 }
 
 /* Smooth animations */
-* {
+/* * {
   transition: all 0.2s ease-in-out;
-}
+} */
 
 /* Custom focus styles */
 button:focus-visible,

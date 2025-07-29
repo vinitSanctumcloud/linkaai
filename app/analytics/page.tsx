@@ -781,10 +781,24 @@ export default function AnalyticsPage() {
         >
           <div className="w-full sm:w-auto">
             <h1 className="text-xl xs:text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-2">
-              <span className="text-black dark:text-gray-900">Good {timeOfDay},</span>
-              <span className="block sm:inline font-serif text-red-600 dark:text-red-400 sm:-mt-0 drop-shadow-md">
-                {agentDetails?.agent_name || "User"}!
-              </span>
+              <span className="bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">Good {timeOfDay},</span>
+              <motion.span
+                    className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
+                    animate={{
+                      backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                    }}
+                    transition={{
+                      duration: 4,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
+                    style={{
+                      backgroundSize: "200% 200%",
+                      marginLeft: "0.50rem",
+                    }}
+                  >
+                {agentDetails?.agent_name || "User"}
+              </motion.span>
             </h1>
             <p className="text-gray-600 dark:text-gray-300 mt-2 text-sm xs:text-base sm:text-lg max-w-full sm:max-w-md">
               Here's what's happening with your AI agent today.{" "}
@@ -948,7 +962,7 @@ export default function AnalyticsPage() {
                     <div className="flex items-center">
                       <Zap className="mr-2 h-5 w-5 sm:h-6 sm:w-6 text-blue-500" />
                       <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">
-                        Real-time Activity
+                        Letest Chats
                       </CardTitle>
                     </div>
                     <Badge
@@ -1135,7 +1149,7 @@ function ActivityItem({
 }) {
   const typeConfig = {
     click: {
-      label: "Link clicked",
+      label: "Clicked",
       icon: <MousePointerClick className="w-4 h-4 text-blue-500" strokeWidth={2} />,
       color: "bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400",
     },

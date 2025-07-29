@@ -1433,7 +1433,7 @@ export default function SettingsPage() {
           <TabsContent value="agent" className="space-y-6">
             <Card className="border-0 shadow-lg">
               <CardHeader>
-                <CardTitle>Branding & Appearance</CardTitle>
+                <CardTitle>Configure Agent</CardTitle>
                 <CardDescription>Customize the visual appearance of your AI agent interface</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">

@@ -20,10 +20,11 @@ export function Header() {
   useEffect(() => {
     // Only access localStorage in the browser
     if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('accessToken')
+      const token = localStorage.getItem('accessToken');
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
       setIsLoggedIn(!!token)
       setUserImage(localStorage.getItem('userImage') || '/default-profile.png')
-      setUserName(localStorage.getItem('userName') || 'User')
+      setUserName(`${user.first_name}` || 'User')
       // console.log(token, 'token')
     }
   }, [])
@@ -52,14 +53,10 @@ export function Header() {
           {isLoggedIn ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:bg-orange-50">
-                  <Image
-                    src={userImage}
-                    alt="User profile"
-                    width={40}
-                    height={40}
-                    className="rounded-full object-cover border border-orange-200"
-                  />
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 hover:bg-orange-50 flex items-center justify-center">
+                  <span className="text-lg font-medium text-orange-600">
+                    {userName.charAt(0).toUpperCase()}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64 bg-white rounded-lg shadow-xl border border-gray-100" align="end">
