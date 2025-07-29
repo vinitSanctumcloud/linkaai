@@ -1531,7 +1531,7 @@ export default function SettingsPage() {
                           onChange={(e) =>
                             setFormData({
                               ...formData,
-                              customUrl: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                              customUrl: e.target.value.toLowerCase().replace(/[^a-zA-Z0-9-]/g, ''),
                             })
                           }
                           // placeholder="yourname"
