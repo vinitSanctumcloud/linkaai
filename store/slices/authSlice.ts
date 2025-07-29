@@ -35,7 +35,7 @@ export const initializeAuthState = createAsyncThunk(
       await dispatch(fetchAiAgentData(accessToken));
     }
 
-    console.log(aiAgentData,"ddddd")
+    // console.log(aiAgentData,"ddddd")
 
     return {
       accessToken,

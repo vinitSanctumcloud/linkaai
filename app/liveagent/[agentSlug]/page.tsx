@@ -1,5 +1,6 @@
 'use client';
 
+import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 import { FaMicrophone } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
@@ -12,6 +13,21 @@ interface Prompt {
   ai_agent_id: number;
   prompt_text: string;
   is_active: boolean;
+}
+
+interface ActiveAgentResponse {
+  message: string;
+  data: {
+    is_active: boolean;
+    active_slug: string;
+  };
+}
+
+interface ApiResponse {
+  message: string;
+  data: {
+    ai_agent: any; // Replace 'any' with the actual type for your agent details
+  };
 }
 
 interface AiAgent {
@@ -30,12 +46,7 @@ interface AiAgent {
   prompts: Prompt[];
 }
 
-interface ApiResponse {
-  message: string;
-  data: {
-    ai_agent: AiAgent;
-  };
-}
+
 
 interface Message {
   text: string;
@@ -75,6 +86,7 @@ export default function AgentDetails() {
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [metaCards, setMetaCards] = useState<any[]>([]);
   const chatEndRef = useRef<HTMLDivElement>(null);
+  const router = useRouter()
 
   // Scroll to the latest message
   useEffect(() => {
@@ -82,9 +94,11 @@ export default function AgentDetails() {
   }, [messages, showConfirmation]);
 
   // Fetch agent details from API
-  useEffect(() => {
+ useEffect(() => {
     const pathParts = window.location.pathname.split('/');
     const slug = pathParts[pathParts.length - 1];
+
+    console.log('Slug:', slug);
 
     if (!slug) {
       setError('No agent slug found in URL');
@@ -92,36 +106,92 @@ export default function AgentDetails() {
       return;
     }
 
-    async function fetchAgentDetails() {
+    async function fetchAgentDetails(slug: string) {
       try {
-        const response = await fetch(
-          `${API_BASE_URL}/v4/ai-agent/get-agent/details/${slug}`,
+        setLoading(true);
+
+        // Check if agent is active and get active slug
+        const activeResponse = await fetch(
+          `https://api.tagwell.co/api/v4/ai-agent/get/active/slug?ai_agent_slug=${slug}`,
           {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              // 'Authorization': `Bearer ${token}`,
+              // 'Authorization': `Bearer ${token}', // Uncomment and define token if needed
+            },
+          }
+        );
+        console.log(activeResponse,"dadad")
+        // Check if response is successful
+        if (!activeResponse.ok) {
+          const errorText = await activeResponse.text();
+          console.error('Active response error:', activeResponse.status, errorText);
+          throw new Error(`Failed to check agent status: ${activeResponse.status} ${activeResponse.statusText}`);
+        }
+
+        // Verify response is JSON
+        const contentType = activeResponse.headers.get('Content-Type');
+        if (!contentType || !contentType.includes('application/json')) {
+          const text = await activeResponse.text();
+          console.error('Non-JSON response:', text);
+          throw new Error('Response is not JSON');
+        }
+
+        const activeData: ActiveAgentResponse = await activeResponse.json();
+        console.log('Active data:', activeData);
+
+        // if (!activeData.data.is_active) {
+        //   throw new Error('Agent is inactive');
+        // }
+
+        // Get the active slug
+        const activeSlug = activeData.data.active_slug;
+        console.log('Active slug:', activeSlug);
+
+        // Update URL if active slug is different from input slug
+        if (activeSlug !== slug) {
+          router.push(`/liveagent/${activeSlug}`); // Adjust path as needed
+        }
+
+        // Fetch agent details using the active slug
+        const response = await fetch(
+          `${API_BASE_URL}/v4/ai-agent/get-agent/details/${activeSlug}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': `Bearer ${token}', // Uncomment and define token if needed
             },
           }
         );
 
+        // Check if response is successful
         if (!response.ok) {
-          throw new Error(`Failed to fetch agent details: ${response.statusText}`);
+          const errorText = await response.text();
+          console.error('Details response error:', response.status, errorText);
+          throw new Error(`Failed to fetch agent details: ${response.status} ${response.statusText}`);
+        }
+
+        // Verify response is JSON
+        if (!response.headers.get('Content-Type')?.includes('application/json')) {
+          const text = await response.text();
+          console.error('Non-JSON response:', text);
+          throw new Error('Response is not JSON');
         }
 
         const data: ApiResponse = await response.json();
+        console.log('Agent details:', data);
         setAgentDetails(data.data.ai_agent);
       } catch (err: any) {
-        console.error('Fetch error:', err.message || err);
-        setError('Error fetching agent details. Please try again later.');
+        console.error('Fetch error:', err);
+        setError(err.message || 'Error fetching agent details. Please try again later.');
       } finally {
         setLoading(false);
       }
     }
 
-    fetchAgentDetails();
-  }, []);
-
+    fetchAgentDetails(slug); // Pass slug to the function
+  }, [router]);
   // Load chat history on mount
   useEffect(() => {
     if (!agentDetails) return;
@@ -136,7 +206,7 @@ export default function AgentDetails() {
           setShowWelcome(false);
           setShowPrompts(false);
         }
-      } catch {}
+      } catch { }
     }
   }, [agentDetails]);
 
@@ -223,12 +293,12 @@ export default function AgentDetails() {
       setMessages((prev) => {
         const updated = [...prev];
         let cleanedText = assistantText
-            .replace(/\[METAID:[^\]]+\]/g, '')
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
-            .replace(/Check\s?them\s?out\s?here/gi, '')
-            .replace(/\s{2,}/g, ' ')
-            .replace(/(\d+\.\s[^\n]*)/g, '$1\n\n') // Match each numbered point and add double newlines
-            .trim();
+          .replace(/\[METAID:[^\]]+\]/g, '')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
+          .replace(/Check\s?them\s?out\s?here/gi, '')
+          .replace(/\s{2,}/g, ' ')
+          .replace(/(\d+\.\s[^\n]*)/g, '$1\n\n') // Match each numbered point and add double newlines
+          .trim();
         updated[updated.length - 1] = {
           text: cleanedText,
           sender: 'assistant',
@@ -261,7 +331,7 @@ export default function AgentDetails() {
           { text: '', sender: 'meta', metaCards: metaResults }
         ]);
       }
-      
+
     } catch (error) {
       setMessages((prev) => [
         ...prev,
@@ -315,7 +385,7 @@ export default function AgentDetails() {
           {showWelcome && (
             <div className="bg-gradient-to-r  p-4 rounded-t-2xl">
               <div className="flex flex-col items-center">
-                <div className="w-48 h-48 sm:w-48 sm:h-48 rounded-full overflow-hidden border-4 border-white shadow-md">
+                <div className="w-36 h-36 sm:w-64 sm:h-64 rounded-full overflow-hidden border-4 border-white shadow-md">
                   {agentDetails.greeting_media_type === 'video' ? (
                     <video
                       src={agentDetails.greeting_media_url}
@@ -347,7 +417,7 @@ export default function AgentDetails() {
 
           {/* Quick Prompts */}
           {showPrompts && (
-            <div className="p-4 flex flex-wrap gap-3"> {/* Flexbox with wrapping */}
+            <div className="p-4 flex flex-wrap gap-3 sm:mt-16"> {/* Flexbox with wrapping */}
               {agentDetails.prompts
                 .filter((prompt) => prompt.is_active)
                 .map((prompt) => (

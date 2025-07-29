@@ -249,6 +249,13 @@ export default function AgentBuilderPage() {
         });
         return;
       }
+      if (!imageUrl) {
+        toast.error("No image URL returned from the server.", {
+          position: "top-right",
+          duration: 2000,
+        });
+        return;
+      }
 
       // Update agentConfig with the uploaded image URL
       setAgentConfig((prev) => ({ ...prev, avatar: imageUrl }));
@@ -412,10 +419,11 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           // Map the API response to the agentConfig state
           setAgentConfig({
             // ...agentData,
-            name: agentData.agent_name || "",
+            name: agentData.agent_name || "AIS",
             avatar: agentData.avatar_image_url || "",
             trainingInstructions: agentData.training_instructions || "",
             prompts: sanitizedPrompts,
+            ai_agent_slug: agentData?.ai_agent_slug || "",
             partnerLinks: agentData.partner_links?.map((link: any) => ({
               id: link.id,
               category: link.category_name || "",
@@ -471,7 +479,6 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             greeting: agentData.welcome_greeting || "",
             greetingMediaType: agentData.greeting_media_type || null,
             greetingMedia: agentData.greeting_media_url || null,
-            ai_agent_slug: agentData.ai_agent_slug || ""
           });
         } else {
           const errorData = await response.json();
@@ -1279,11 +1286,46 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
   };
 
   const handleSave = async () => {
-    console.log("first")
-    const link = `${siteDomain}/liveagent/${agentConfig?.ai_agent_slug}`;
-    // const link = `abc.coom`;
-    setAgentLink(link);
-    setIsModalOpen(true)
+    console.log("first");
+    const accessToken = localStorage.getItem("accessToken");
+    try {
+      const response = await fetch(`https://api.tagwell.co/api/v4/ai-agent/get-agent/details`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          // Add any necessary authorization headers here
+           Authorization: `Bearer ${accessToken}`,
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch agent details');
+      }
+
+      const data = await response.json();
+      console.log(data.data.ai_agent.ai_agent_slug, "agent details");
+
+      // Update the slug from fetched data (assuming the response contains the slug)
+      const updatedSlug = data.data.ai_agent.ai_agent_slug;
+      console.log(updatedSlug,"slug") // Fallback to original if not found
+      const link = `${siteDomain}/liveagent/${updatedSlug}`;
+      console.log(link, "linkfor url");
+
+      setTimeout(() => {
+        setAgentLink(link);
+        setIsModalOpen(true);
+      }, 1000); // 1-second delay, adjust as needed
+    } catch (error) {
+      console.error('Error fetching agent details:', error);
+      // Fallback to original slug if fetch fails
+      const link = `${siteDomain}/liveagent/${agentConfig?.ai_agent_slug}`;
+      console.log(link, "linkfor url (fallback)");
+
+      setTimeout(() => {
+        setAgentLink(link);
+        setIsModalOpen(true);
+      }, 1000);
+    }
   };
 
   const nextStep = async () => {
@@ -1366,6 +1408,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           payload = {
             agent_name: agentConfig.name,
             training_instructions: agentConfig.trainingInstructions,
+            // ai_agenet_slug : agentConfig.ai_agent_slug
           };
           break;
 

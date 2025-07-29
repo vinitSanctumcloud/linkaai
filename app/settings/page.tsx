@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X } from 'lucide-react';
+import { Save, Palette, Download, CreditCard, Key, EyeOff, Eye, CheckCircle2, Circle, AlertTriangle, Loader2, UserCircle, Phone, Check, X, Infinity, Shield } from 'lucide-react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogTitle, AlertDialogTrigger, AlertDialogAction, AlertDialogFooter, AlertDialogHeader } from '@/components/ui/alert-dialog';
 import { FaCcVisa, FaCcMastercard, FaCcAmex } from 'react-icons/fa';
@@ -128,6 +128,9 @@ interface PaymentData {
 }
 
 export default function SettingsPage() {
+  const dispatch = useDispatch<AppDispatch>();
+  const { aiAgentData, user } = useSelector((state: RootState) => state.auth);
+  const { agent } = useSelector((state: RootState) => state.agents);
   const [settings, setSettings] = useState<Settings | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -169,15 +172,19 @@ export default function SettingsPage() {
   const [phoneSecurityToken, setPhoneSecurityToken] = useState('');
   const [showEmailOtpModal, setShowEmailOtpModal] = useState(false);
   const [showPhoneOtpModal, setShowPhoneOtpModal] = useState(false);
+  const [isSlugAvailable, setIsSlugAvailable] = useState<boolean | null>(null);
+  const [isCheckingSlug, setIsCheckingSlug] = useState(false);
+  const [slugError, setSlugError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const dispatch = useDispatch<AppDispatch>();
-  const { aiAgentData, user } = useSelector((state: RootState) => state.auth);
 
   // Initialize auth state only once on mount
   useEffect(() => {
-    dispatch(initializeAuthState());
-  }, [dispatch]);
+    dispatch(initializeAuthState()).then(() => {
+      if (agent?.ai_agent_slug) {
+        setFormData(prev => ({ ...prev, customUrl: agent.ai_agent_slug }));
+      }
+    });
+  }, [dispatch, agent?.ai_agent_slug]);
 
   // Sync local states with Redux user state
   useEffect(() => {
@@ -216,6 +223,91 @@ export default function SettingsPage() {
       setIsPhoneVerified(storedUser.phone_number_verified || false);
     }
   }, [user, email, phone, email_verified, phone_number_verified]);
+
+   useEffect(() => {
+    const checkSlugAvailability = async () => {
+      if (formData.customUrl && formData.customUrl !== agent?.ai_agent_slug) {
+
+        console.log(formData.customUrl, "dada")
+        setIsCheckingSlug(true);
+        setSlugError('');
+        try {
+          const response = await fetch(`https://api.tagwell.co/api/v4/ai-agent/check/slug/availibility?ai_agent_slug=${formData.customUrl}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+            },
+          });
+
+          const data = await response.json();
+          console.log(data, "data")
+          setIsSlugAvailable(data.data.is_available);
+          if (!data.data.is_available) {
+            setSlugError('This URL is not available');
+          }
+        } catch (error) {
+          console.error('Error checking slug availability:', error);
+          setSlugError('Error checking URL availability');
+          setIsSlugAvailable(false);
+        } finally {
+          setIsCheckingSlug(false);
+        }
+      } else {
+        setIsSlugAvailable(null);
+        setSlugError('');
+      }
+    };
+
+    const debounce = setTimeout(checkSlugAvailability, 500);
+    return () => clearTimeout(debounce);
+  }, [formData.customUrl, agent?.ai_agent_slug]);
+
+  const handleSave = async () => {
+    if (!isSlugAvailable && formData.customUrl !== agent?.ai_agent_slug) {
+      toast.error('Please select an available URL', {
+        position: "top-right",
+        duration: 2000,
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/update/slug', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
+        },
+        body: JSON.stringify({
+          ai_agent_slug: formData.customUrl
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Agent URL updated successfully!', {
+          position: "top-right",
+          duration: 2000,
+        });
+        dispatch(initializeAuthState()); // Refresh auth state to get updated agent data
+      } else {
+        const error = await response.json();
+        toast.error(error.error || 'Failed to update agent URL', {
+          position: "top-right",
+          duration: 2000,
+        });
+      }
+    } catch (error) {
+      console.error('Error updating slug:', error);
+      toast.error('An error occurred while updating agent URL.', {
+        position: "top-right",
+        duration: 2000,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // === API FUNCTIONS ===
   const fetchSubscriptionDetails = async () => {
@@ -339,58 +431,6 @@ export default function SettingsPage() {
     setPasswordStrength(strength);
   }, [formData.newPassword]);
 
-  const handleSave = async () => {
-    setIsLoading(true);
-    try {
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        toast.success('Settings updated successfully!', {
-          position: "top-right",
-          duration: 2000,
-        });
-        const settingsResponse = await fetch('/api/settings', {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${localStorage.getItem('accessToken')}`,
-          },
-        });
-        if (settingsResponse.ok) {
-          const data = await settingsResponse.json();
-          setSettings(data);
-          setFormData({
-            agentName: data.agentName || '',
-            brandColor: data.brandColor || '#FF6B35',
-            voiceEnabled: data.voiceEnabled ?? true,
-            customUrl: data.customUrl || '',
-            welcomeMessage: data.welcomeMessage || '',
-            instructions: data.instructions || '',
-            avatarUrl: data.avatarUrl || '',
-            newPassword: '',
-            chatLimit: data.chatLimit || 0,
-          });
-          setAvatarPreview(data.avatarUrl || '');
-        }
-      } else {
-        const error = await response.json();
-        toast.error(error.error || 'Failed to update settings', {
-          position: "top-right",
-          duration: 2000,
-        });
-      }
-    } catch (error) {
-      toast.error('An error occurred. Please try again.', {
-        position: "top-right",
-        duration: 2000,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleVerifyEmail = async () => {
     if (!newEmail && !email) {
@@ -852,7 +892,7 @@ export default function SettingsPage() {
   };
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : 'https://earnlinks.ai';
-  const chatUrl = formData.customUrl ? `${baseUrl}/chat/${formData.customUrl}` : '';
+  const chatUrl = formData.customUrl ? `${baseUrl}/liveagent/${formData.customUrl}` : '';
 
 
   return (
@@ -1431,7 +1471,7 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="agent" className="space-y-6">
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg transition-all duration-300 hover:shadow-xl">
               <CardHeader>
                 <CardTitle>Configure Agent</CardTitle>
                 <CardDescription>Customize the visual appearance of your AI agent interface</CardDescription>
@@ -1446,13 +1486,13 @@ export default function SettingsPage() {
                         type="color"
                         value={formData.brandColor}
                         onChange={(e) => setFormData({ ...formData, brandColor: e.target.value })}
-                        className="w-16 h-10 p-1 border rounded"
+                        className="w-16 h-10 p-1 border rounded cursor-pointer transition-all duration-300 hover:scale-105"
                       />
                       <Input
                         value={formData.brandColor}
                         onChange={(e) => setFormData({ ...formData, brandColor: e.target.value })}
                         placeholder="#FF6B35"
-                        className="flex-1"
+                        className="flex-1 transition-all duration-300 focus:ring-2 focus:ring-orange-500"
                       />
                     </div>
                     <p className="text-sm text-gray-600">
@@ -1462,7 +1502,7 @@ export default function SettingsPage() {
                   <div className="space-y-2">
                     <Label>Color Preview</Label>
                     <div
-                      className="w-full h-20 rounded-lg border flex items-center justify-center text-white font-medium"
+                      className="w-full h-20 rounded-lg border flex items-center justify-center text-white font-medium transition-all duration-500"
                       style={{ backgroundColor: formData.brandColor }}
                     >
                       {formData.agentName || 'AI Assistant'}
@@ -1471,42 +1511,110 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="customUrl">Custom URL</Label>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-gray-600">{baseUrl}/chat/</span>
-                      <Input
-                        id="customUrl"
-                        value={formData.customUrl}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            customUrl: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''),
-                          })
-                        }
-                        placeholder="yourname"
-                        className="flex-1"
-                      />
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="customUrl">Custom URL</Label>
+                      <span className="text-xs text-gray-500">Only lowercase letters and numbers</span>
                     </div>
-                    {chatUrl && (
-                      <p className="text-sm text-gray-600">
-                        Your chat will be available at: <span className="font-mono text-orange-600">{chatUrl}</span>
+
+                    <div className="flex items-center relative">
+                      {/* Static base URL part */}
+                      <div className="flex items-center bg-gray-50 px-3 py-2 border border-gray-300 rounded-l-md text-sm text-gray-600">
+                        {baseUrl}/liveagent/
+                      </div>
+
+                      {/* Editable part with visual emphasis */}
+                      <div className="relative flex-1">
+                        <Input
+                          id="customUrl"
+                          type="text"
+                          value={formData.customUrl}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              customUrl: e.target.value.toLowerCase().replace(/[^a-z0-9]/g, ''),
+                            })
+                          }
+                          // placeholder="yourname"
+                          className="w-full pl-3 pr-10 py-2 border-l-0 rounded-l-none border-gray-300 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200"
+                          style={{
+                            backgroundColor: formData.customUrl ? '#FFF5F0' : 'white',
+                            borderColor: formData.customUrl ? '#FFD1B8' : '#D1D5DB',
+                            boxShadow: formData.customUrl ? '0 0 0 1px #FFD1B8' : 'none'
+                          }}
+                        />
+
+                        {/* Edit indicator label */}
+                        {!formData.customUrl && (
+                          <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                            <span className="text-gray-400 text-sm">edit here</span>
+                          </div>
+                        )}
+
+                        {/* Status icons */}
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          {isCheckingSlug && (
+                            <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+                          )}
+                          {isSlugAvailable === true && !isCheckingSlug && (
+                            <Check className="h-5 w-5 text-green-500" />
+                          )}
+                          {isSlugAvailable === false && !isCheckingSlug && (
+                            <X className="h-5 w-5 text-red-500" />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Validation messages */}
+                    {slugError && (
+                      <p className="text-sm text-red-500 flex items-center mt-1">
+                        <X className="h-4 w-4 mr-1" /> {slugError}
                       </p>
+                    )}
+
+                    {chatUrl && isSlugAvailable && (
+                      <div className="mt-2 p-2 bg-green-50 rounded-md border border-green-200">
+                        <p className="text-sm text-gray-700 flex items-center">
+                          <Check className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
+                          <span>Your live agent URL is ready:</span>
+                          <span className="font-medium text-orange-600 ml-1 underline">{chatUrl}</span>
+                        </p>
+                      </div>
                     )}
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="chatLimit">Limit Visitor Chat Sessions</Label>
-                    <Input
-                      id="chatLimit"
-                      type="number"
-                      value={formData.chatLimit}
-                      onChange={(e) =>
-                        setFormData({ ...formData, chatLimit: parseInt(e.target.value) || 0 })
-                      }
-                      placeholder="e.g. 5"
-                      className="w-full"
-                      min={0}
-                    />
-                    <p className="text-sm text-gray-600">Set the max number of chats a visitor can initiate.</p>
+                    <div className="relative">
+                      <Input
+                        id="chatLimit"
+                        type="number"
+                        value={formData.chatLimit}
+                        onChange={(e) =>
+                          setFormData({ ...formData, chatLimit: parseInt(e.target.value) || 0 })
+                        }
+                        placeholder="e.g. 5"
+                        className="w-full transition-all duration-300 focus:ring-2 focus:ring-orange-500"
+                        min={0}
+                      />
+                      {formData.chatLimit > 0 && (
+                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                          <Check className="h-5 w-5 text-green-500" />
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {formData.chatLimit > 0 ? (
+                        <span className="flex items-center">
+                          <Shield className="h-4 w-4 mr-1 text-orange-500" />
+                          Visitors limited to {formData.chatLimit} chat session{formData.chatLimit !== 1 ? 's' : ''}
+                        </span>
+                      ) : (
+                        <span className="flex items-center">
+                          <Infinity className="h-4 w-4 mr-1 text-gray-400" />
+                          No limit on visitor chat sessions
+                        </span>
+                      )}
+                    </p>
                   </div>
                 </div>
               </CardContent>
