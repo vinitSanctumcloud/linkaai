@@ -378,22 +378,40 @@ export default function AgentDetails() {
   }
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50  bg-opacity-50">
-      <div className="w-[90vw] max-w-[400px] h-[80vh] max-h-[600px] sm:max-w-[450px] sm:max-h-[700px] lg:max-w-[500px] lg:max-h-[800px]">
-        <div className="relative bg-white rounded-2xl shadow-2xl border border-gray-200 h-full flex flex-col overflow-hidden">
+    <div className="min-h-screen w-full flex items-center justify-center bg-gray-100 py-4">
+      <div
+        className="
+          w-full
+          max-w-[400px]
+          sm:max-w-[450px]
+          lg:max-w-[500px]
+          bg-white
+          rounded-2xl
+          shadow-2xl
+          border border-gray-200
+          flex flex-col
+          overflow-hidden
+          mx-2
+          lg:h-[700px] xl:h-[800px]
+        "
+        style={{
+          minHeight: 'auto',
+          maxHeight: '90vh',
+          height: 'auto',
+        }}
+      >
           {/* Header with Agent Info */}
           {showWelcome && (
-            <div className="bg-gradient-to-r  p-4 rounded-t-2xl">
-              <div className="flex flex-col items-center">
-                <div className="w-36 h-36 sm:w-64 sm:h-64 rounded-full overflow-hidden border-4 border-white shadow-md">
+            <div className="flex flex-col items-center justify-center flex-shrink-0 py-2 sm:py-4">
+              <div className="w-36 h-36 sm:w-40 sm:h-40 lg:w-56 lg:h-56 xl:w-64 xl:h-64 rounded-full overflow-hidden border-4 border-white shadow-md mb-2">
                   {agentDetails.greeting_media_type === 'video' ? (
                     <video
                       src={agentDetails.greeting_media_url}
-                      autoPlay
-                      muted // Enable audio
-                      loop // Play video in a loop
+                      loop
                       playsInline
-                      className="w-full h-full object-cover"
+                      autoPlay
+                      muted
+                      className="w-full h-full object-cover object-center"
                       onError={() => console.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.", {
                         position: "top-right",
                         duration: 2000,
@@ -403,27 +421,26 @@ export default function AgentDetails() {
                     <img
                       src={agentDetails.greeting_media_url || 'https://via.placeholder.com/150'}
                       alt={agentDetails.agent_name || 'Agent Avatar'}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover object-center"
                     />
                   )}
                 </div>
-                <h2 className="mt-2 text-lg sm:text-xl font-semibold text-black">
+                <h2 className="mt-2 text-xl sm:text-2xl font-bold text-black text-center">
                   {agentDetails.greeting_title || `Agent`}
                 </h2>
-                <p className="text-sm text-gray-500">{agentDetails.welcome_greeting}</p>
+                <p className="text-base sm:text-lg text-gray-500 text-center">{agentDetails.welcome_greeting}</p>
               </div>
-            </div>
           )}
 
           {/* Quick Prompts */}
           {showPrompts && (
-            <div className="p-4 flex flex-wrap gap-3 sm:mt-16"> {/* Flexbox with wrapping */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-4 py-4">
               {agentDetails.prompts
                 .filter((prompt) => prompt.is_active)
                 .map((prompt) => (
                   <button
                     key={prompt.id}
-                    className="flex-1 min-w-[calc(50%-6px)] text-sm sm:text-base font-medium bg-white text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm border border-gray-200 hover:border-gray-300"
+                    className="w-full text-base font-semibold bg-white text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm border border-gray-200 hover:border-gray-300"
                     onClick={() => {
                       setInput(prompt.prompt_text);
                       setTimeout(handleSendMessage, 100);
@@ -436,7 +453,7 @@ export default function AgentDetails() {
           )}
 
           {/* Chat Messages Area */}
-          <div className="flex-grow overflow-y-auto p-4 no-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 no-scrollbar bg-white">
             {messages.map((message, index) => (
               <React.Fragment key={index}>
                 {/* Normal chat message */}
@@ -638,6 +655,5 @@ export default function AgentDetails() {
         }
         `}</style>
       </div>
-    </div>
   );
 }

@@ -3410,7 +3410,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                 className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                               />
                               <datalist id={`category-suggestions-${link.id}`}>
-                                {categories.map((category) => (
+                                {(categories || []).map((category) => (
                                   <option key={category.name} value={category.name} />
                                 ))}
                               </datalist>
@@ -3651,8 +3651,8 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                       onChange={(e) => updateLinkaProMonetization(link.id!, 'category', e.target.value)}
                                       className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                                     />
-                                    <datalist id={`pro-category-suggestions-${link.id}`}>
-                                      {categories.map((category) => (
+                                    <datalist id={`category-suggestions-${link.id}`}>
+                                      {(categories || []).map((category) => (
                                         <option key={category.name} value={category.name} />
                                       ))}
                                     </datalist>
