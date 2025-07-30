@@ -186,12 +186,9 @@ export default function AgentDetails() {
         if (value) {
           assistantText += decoder.decode(value);
           let cleanedText = assistantText
-            .replace(/\[METAID:[^\]]+\]/g, '')
-            .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
-            .replace(/Check\s?them\s?out\s?here/gi, '')
-            .replace(/\s{2,}/g, ' ')
-            .replace(/(\d+\.\s[^\n]*)/g, '$1\n\n')
+            .replace(/[\s\-•]*\[METAID:[^\]]+\]/g, '')
             .trim();
+
           setMessages((prev) => {
             const updated = [...prev];
             updated[updated.length - 1] = {
@@ -206,11 +203,7 @@ export default function AgentDetails() {
       setMessages((prev) => {
         const updated = [...prev];
         let cleanedText = assistantText
-          .replace(/\[METAID:[^\]]+\]/g, '')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '')
-          .replace(/Check\s?them\s?out\s?here/gi, '')
-          .replace(/\s{2,}/g, ' ')
-          .replace(/(\d+\.\s[^\n]*)/g, '$1\n\n')
+          .replace(/[\s\-•]*\[METAID:[^\]]+\]/g, '')
           .trim();
         updated[updated.length - 1] = { text: cleanedText, sender: 'assistant' };
         return updated;

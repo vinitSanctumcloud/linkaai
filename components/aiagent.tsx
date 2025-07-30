@@ -183,21 +183,35 @@ export function AiAgent({
                                     >
                                         <ReactMarkdown
                                             components={{
-                                                li: ({ node, ...props }) => <li style={{ marginBottom: '1em' }} {...props} />,
-                                                p: ({ node, ...props }) => <p style={{ marginBottom: '1em' }} {...props} />,
-                                                a: ({ node, ...props }) => (
-                                                    <a
-                                                        href={props.href}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        style={{ color: '#2563eb', textDecoration: 'underline', fontWeight: 500 }}
-                                                    >
-                                                        {props.children}
-                                                    </a>
-                                                ),
+                                            a: ({ node, ...props }) => (
+                                                <a
+                                                {...props}
+                                                className="text-blue-600 underline"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                />
+                                            ),
+                                            ul: ({ node, ...props }) => (
+                                                <ul className="list-disc ml-[20px]" {...props} />
+                                            ),
+                                            ol: ({ node, ...props }) => (
+                                                <ol className="list-decimal ml-[20px]" {...props} />
+                                            ),
+                                            li: ({ node, ...props }) => (
+                                                <li className="mb-1" {...props} />
+                                            ),
+                                            h1: ({ node, ...props }) => (
+                                                <h1 className="font-bold text-lg mb-2" {...props} />
+                                            ),
+                                            h2: ({ node, ...props }) => (
+                                                <h2 className="font-semibold text-base mb-1" {...props} />
+                                            ),
+                                            p: ({ node, ...props }) => (
+                                                <p className="mb-2" {...props} />
+                                            ),
                                             }}
                                         >
-                                            {message.text.replace(/(\d+\.\s)/g, '\n$1')}
+                                            {message.text}
                                         </ReactMarkdown>
                                     </div>
                                 </div>
