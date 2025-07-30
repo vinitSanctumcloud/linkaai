@@ -46,7 +46,7 @@ import {
   Code,
   Copy,
   Trash2Icon,
-  X
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -59,6 +59,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@radix-ui/react-dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Link from "next/link";
+
 // import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 // Interfaces remain unchanged
 interface ConditionalPrompt {
@@ -2229,6 +2231,16 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
+        {/* Yellow banner for free users */}
+        <div className="bg-yellow-50 text-blue-700 rounded-xl p-3 text-sm font-medium text-left border-b border-yellow-200">
+          To add knowledge, links and monetization to your AI-Agent,{" "}
+          <Link
+            href="/pricing"
+            className="text-linka-dark-orange hover:underline font-semibold"
+          >
+            upgrade!
+          </Link>
+        </div>
             <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
               <div className="space-y-1">
                 <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
