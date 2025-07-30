@@ -165,7 +165,7 @@ export default function EmbedPage() {
           {/* Left Column - Configuration and Embed Options */}
           <div className="space-y-4 md:space-y-6">
             {/* Embed Options Card */}
-            <Card className="border border-gray-200 shadow-sm rounded-xl w-full max-w-3xl mx-auto">
+            <Card className="border border-gray-200 shadow-sm rounded-xl w-full max-w-full mx-auto">
               <CardHeader className="px-4 sm:px-6">
                 <CardTitle className="text-lg sm:text-xl font-semibold">
                   Share your AI agent with your audience.
