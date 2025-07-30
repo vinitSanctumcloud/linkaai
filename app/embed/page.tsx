@@ -42,9 +42,9 @@ interface Settings {
 }
 
 export default function EmbedPage() {
-  const dispatch = useDispatch<AppDispatch>()
+  const dispatch = useDispatch<AppDispatch>();
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [embedSize, setEmbedSize] = useState({ width: "400", height: "600" });
+  const [embedSize, setEmbedSize] = useState({ width: "25rem", height: "37.5rem" });
   const [isCopied, setIsCopied] = useState(false);
   const { agent: agentDetails, status, error } = useSelector((state: RootState) => state.agents);
 
@@ -52,7 +52,7 @@ export default function EmbedPage() {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const origin = window.location.origin; // e.g., https://example.com
+      const origin = window.location.origin;
       setSiteDomain(origin);
     }
   }, []);
@@ -66,6 +66,7 @@ export default function EmbedPage() {
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
+
   useEffect(() => {
     fetchSettings();
   }, []);
@@ -90,20 +91,16 @@ export default function EmbedPage() {
     });
   };
 
-  const agentSlug = agentDetails?.ai_agent_slug
-
-  // const baseUrl =
-  //   typeof window !== "undefined"
-  //     ? window.location.origin
-  //     : "https://earnlinks.ai";
-  const chatUrl = `${siteDomain}/liveagent/${agentSlug}`
+  const agentSlug = agentDetails?.ai_agent_slug;
+  const chatUrl = `${siteDomain}/liveagent/${agentSlug}`;
+  const chatUrl1 = `${siteDomain}/liveagent1/${agentSlug}`;
 
   const iframeCode = `<iframe 
-  src="${chatUrl}" 
+  src="${chatUrl1}" 
   width="${embedSize.width}" 
   height="${embedSize.height}"
   frameborder="0"
-  style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+  style="border-radius: 0.625rem; box-shadow: 0 0.25rem 1.25rem rgba(0,0,0,0.1);">
 </iframe>`;
 
   const widgetCode = `<!-- EarnLinks.AI Chat Widget -->
@@ -111,12 +108,12 @@ export default function EmbedPage() {
 <script>
   (function() {
     var widget = document.createElement('iframe');
-    widget.src = '${chatUrl}';
-    widget.style.width = '${embedSize.width}px';
-    widget.style.height = '${embedSize.height}px';
+    widget.src = '${chatUrl1}';
+    widget.style.width = '${embedSize.width}';
+    widget.style.height = '${embedSize.height}';
     widget.style.border = 'none';
-    widget.style.borderRadius = '10px';
-    widget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+    widget.style.borderRadius = '0.625rem';
+    widget.style.boxShadow = '0 0.25rem 1.25rem rgba(0,0,0,0.1)';
     widget.frameBorder = '0';
     document.getElementById('earnlinks-chat-widget').appendChild(widget);
   })();
@@ -128,17 +125,17 @@ export default function EmbedPage() {
     var button = document.createElement('button');
     button.innerHTML = '💬 Chat with AI';
     button.style.position = 'fixed';
-    button.style.bottom = '20px';
-    button.style.right = '20px';
+    button.style.bottom = '1.25rem';
+    button.style.right = '1.25rem';
     button.style.zIndex = '9999';
-    button.style.padding = '12px 20px';
+    button.style.padding = '0.75rem 1.25rem';
     button.style.backgroundColor = '${settings?.brandColor || "#FF6B35"}';
     button.style.color = 'white';
     button.style.border = 'none';
-    button.style.borderRadius = '25px';
+    button.style.borderRadius = '1.5625rem';
     button.style.cursor = 'pointer';
     button.style.fontWeight = 'bold';
-    button.style.fontSize = '14px';
+    button.style.fontSize = '0.875rem';
     
     button.onclick = function() {
       window.open('${chatUrl}', 'earnlinks-chat', 'width=400,height=600,scrollbars=no,resizable=yes');
@@ -151,7 +148,6 @@ export default function EmbedPage() {
   return (
     <DashboardLayout>
       <div className="space-y-6 md:space-y-8 sm:px-6 lg:px-8 py-6">
-        {/* Header */}
         <div className="text-center md:text-left">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             Share Your AI-Agent
@@ -162,9 +158,7 @@ export default function EmbedPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          {/* Left Column - Configuration and Embed Options */}
           <div className="space-y-4 md:space-y-6">
-            {/* Embed Options Card */}
             <Card className="border border-gray-200 shadow-sm rounded-xl w-full max-w-full mx-auto">
               <CardHeader className="px-4 sm:px-6">
                 <CardTitle className="text-lg sm:text-xl font-semibold">
@@ -305,8 +299,7 @@ export default function EmbedPage() {
               </CardContent>
             </Card>
 
-            {/* Configuration Card */}
-            <Card className=" rounded-xl">
+            <Card className="rounded-xl">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg sm:text-xl">
                   <Code className="mr-2 h-5 w-5 text-orange-600" />
@@ -320,7 +313,7 @@ export default function EmbedPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="width" className="text-sm sm:text-base">
-                      Width (px)
+                      Width (rem)
                     </Label>
                     <Input
                       id="width"
@@ -328,13 +321,13 @@ export default function EmbedPage() {
                       onChange={(e) =>
                         setEmbedSize({ ...embedSize, width: e.target.value })
                       }
-                      placeholder="400"
+                      placeholder="25rem"
                       className="text-sm sm:text-base"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="height" className="text-sm sm:text-base">
-                      Height (px)
+                      Height (rem)
                     </Label>
                     <Input
                       id="height"
@@ -342,51 +335,14 @@ export default function EmbedPage() {
                       onChange={(e) =>
                         setEmbedSize({ ...embedSize, height: e.target.value })
                       }
-                      placeholder="600"
+                      placeholder="37.5rem"
                       className="text-sm sm:text-base"
                     />
                   </div>
                 </div>
-
-                {/* {chatUrl && (
-                  <div className="pt-4">
-                    <Label className="text-sm sm:text-base">
-                      Your Chat URL
-                    </Label>
-                    <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                      <div className="flex-1 flex items-center">
-                        <Input
-                          value={chatUrl}
-                          readOnly
-                          className="text-xs sm:text-sm"
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => copyToClipboard(chatUrl)}
-                          className="flex items-center gap-1"
-                        >
-                          <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Copy</span>
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => window.open(chatUrl, "_blank")}
-                          className="flex items-center gap-1"
-                        >
-                          <ExternalLink className="h-3 w-3 sm:h-4 sm:w-4" />
-                          <span className="hidden sm:inline">Open</span>
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )} */}
               </CardContent>
             </Card>
-            {/* Integration Tips Card */}
+
             <Card className="border border-orange-200 shadow-sm rounded-xl bg-orange-50">
               <CardHeader>
                 <CardTitle className="text-orange-900 text-lg sm:text-xl">
@@ -414,13 +370,12 @@ export default function EmbedPage() {
             </Card>
           </div>
 
-          {/* Right Column - Only Live Preview */}
-          <div className="space-y-4 md:space-y-6">
-            <Card className="border border-gray-200 shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl">
-              <CardHeader className="px-6 pt-6 pb-4">
+          <div className="space-y-4 md:space-y-6 flex justify-center items-start min-h-screen bg-gray-50">
+            <Card className="border border-gray-200 shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl w-full max-w-4xl">
+              <CardHeader className="px-6 pt-6 pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
                 <div className="space-y-1">
                   <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <Eye className="w-5 h-5 text-linka-dark-orange" />
+                    <Eye className="w-5 h-5 text-blue-600" />
                     Live Preview
                   </CardTitle>
                   <CardDescription className="text-sm sm:text-base text-gray-600">
@@ -429,81 +384,79 @@ export default function EmbedPage() {
                 </div>
               </CardHeader>
 
-              <CardContent className="px-3  pb-3 sm:pb-6">
-                <div className="p-2 sm:p-6 rounded-lg">
-                  {/* Preview container with responsive sizing */}
-                  <div className="relative w-full">
-                    <div
-                      className={`mx-auto bg-red-50 rounded-lg sm:rounded-xl shadow-md overflow-hidden ${embedSize.width === "100%" ? "w-full" : "w-auto"
-                        }`}
-                      style={{
-                        width:
-                          embedSize.width === "100%"
-                            ? "100%"
-                            : `${Math.min(
-                              parseInt(embedSize.width),
-                              typeof window !== "undefined"
-                                ? window.innerWidth - 40
-                                : 400
-                            )}px`,
-                        height: `${Math.min(parseInt(embedSize.height), 600)}px`,
-                        minHeight: "250px",
-                        maxWidth: "100%",
-                      }}
-                    >
-                      {chatUrl ? (
-                        <iframe
-                          src={chatUrl}
-                          className="w-full h-full"
-                          frameBorder="0"
-                          title="Chat Preview"
-                          allow="microphone"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center bg-gray-50 p-4">
-                          <Bot className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mb-3" />
-                          <p className="text-gray-500 text-center text-xs sm:text-sm">
-                            Configure your agent to see the preview
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Size indicator - hidden on small screens */}
-                    {embedSize.width !== "100%" && (
-                      <div className="hidden sm:block absolute -bottom-3 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-full text-xs font-medium text-gray-600 shadow-sm border border-gray-200">
-                        {embedSize.width} × {embedSize.height} px
+              <CardContent className="p-6">
+                <div className="relative w-full h-full flex justify-center items-center">
+                  <div
+                    className="bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-md border border-gray-100 relative"
+                    style={{
+                      width: embedSize.width,
+                      height: embedSize.height,
+                      maxWidth: "100%",
+                      minHeight: "50rem",
+                      maxHeight: "50rem",
+                      display: "flex",
+                      justifyContent: "center",
+                      alignItems: "center",
+                      background: "linear-gradient(145deg, #ffffff, #f8fafc)",
+                      overflow: "hidden",
+                    }}
+                  >
+                    {chatUrl ? (
+                      <iframe
+                        src={chatUrl}
+                        className="w-full h-full border-0 rounded-lg"
+                        style={{
+                          transform: "scale(1)",
+                          transformOrigin: "top left",
+                          minHeight: "100%",
+                          minWidth: "100%",
+                        }}
+                        title="Chat Preview"
+                        allow="microphone; clipboard-write"
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-modals"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
+                        <Bot className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mb-4" />
+                        <p className="text-gray-500 text-center text-sm sm:text-base font-medium px-4">
+                          Configure your agent to see the preview
+                        </p>
                       </div>
                     )}
                   </div>
 
-                  {/* Responsive controls - stacked on mobile */}
-                  <div className="mt-4 sm:mt-6 flex flex-col sm:flex-row justify-center gap-2 sm:gap-3">
-                    <Button
-                      variant={
-                        embedSize.width === "400" ? "default" : "outline"
-                      }
-                      size="sm"
-                      onClick={() =>
-                        setEmbedSize({ width: "400", height: "600" })
-                      }
-                      className="text-xs sm:text-sm py-1 sm:py-2"
-                    >
-                      Mobile
-                    </Button>
-                    <Button
-                      variant={
-                        embedSize.width === "650" ? "default" : "outline"
-                      }
-                      size="sm"
-                      onClick={() =>
-                        setEmbedSize({ width: "650", height: "600" })
-                      }
-                      className="text-xs sm:text-sm py-1 sm:py-2"
-                    >
-                      Desktop
-                    </Button>
-                  </div>
+                  {embedSize.width !== "100%" && (
+                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-full text-xs font-medium text-gray-600 shadow-sm border border-gray-200 sm:block hidden">
+                      {embedSize.width} × {embedSize.height}
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+                  <Button
+                    variant={embedSize.width === "25rem" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setEmbedSize({ width: "25rem", height: "37.5rem" })}
+                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
+                  >
+                    Mobile (400px)
+                  </Button>
+                  <Button
+                    variant={embedSize.width === "40.625rem" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setEmbedSize({ width: "40.625rem", height: "37.5rem" })}
+                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
+                  >
+                    Desktop (650px)
+                  </Button>
+                  {/* <Button
+                    variant={embedSize.width === "100%" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setEmbedSize({ width: "100%", height: "37.5rem" })}
+                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
+                  >
+                    Full Width
+                  </Button> */}
                 </div>
               </CardContent>
             </Card>

@@ -2459,7 +2459,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                       />
                       Product Expansion
                     </label>
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                    {/* <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
                       <input
                         type="radio"
                         name="monetizationOption"
@@ -2473,7 +2473,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                         }}
                       />
                       Website Monetization (coming soon)
-                    </label>
+                    </label> */}
                   </div>
                 )}
               </div>

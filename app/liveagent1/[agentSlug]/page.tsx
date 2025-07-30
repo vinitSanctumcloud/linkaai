@@ -264,48 +264,81 @@ export default function AgentDetails() {
   const pageTitle = agentDetails?.greeting_title || 'AI Agent';
   const pageDescription = agentDetails?.welcome_greeting || 'Interact with our AI agent on LinkaAI';
 
-  // Define the styles in a variable
-const boxStyles = {
-  className: `
-    fixed top-1/2 left-1/2
-    -translate-x-1/2 -translate-y-1/2
-    w-[90vw] max-w-[400px]
-    sm:max-w-[450px]
-    lg:max-w-[500px]
-    bg-white
-    rounded-2xl
-    shadow-2xl
-    border border-gray-200
-    flex flex-col
-    overflow-hidden
-    z-40
-    lg:h-[700px] xl:h-[800px]
-  `,
-  style: {
-    minHeight: '80vh',
-    maxHeight: '80vh',
-    height: 'auto',
-  },
-};
-
+  const boxStyles = {
+    className: `
+            fixed bottom-12 right-4
+            w-[90vw] max-w-[400px]
+            sm:max-w-[450px]
+            lg:max-w-[500px]
+            bg-white
+            rounded-2xl
+            shadow-2xl
+            border border-gray-200
+            flex flex-col
+            overflow-hidden
+            z-40
+            lg:h-[700px] xl:h-[800px]
+          `,
+    style: {
+      minHeight: '80vh',
+      maxHeight: '80vh',
+      height: 'auto',
+    }
+  }
   return (
-    <AiAgent
-      agentDetails={agentDetails}
-      messages={messages}
-      input={input}
-      showWelcome={showWelcome}
-      showPrompts={showPrompts}
-      isChatOpen={isChatOpen}
-      thumbnailUrl={thumbnailUrl}
-      pageTitle={pageTitle}
-      pageDescription={pageDescription}
-      chatEndRef={chatEndRef}
-      setInput={setInput}
-      handleSendMessage={handleSendMessage}
-      handleKeyPress={handleKeyPress}
-      toggleChat={toggleChat}
-      boxStyles={boxStyles}
-      cross={false}
-    />
+    <>
+      {!isChatOpen && (
+        <button
+          onClick={toggleChat}
+          className="fixed bottom-6 right-6 w-44 h-44 rounded-full shadow-lg overflow-hidden z-50 hover:shadow-xl transition-all duration-300 focus:outline-none"
+          aria-label="Toggle chat"
+        >
+          {agentDetails?.greeting_media_type === 'video' ? (
+            <video
+              src={agentDetails?.greeting_media_url}
+              loop
+              playsInline
+              autoPlay
+              muted
+              className="w-full h-full object-cover object-center"
+            />
+          ) : (
+            <div
+              className="w-full h-full"
+              style={{
+                backgroundImage: `url(${thumbnailUrl})`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
+            />
+          )}
+          <div className="absolute inset-0 bg-black bg-opacity-10 flex items-center justify-center">
+            <span className="text-white text-sm font-semibold">Chat</span>
+          </div>
+        </button>
+      )}
+      {
+        isChatOpen && (
+          <AiAgent
+            agentDetails={agentDetails}
+            messages={messages}
+            input={input}
+            showWelcome={showWelcome}
+            showPrompts={showPrompts}
+            isChatOpen={isChatOpen}
+            thumbnailUrl={thumbnailUrl}
+            pageTitle={pageTitle}
+            pageDescription={pageDescription}
+            chatEndRef={chatEndRef}
+            setInput={setInput}
+            handleSendMessage={handleSendMessage}
+            handleKeyPress={handleKeyPress}
+            toggleChat={toggleChat}
+            boxStyles={boxStyles}
+            cross={true}
+          />)
+      }
+
+    </>
   );
 }
