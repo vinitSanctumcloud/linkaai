@@ -79,7 +79,8 @@ interface PartnerLink {
   // affiliateimage: string | undefined;
   // status?: "Submitted" | "Hold" | "Processing" | "Complete";
   status?: number;
-  productReview?: string
+  productReview?: string;
+  proceesing?: string;
 }
 
 interface LinkaProMonetizationProduct {
@@ -89,6 +90,7 @@ interface LinkaProMonetizationProduct {
   affiliateLink?: string;
   categoryUrl?: string;
   status: number;
+  proceesing?: string;
 }
 
 interface LinkaProMonetizationBlog {
@@ -97,6 +99,7 @@ interface LinkaProMonetizationBlog {
   category: string;
   blogUrl?: string;
   status: number;
+  proceesing?: string;
 }
 
 interface LinkaProMonetizationWebsite {
@@ -105,6 +108,7 @@ interface LinkaProMonetizationWebsite {
   category: string;
   websiteUrl?: string;
   status: number;
+  proceesing?: string;
 }
 
 type LinkaProMonetization = LinkaProMonetizationProduct | LinkaProMonetizationBlog | LinkaProMonetizationWebsite;
@@ -191,6 +195,7 @@ export default function AgentBuilderPage() {
   const [siteDomain, setSiteDomain] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [isAddContentOpen, setIsAddContentOpen] = useState(false);
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const accessToken = localStorage.getItem("accessToken");
@@ -442,6 +447,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               socialMediaLink: link.social_media_link || "",
               productReview: link.product_review || "",
               status: link.status,
+              proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
             })) || [],
             linkaProMonetizations: agentData.linka_pro_monetizations?.map((link: any) => {
               if (link.type === "products") {
@@ -452,6 +458,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   affiliateLink: link.affiliate_url || "",
                   categoryUrl: link.url || "",
                   status: link.status,
+                  proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               } else if (link.type === "blogs") {
                 return {
@@ -460,6 +467,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   category: link.category_name || "",
                   blogUrl: link.url || "",
                   status: link.status,
+                  proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               } else if (link.type === "websites") {
                 return {
@@ -468,6 +476,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   category: link.category_name || "",
                   websiteUrl: link.url || "",
                   status: link.status,
+                  proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               }
               return null;
@@ -562,6 +571,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               socialMediaLink: link.social_media_link || "",
               productReview: link.product_review || "",
               status: link.status,
+              proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
             }));
             setPartnerLinksTableData(mappedLinks);
           } else if (activeTab === "aipro") {
@@ -574,6 +584,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   affiliateLink: link.affiliate_url || "",
                   categoryUrl: link.url || "",
                   status: link.status,
+                  proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               } else if (link.type === "blogs") {
                 return {
@@ -582,6 +593,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   category: link.category_name || "",
                   blogUrl: link.url || "",
                   status: link.status,
+                  proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               } else if (link.type === "websites") {
                 return {
@@ -590,11 +602,14 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   category: link.category_name || "",
                   websiteUrl: link.url || "",
                   status: link.status,
+                  proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               }
               return null;
             }).filter((link: any) => link !== null);
             setAiproLinksTableData(mappedLinks);
+
+            console.log(mappedLinks);
           }
 
           // setTotalPages(data.data.meta.total || 1);
@@ -690,6 +705,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             socialMediaLink: "",
             productReview: "",
             status: 0,
+            proceesing: '0/0 links'
           },
         ]);
         console.log("Initialized modalLinks for partner:", modalLinks);
@@ -704,6 +720,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               affiliateLink: "",
               categoryUrl: "",
               status: 1,
+              proceesing: '0/0 links'
             };
             break;
           case "blogs":
@@ -713,6 +730,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               category: "",
               blogUrl: "",
               status: 1,
+              proceesing: '0/0 links'
             };
             break;
           case "websites":
@@ -722,6 +740,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
               category: "",
               websiteUrl: "",
               status: 1,
+              proceesing: '0/0 links'
             };
             break;
           default:
@@ -1067,6 +1086,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           affiliateLink: "",
           categoryUrl: "",
           status: 1,
+          proceesing: '0/0 links'
         };
         break;
       case "blogs":
@@ -1076,6 +1096,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           category: "",
           blogUrl: "",
           status: 1,
+          proceesing: '0/0 links'
         };
         break;
       case "websites":
@@ -1085,6 +1106,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           category: "",
           websiteUrl: "",
           status: 1,
+          proceesing: '0/0 links'
         };
         break;
       default:
@@ -2394,6 +2416,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Status
                         </th>
+                                                <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Processeing
+                        </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Actions
                         </th>
@@ -2428,6 +2453,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                             >
                               {statusList[link.status !== undefined ? link.status : 0] || "Unknown"}
                             </span>
+                          </td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            {link.proceesing}
                           </td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
                             <DropdownMenu>
@@ -2513,6 +2541,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           Status
                         </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Processeing
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Actions
                         </th>
                       </tr>
@@ -2547,15 +2578,55 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                 <span>{link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}</span>
                               )}
                             </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            {/* <td className="px-3 py-3 sm:px-6 sm:py-4">
                               <span
                                 className={`px-2 py-1 rounded-full text-xs ${statusStyles[statusList[link.status !== undefined ? link.status : 0]] ||
                                   "bg-gray-100 text-gray-800"
                                   }`}
                               >
                                 {statusList[link.status !== undefined ? link.status : 0] || "Unknown"}
+                                {link.status === -2 ? (
+                                  <a
+                                    href="/pricing"
+                                    className="text-gray-800 hover:underline"
+                                  >
+                                    Insufficient Tokens
+                                  </a>
+                                ) : (
+                                  statusList[link.status !== undefined ? link.status : 0] || "Unknown"
+                                )}
+                                {link.status === -1 && (
+                                  <span className="text-xs text-red-500">Link Blocked by Provider</span>
+                                )}
                               </span>
-                            </td>
+                            </td> */}
+                  <td className="px-3 py-3 sm:px-6 sm:py-4">
+                    <div className="flex flex-col gap-1">
+                      <span
+                        className={`inline-flex items-center justify-center rounded-full text-xs py-1 ${
+                          statusStyles[statusList[link.status !== undefined ? link.status : 0]] ||
+                          "bg-gray-100 text-gray-800"
+                        }`}
+                      >
+                        {link.status === -2 ? (
+                          <a
+                            href="/pricing"
+                            className="text-gray-800 hover:underline px-1"
+                          >
+                            Insufficient Tokens
+                          </a>
+                        ) : (
+                          statusList[link.status !== undefined ? link.status : 0] || "Unknown"
+                        )}
+                      </span>
+                      {link.status === -1 && (
+                        <span className="text-xs text-red-500">Link Blocked by Provider</span>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 sm:px-6 sm:py-4">
+                    {link.proceesing}
+                  </td>
                             <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
