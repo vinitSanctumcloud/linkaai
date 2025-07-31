@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { DashboardLayout } from "@/components/dashboard-layout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -62,17 +62,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import Link from "next/link";
 import { FaFilePdf, FaLink, FaMicrophone, FaPlay } from "react-icons/fa";
 import { API } from "@/config/api";
+import PreviewModal from "@/components/agent/preview-modal";
 
 // import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 // Interfaces remain unchanged
-interface ConditionalPrompt {
+export interface ConditionalPrompt {
   id: string;
   mainPrompt: string;
   option1: { label: string; followUps: string[] };
   option2: { label: string; followUps: string[] };
 }
 
-interface PartnerLink {
+export interface PartnerLink {
   id?: string;
   category: string;
   affiliateLink: string;
@@ -85,7 +86,7 @@ interface PartnerLink {
   proceesing?: string;
 }
 
-interface LinkaProMonetizationProduct {
+export interface LinkaProMonetizationProduct {
   id?: string;
   proType?: string; // "products"
   category: string;
@@ -95,7 +96,7 @@ interface LinkaProMonetizationProduct {
   proceesing?: string;
 }
 
-interface LinkaProMonetizationBlog {
+export interface LinkaProMonetizationBlog {
   id?: string;
   proType?: string; // "blogs"
   category: string;
@@ -104,7 +105,7 @@ interface LinkaProMonetizationBlog {
   proceesing?: string;
 }
 
-interface LinkaProMonetizationWebsite {
+export interface LinkaProMonetizationWebsite {
   id?: string;
   proType?: string; // "websites"
   category: string;
@@ -186,7 +187,7 @@ export default function AgentBuilderPage() {
   });
   const [imageError, setImageError] = useState(false);
   const [isMonetizationModalOpen, setIsMonetizationModalOpen] = useState(false);
-  const [selectedMonetizationOption, setSelectedMonetizationOption] = useState("products");
+  const [selectedMonetizationOption, setSelectedMonetizationOption] = useState("blogs");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [agentLink, setAgentLink] = useState('');
   const [isSaving, setIsSaving] = useState(false);
@@ -198,6 +199,26 @@ export default function AgentBuilderPage() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
   const [isAddContentOpen, setIsAddContentOpen] = useState(false);
+
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false); // New state for preview modal
+  const [selectedLink, setSelectedLink] = useState<PartnerLink | LinkaProMonetizationProduct | LinkaProMonetizationBlog | LinkaProMonetizationWebsite | null>(null); // New state for selected link
+
+  const mainContentRef = useRef<HTMLDivElement>(null);
+  
+  const handlePreviewLink = (index: number, type: "partner" | "aipro") => {
+    console.log(aiproLinksTableData[index])
+    const link = type === "partner" ? partnerLinksTableData[index] : aiproLinksTableData[index];
+    setSelectedLink(link);
+    console.log(selectedLink)
+    setIsPreviewModalOpen(true);
+  };
+
+  const handleClosePreviewModal = () => {
+    setIsPreviewModalOpen(false);
+    setSelectedLink(null); // Reset selected link
+    mainContentRef.current?.focus();
+  };
+
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const accessToken = localStorage.getItem("accessToken");
@@ -2567,7 +2588,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                               >
                                 <DropdownMenuItem
                                   className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                  onClick={() => handlePreviewLink(index)}
+                                  onClick={() => handlePreviewLink(index, "partner")}
                                 >
                                   Preview
                                 </DropdownMenuItem>
@@ -2711,7 +2732,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                                 >
                                   <DropdownMenuItem
                                     className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                    onClick={() => handlePreviewLink(index)}
+                                    onClick={() => handlePreviewLink(index, "aipro") }
                                   >
                                     Preview
                                   </DropdownMenuItem>
@@ -3170,11 +3191,6 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
     }
   };
 
-  // For Preview action
-  const handlePreviewLink = (index: any) => {
-    console.log(`Preview link at index ${index}`, agentConfig.partnerLinks[index]);
-  };
-
   // For Retry action
   const handleRetryLink = (index: any) => {
     console.log(`Retry link at index ${index}`, agentConfig.partnerLinks[index]);
@@ -3194,7 +3210,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
   };
 
   return (
-    <DashboardLayout>
+    <DashboardLayout key={isPreviewModalOpen ? "modal-open" : "modal-closed"}>
       <div className="mx-auto py-6 sm:py-4 w-full">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-linka-russian-violet mb-4 sm:mb-0">
@@ -4086,7 +4102,11 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             </div>
           </DialogContent>
         </Dialog>
-
+      <PreviewModal
+        isOpen={isPreviewModalOpen}
+        onClose={handleClosePreviewModal}
+        link={selectedLink}
+      />
       </div>
     </DashboardLayout >
   );
