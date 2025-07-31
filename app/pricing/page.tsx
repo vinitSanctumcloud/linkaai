@@ -9,6 +9,7 @@ import { CheckCircle, Sparkles, X, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, CardNumberElement, CardExpiryElement, CardCvcElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { API } from '@/config/api';
 
 interface Plan {
   name: string;
@@ -103,7 +104,7 @@ const PaymentForm: React.FC<{
 
         // Fetch product data
         const productResponse = await fetch(
-          `https://api.tagwell.co/api/v4/ai-agent/billing/products/${productId}/plans`,
+          API.GET_PLAN(productId),
           {
             method: 'GET',
             headers: {
@@ -118,7 +119,7 @@ const PaymentForm: React.FC<{
         setSelectedPlan(data.data.plans.find(plan => plan.interval === 'year') || data.data.plans[0]);
 
         // Fetch free subscription status
-        const freeTrialResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/freetrial', {
+        const freeTrialResponse = await fetch(API.GET_FREE_TRIAL, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -134,7 +135,7 @@ const PaymentForm: React.FC<{
         console.log('checkIfFreeSubscripation :: ', freeTrialData);
 
         // Fetch payment method
-        const paymentMethodResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/paymentmethod', {
+        const paymentMethodResponse = await fetch(API.GET_PAYMENT_METHOD, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -175,7 +176,7 @@ const PaymentForm: React.FC<{
     try {
       const accessToken = localStorage.getItem('accessToken');
       if (!accessToken) throw new Error('No access token found');
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/coupons/apply', {
+      const response = await fetch(API.APPLY_COUPON, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify({ promotional_code: couponCode, plan_id: selectedPlan?.id }),
@@ -289,7 +290,7 @@ const PaymentForm: React.FC<{
     };
 
     try {
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/subscribe', {
+      const response = await fetch(API.SUBSCRIBE_PLAN, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${accessToken}` },
         body: JSON.stringify(payload),
@@ -573,7 +574,7 @@ export default function PricingPage() {
           throw new Error('No access token found');
         }
 
-        const freeTrialResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/freetrial', {
+        const freeTrialResponse = await fetch(API.GET_FREE_TRIAL, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -598,7 +599,7 @@ export default function PricingPage() {
           console.log('No subscribed product or free trial is allowed');
         }
 
-        const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/billing/products', {
+        const response = await fetch(API.PLAN_LIST, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

@@ -61,6 +61,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@radix-ui/react-tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import Link from "next/link";
 import { FaFilePdf, FaLink, FaMicrophone, FaPlay } from "react-icons/fa";
+import { API } from "@/config/api";
 
 // import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 // Interfaces remain unchanged
@@ -235,7 +236,7 @@ export default function AgentBuilderPage() {
     formData.append('upload_path', 'ai-agent/avatars'); // Adjust path as needed
 
     try {
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/upload/image', {
+      const response = await fetch(API.UPLOAD_IMAGE, {
         method: 'POST',
         body: formData,
         headers: {
@@ -293,7 +294,7 @@ export default function AgentBuilderPage() {
 
         try {
           // Fetch brands
-          const brandsResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/get-agent/brands', {
+          const brandsResponse = await fetch(API.BRAND_LIST, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -306,7 +307,7 @@ export default function AgentBuilderPage() {
           }
 
           // Fetch categories
-          const categoriesResponse = await fetch('https://api.tagwell.co/api/v4/ai-agent/get-agent/categories', {
+          const categoriesResponse = await fetch(API.CATEGORY_LIST, {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -414,7 +415,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
       }
 
       try {
-        const response = await fetch("https://api.tagwell.co/api/v4/ai-agent/get-agent/details", {
+        const response = await fetch(API.AGENT_DETAILS, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -547,7 +548,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
       let link_type = activeTab === "partner" ? "affiliate" : selectedMonetizationOption;
       try {
         const response = await fetch(
-          `https://api.tagwell.co/api/v4/ai-agent/agent/links/list?link_type=${link_type}&page=${page}`,
+          API.LINK_LIST(link_type, page),
           {
             method: "GET",
             headers: {
@@ -653,7 +654,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 
       try {
         const response = await fetch(
-          "https://api.tagwell.co/api/v4/ai-agent/agent/progress",
+          API.PROGRESS_STEP,
           {
             method: "GET",
             headers: {
@@ -803,7 +804,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 
     try {
       const response = await fetch(
-        `https://api.tagwell.co/api/v4/ai-agent/delete-links/${linkId}`,
+        API.DELETE_LINK(linkId),
         {
           method: "DELETE",
           headers: {
@@ -813,10 +814,11 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
         }
       );
 
+      let link_type = activeTab === "partner" ? "affiliate" : selectedMonetizationOption;
       if (response.ok) {
         // Refetch links to update table data
         const fetchLinksResponse = await fetch(
-          `https://api.tagwell.co/api/v4/ai-agent/agent/links/list?link_type=${type === "partner" ? "affiliate" : selectedMonetizationOption}&page=${page}`,
+          API.LINK_LIST(link_type, page),
           {
             method: "GET",
             headers: {
@@ -1194,7 +1196,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 
       try {
         const response = await fetch(
-          "https://api.tagwell.co/api/v4/ai-agent/upload/image",
+          API.UPLOAD_IMAGE,
           {
             method: "POST",
             body: formData,
@@ -1272,7 +1274,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 
       try {
         const response = await fetch(
-          "https://api.tagwell.co/api/v4/ai-agent/upload/video",
+          API.UPLOAD_VIDEO,
           {
             method: "POST",
             body: formData,
@@ -1323,7 +1325,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
     console.log("first");
     const accessToken = localStorage.getItem("accessToken");
     try {
-      const response = await fetch(`https://api.tagwell.co/api/v4/ai-agent/get-agent/details`, {
+      const response = await fetch(API.AGENT_DETAILS, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -1410,7 +1412,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             });
             return;
           }
-          apiUrl = "https://api.tagwell.co/api/v4/ai-agent/create-agent";
+          apiUrl = API.CREATE_AGENT_1;
           payload = {
             avatar_image_url: agentConfig.avatar,
             greeting_title: agentConfig.greetingTitle,
@@ -1438,7 +1440,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             return;
           }
 
-          apiUrl = "https://api.tagwell.co/api/v4/ai-agent/add-agent-details";
+          apiUrl = API.ADD_AGENT_DETAILS_2;
           payload = {
             agent_name: agentConfig.name,
             training_instructions: agentConfig.trainingInstructions,
@@ -1470,7 +1472,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
             return;
           }
 
-          apiUrl = "https://api.tagwell.co/api/v4/ai-agent/add-prompts";
+          apiUrl = API.ADD_PROMPTS_3;
           payload = {
             prompts: agentConfig.useConditionalPrompts
               ? agentConfig.conditionalPrompts
@@ -1713,7 +1715,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
 
     try {
       const response = await fetch(
-        "https://api.tagwell.co/api/v4/ai-agent/add-links",
+        API.ADD_LINKS_4,
         {
           method: "PUT",
           headers: {
@@ -1724,11 +1726,12 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
         }
       );
 
+      let link_type = activeTab === "partner" ? "affiliate" : selectedMonetizationOption;
+
       if (response.ok) {
         // Refetch links to update table data
         const fetchLinksResponse = await fetch(
-          `https://api.tagwell.co/api/v4/ai-agent/agent/links/list?link_type=${activeTab === "partner" ? "affiliate" : selectedMonetizationOption
-          }&page=${page}`,
+          API.LINK_LIST(link_type, page),
           {
             method: "GET",
             headers: {

@@ -1,6 +1,7 @@
 'use client';
 
 import { AiAgent } from '@/components/aiagent';
+import { API } from '@/config/api';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 // Adjust the import path based on your file structure
@@ -95,8 +96,14 @@ export default function AgentDetails() {
       try {
         setLoading(true);
         const activeResponse = await fetch(
-          `https://api.tagwell.co/api/v4/ai-agent/get/active/slug?ai_agent_slug=${slug}`,
-          { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+          API.AI_AGENT_DATA_FROM_SLUG(slug),
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+              // 'Authorization': `Bearer ${token}', // Uncomment and define token if needed
+            },
+          }
         );
         if (!activeResponse.ok) throw new Error('Failed to check agent status');
         const activeData: ActiveAgentResponse = await activeResponse.json();

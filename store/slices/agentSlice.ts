@@ -1,4 +1,5 @@
 'use client';
+import { API } from '@/config/api';
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
 
 interface Prompt {
@@ -48,7 +49,7 @@ export const fetchAgentDetails = createAsyncThunk<AiAgent, void, { rejectValue: 
       if (!token) {
         return rejectWithValue('No access token found');
       }
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/get-agent/details', {
+      const response = await fetch(API.AGENT_DETAILS, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',

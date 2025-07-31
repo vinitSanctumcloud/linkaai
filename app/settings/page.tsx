@@ -232,7 +232,7 @@ export default function SettingsPage() {
         setIsCheckingSlug(true);
         setSlugError('');
         try {
-          const response = await fetch(`https://api.tagwell.co/api/v4/ai-agent/check/slug/availibility?ai_agent_slug=${formData.customUrl}`, {
+          const response = await fetch(API.SLUG_AVAILABILITY(formData.customUrl), {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
@@ -274,7 +274,7 @@ export default function SettingsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/update/slug', {
+      const response = await fetch(API.UPDATE_SLUG, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -443,7 +443,7 @@ export default function SettingsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/settings/email', {
+      const response = await fetch(API.VERIFY_EMAIL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -492,7 +492,7 @@ export default function SettingsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/settings/phone', {
+      const response = await fetch(API.VERIFY_MOBILE, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -543,7 +543,7 @@ export default function SettingsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/settings/verifyOtpForEmail', {
+      const response = await fetch(API.EMAIL_VERIFY_OTP, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -603,7 +603,7 @@ export default function SettingsPage() {
 
     setIsLoading(true);
     try {
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/settings/verifyOtpForPhone', {
+      const response = await fetch(API.MOBILE_VERIFY_OTP, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -853,7 +853,7 @@ export default function SettingsPage() {
     }
 
     try {
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/credit/payment', {
+      const response = await fetch('', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

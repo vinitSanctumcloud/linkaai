@@ -310,7 +310,7 @@ export const fetchAiAgentData = createAsyncThunk(
         return JSON.parse(cachedAiAgentData).data;
       }
 
-      const response = await fetch('https://api.tagwell.co/api/v4/ai-agent/me', {
+      const response = await fetch(API.USER_API, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${accessToken}`,
