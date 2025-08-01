@@ -270,7 +270,7 @@ const boxStyles = {
     fixed top-1/2 left-1/2
     -translate-x-1/2 -translate-y-1/2
     w-[90vw] max-w-[400px]
-    sm:max-w-[450px]
+    sm:max-w-[500px]
     lg:max-w-[500px]
     bg-white
     rounded-2xl

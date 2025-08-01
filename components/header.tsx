@@ -62,7 +62,7 @@ export function Header() {
               <DropdownMenuContent className="w-64 bg-white rounded-lg shadow-xl border border-gray-100" align="end">
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900">{userName}</p>
-                  <p className="text-xs text-gray-500 truncate">{'test@gmail'}</p>
+                
                 </div>
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard" className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-orange-50">

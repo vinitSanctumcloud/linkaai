@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Head from 'next/head';
 import { FaMicrophone } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
@@ -77,6 +77,12 @@ export function AiAgent({
     boxStyles,
     cross
 }: AiAgentProps) {
+    const [isMuted, setIsMuted] = useState(true);
+
+    const toggleMute = () => {
+        setIsMuted((prev) => !prev);
+    };
+
     return (
         <div className="min-h-screen w-full py-4 relative bg-transparent">
             <Head>
@@ -122,8 +128,9 @@ export function AiAgent({
                                     loop
                                     playsInline
                                     autoPlay
-                                    muted
-                                    className="w-full h-full object-cover object-center"
+                                    muted={isMuted}
+                                    onClick={toggleMute}
+                                    className="w-full h-full object-cover object-center cursor-pointer"
                                 />
                             ) : (
                                 <img
@@ -183,32 +190,32 @@ export function AiAgent({
                                     >
                                         <ReactMarkdown
                                             components={{
-                                            a: ({ node, ...props }) => (
-                                                <a
-                                                {...props}
-                                                className="text-blue-600 underline"
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                />
-                                            ),
-                                            ul: ({ node, ...props }) => (
-                                                <ul className="list-disc ml-[20px]" {...props} />
-                                            ),
-                                            ol: ({ node, ...props }) => (
-                                                <ol className="list-decimal ml-[20px]" {...props} />
-                                            ),
-                                            li: ({ node, ...props }) => (
-                                                <li className="mb-1" {...props} />
-                                            ),
-                                            h1: ({ node, ...props }) => (
-                                                <h1 className="font-bold text-lg mb-2" {...props} />
-                                            ),
-                                            h2: ({ node, ...props }) => (
-                                                <h2 className="font-semibold text-base mb-1" {...props} />
-                                            ),
-                                            p: ({ node, ...props }) => (
-                                                <p className="mb-2" {...props} />
-                                            ),
+                                                a: ({ node, ...props }) => (
+                                                    <a
+                                                        {...props}
+                                                        className="text-blue-600 underline"
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                    />
+                                                ),
+                                                ul: ({ node, ...props }) => (
+                                                    <ul className="list-disc ml-[20px]" {...props} />
+                                                ),
+                                                ol: ({ node, ...props }) => (
+                                                    <ol className="list-decimal ml-[20px]" {...props} />
+                                                ),
+                                                li: ({ node, ...props }) => (
+                                                    <li className="mb-1" {...props} />
+                                                ),
+                                                h1: ({ node, ...props }) => (
+                                                    <h1 className="font-bold text-lg mb-2" {...props} />
+                                                ),
+                                                h2: ({ node, ...props }) => (
+                                                    <h2 className="font-semibold text-base mb-1" {...props} />
+                                                ),
+                                                p: ({ node, ...props }) => (
+                                                    <p className="mb-2" {...props} />
+                                                ),
                                             }}
                                         >
                                             {message.text}

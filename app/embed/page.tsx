@@ -99,7 +99,7 @@ export default function EmbedPage() {
   width="${embedSize.width}" 
   height="${embedSize.height}"
   frameborder="0"
-  style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
+  style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: fixed; bottom: 0; right: 0; background-color: transparent; z-index: 1000;">
 </iframe>`;
 
   const widgetCode = `<!-- EarnLinks.AI Chat Widget -->
@@ -113,7 +113,12 @@ export default function EmbedPage() {
     widget.style.border = 'none';
     widget.style.borderRadius = '10px';
     widget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+    widget.style.position = 'fixed';
+    widget.style.bottom = '.5rem';
+    widget.style.right = '1rem';
+    widget.style.zIndex = '1000';
     widget.frameBorder = '0';
+    widget.setAttribute('allowtransparency', 'true');
     document.getElementById('earnlinks-chat-widget').appendChild(widget);
   })();
 </script>`;
@@ -434,14 +439,7 @@ export default function EmbedPage() {
                 </div>
 
                 <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-                  <Button
-                    variant={embedSize.width === "100%" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setEmbedSize({ width: "100%", height: "750px" })}
-                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
-                  >
-                    Full Width
-                  </Button>
+
                   <Button
                     variant={embedSize.width === "600px" ? "default" : "outline"}
                     size="sm"
