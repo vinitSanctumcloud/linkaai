@@ -2165,228 +2165,219 @@ export default function AgentBuilderPage() {
       
       case 2:
         return (
-          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
-            <CardHeader className="px-6 pt-6 pb-4">
-              <div className="space-y-1">
-                <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight">
-                  Conversation Design
-                </CardTitle>
-                <p className="text-sm text-linka-night/70 font-light">
-                  Craft engaging prompts and branching dialogue flows
-                </p>
+         <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+      <CardHeader className="px-6 pt-6 pb-4">
+        <div className="space-y-1">
+          <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight">
+            Conversation Design
+          </CardTitle>
+          <p className="text-sm text-linka-night/70 font-light">
+            Craft engaging prompts and branching dialogue flows
+          </p>
+        </div>
+      </CardHeader>
+      <CardContent className="px-6 pb-8 space-y-6">
+        {!agentConfig.useConditionalPrompts ? (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                <MessageSquare className="w-5 h-5 text-linka-carolina-blue" />
+                Conversation Starters
+              </h3>
+              <p className="text-xs text-linka-night/60">
+                These buttons will appear when users first interact with your AI (max 40 chars)
+              </p>
+            </div>
+            <div className="grid grid-cols-1 gap-4">
+              {agentConfig.prompts.map((prompt, index) => (
+                <div key={index} className="space-y-2">
+                  <Label
+                    htmlFor={`prompt-${index}`}
+                    className="text-linka-russian-violet/90"
+                  >
+                    Prompt {index + 1}
+                  </Label>
+                  <Input
+                    id={`prompt-${index}`}
+                    placeholder={[
+                      "Plan my itinerary (max 40 chars)",
+                      "Local recommendations (max 40 chars)",
+                      "Show best deals (max 40 chars)",
+                      "About activities (max 40 chars)",
+                    ][index]}
+                    value={prompt}
+                    onChange={(e) => updatePrompt(index, e.target.value)}
+                    maxLength={40}
+                    className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 transition-all duration-200"
+                  />
+                  <p className="text-xs text-linka-night/60">
+                    {prompt.length}/40 characters
+                  </p>
+                </div>
+              ))}
+            </div>
+            <div className="bg-linka-alice-blue/30 rounded-xl p-4 border border-linka-alice-blue/50 mt-4">
+              <p className="text-xs text-linka-night/70 mb-3 font-medium uppercase tracking-wider">
+                Button Preview
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {agentConfig.prompts.map((prompt, index) => (
+                  <div
+                    key={index}
+                    className="bg-white border border-linka-columbia-blue/50 rounded-lg p-3 text-sm font-medium text-linka-night hover:shadow-sm transition-all duration-200 hover:border-linka-carolina-blue hover:translate-y-[-2px]"
+                  >
+                    {prompt || `Prompt ${index + 1}`}
+                  </div>
+                ))}
               </div>
-            </CardHeader>
-            <CardContent className="px-6 pb-8 space-y-6">
-              {!agentConfig.useConditionalPrompts ? (
-                <div className="space-y-6 animate-in fade-in">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                      <MessageSquare className="w-5 h-5 text-linka-carolina-blue" />
-                      Conversation Starters
-                    </h3>
-                    <p className="text-xs text-linka-night/60">
-                      These buttons will appear when users first interact with
-                      your AI
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4">
-                    {agentConfig.prompts.map((prompt, index) => (
-                      <div key={index} className="space-y-2">
-                        <Label
-                          htmlFor={`prompt-${index}`}
-                          className="text-linka-russian-violet/90"
-                        >
-                          Prompt {index + 1}
-                        </Label>
-                        <Input
-                          id={`prompt-${index}`}
-                          placeholder={
-                            [
-                              "Help me plan my itinerary",
-                              "Find local recommendations",
-                              "Show me the best deals",
-                              "Tell me about activities",
-                            ][index]
-                          }
-                          value={prompt}
-                          onChange={(e) => updatePrompt(index, e.target.value)}
-                          className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 transition-all duration-200"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  <div className="bg-linka-alice-blue/30 rounded-xl p-4 border border-linka-alice-blue/50 mt-4">
-                    <p className="text-xs text-linka-night/70 mb-3 font-medium uppercase tracking-wider">
-                      Button Preview
-                    </p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {agentConfig.prompts.map((prompt, index) => (
-                        <div
-                          key={index}
-                          className="bg-white border border-linka-columbia-blue/50 rounded-lg p-3 text-sm font-medium text-linka-night hover:shadow-sm transition-all duration-200 hover:border-linka-carolina-blue hover:translate-y-[-2px]"
-                        >
-                          {prompt || `Prompt ${index + 1}`}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-6 animate-in fade-in">
-                  <div className="space-y-2">
-                    <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                      <GitBranch className="w-5 h-5 text-linka-dark-orange" />
-                      Branching Flows
-                    </h3>
-                    <p className="text-xs text-linka-night/60">
-                      Create decision trees that adapt to different user needs
-                    </p>
-                  </div>
-                  {agentConfig.conditionalPrompts.length === 0 ? (
-                    <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
-                      <GitBranch className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4 animate-pulse" />
-                      <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
-                        No Conversation Flows Yet
-                      </h3>
-                      <p className="text-linka-night/60 mb-4 max-w-md mx-auto">
-                        Create your first branching conversation to guide users
-                        through different paths
-                      </p>
-                      <Button
-                        onClick={() => openConditionalModal()}
-                        className="bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white shadow-md transition-all duration-300 hover:scale-105"
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Create Flow
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-4">
-                      {agentConfig.conditionalPrompts.map((prompt) => (
-                        <Card
-                          key={prompt.id}
-                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 overflow-hidden"
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium text-linka-russian-violet flex items-center gap-2">
-                                <MessageSquare className="w-4 h-4 text-linka-carolina-blue" />
-                                {prompt.mainPrompt || "Untitled Flow"}
-                              </h4>
-                              <div className="flex gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => openConditionalModal(prompt)}
-                                  className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 transition-all duration-200 hover:scale-105"
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6 animate-in fade-in">
+            <div className="space-y-2">
+              <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                <GitBranch className="w-5 h-5 text-linka-dark-orange" />
+                Branching Flows
+              </h3>
+              <p className="text-xs text-linka-night/60">
+                Create decision trees that adapt to different user needs (max 40 chars)
+              </p>
+            </div>
+            {agentConfig.conditionalPrompts.length === 0 ? (
+              <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
+                <GitBranch className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4 animate-pulse" />
+                <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
+                  No Conversation Flows Yet
+                </h3>
+                <p className="text-linka-night/60 mb-4 max-w-md mx-auto">
+                  Create your first branching conversation to guide users through different paths
+                </p>
+                <Button
+                  onClick={() => openConditionalModal()}
+                  className="bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white shadow-md transition-all duration-300 hover:scale-105"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create Flow
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {agentConfig.conditionalPrompts.map((prompt) => (
+                  <Card
+                    key={prompt.id}
+                    className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 overflow-hidden"
+                  >
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium text-linka-russian-violet flex items-center gap-2">
+                          <MessageSquare className="w-4 h-4 text-linka-carolina-blue" />
+                          {prompt.mainPrompt.length > 40 ? prompt.mainPrompt.slice(0, 40) : prompt.mainPrompt || "Untitled Flow"}
+                        </h4>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openConditionalModal(prompt)}
+                            className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 transition-all duration-200 hover:scale-105"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="border-red-200 text-red-600 hover:bg-red-50 transition-all duration-200 hover:scale-105"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="border-red-100">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle className="text-linka-russian-violet">
+                                  Delete this flow?
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will permanently delete "
+                                  {prompt.mainPrompt.length > 40 ? prompt.mainPrompt.slice(0, 40) : prompt.mainPrompt || "this flow"}" and all its branches.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="border-linka-alice-blue hover:bg-linka-alice-blue">
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => deleteConditionalPrompt(prompt.id)}
+                                  className="bg-red-600 hover:bg-red-700 transition-all duration-200"
                                 >
-                                  <Edit className="w-4 h-4" />
-                                </Button>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="border-red-200 text-red-600 hover:bg-red-50 transition-all duration-200 hover:scale-105"
-                                    >
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent className="border-red-100">
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle className="text-linka-russian-violet">
-                                        Delete this flow?
-                                      </AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete "
-                                        {prompt.mainPrompt || "this flow"}" and
-                                        all its branches.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel className="border-linka-alice-blue hover:bg-linka-alice-blue">
-                                        Cancel
-                                      </AlertDialogCancel>
-                                      <AlertDialogAction
-                                        onClick={() =>
-                                          deleteConditionalPrompt(prompt.id)
-                                        }
-                                        className="bg-red-600 hover:bg-red-700 transition-all duration-200"
-                                      >
-                                        <Trash2 className="w-4 h-4 mr-2" />
-                                        Delete Flow
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
+                                  <Trash2 className="w-4 h-4 mr-2" />
+                                  Delete Flow
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-linka-dark-orange" />
+                            <Label className="text-sm font-medium text-linka-russian-violet">
+                              {prompt.option1.label.length > 40 ? prompt.option1.label.slice(0, 40) : prompt.option1.label || "Option 1"}
+                            </Label>
+                          </div>
+                          <div className="space-y-2 ml-4">
+                            {prompt.option1.followUps.map((followUp, index) => (
+                              <div
+                                key={index}
+                                className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
+                              >
+                                {followUp.length > 40 ? followUp.slice(0, 40) : followUp || `Follow-up question ${index + 1}`}
                               </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full bg-linka-dark-orange" />
-                                  <Label className="text-sm font-medium text-linka-russian-violet">
-                                    {prompt.option1.label || "Option 1"}
-                                  </Label>
-                                </div>
-                                <div className="space-y-2 ml-4">
-                                  {prompt.option1.followUps.map(
-                                    (followUp, index) => (
-                                      <div
-                                        key={index}
-                                        className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
-                                      >
-                                        {followUp ||
-                                          `Follow-up question ${index + 1}`}
-                                      </div>
-                                    )
-                                  )}
-                                </div>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-linka-carolina-blue" />
+                            <Label className="text-sm font-medium text-linka-russian-violet">
+                              {prompt.option2.label.length > 40 ? prompt.option2.label.slice(0, 40) : prompt.option2.label || "Option 2"}
+                            </Label>
+                          </div>
+                          <div className="space-y-2 ml-4">
+                            {prompt.option2.followUps.map((followUp, index) => (
+                              <div
+                                key={index}
+                                className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
+                              >
+                                {followUp.length > 40 ? followUp.slice(0, 40) : followUp || `Follow-up question ${index + 1}`}
                               </div>
-                              <div className="space-y-3">
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 rounded-full bg-linka-carolina-blue" />
-                                  <Label className="text-sm font-medium text-linka-russian-violet">
-                                    {prompt.option2.label || "Option 2"}
-                                  </Label>
-                                </div>
-                                <div className="space-y-2 ml-4">
-                                  {prompt.option2.followUps.map(
-                                    (followUp, index) => (
-                                      <div
-                                        key={index}
-                                        className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
-                                      >
-                                        {followUp ||
-                                          `Follow-up question ${index + 1}`}
-                                      </div>
-                                    )
-                                  )}
-                                </div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))}
-                      <Button
-                        onClick={() => openConditionalModal()}
-                        variant="outline"
-                        className={`w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 transition-all duration-300 ${agentConfig.conditionalPrompts.length >= 2 ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02]"}`}
-                        disabled={agentConfig.conditionalPrompts.length >= 2}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {agentConfig.conditionalPrompts.length === 0
-                          ? "Create First Flow"
-                          : "Add Another Flow"}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                <Button
+                  onClick={() => openConditionalModal()}
+                  variant="outline"
+                  className={`w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 transition-all duration-300 ${agentConfig.conditionalPrompts.length >= 2 ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02]"}`}
+                  disabled={agentConfig.conditionalPrompts.length >= 2}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  {agentConfig.conditionalPrompts.length === 0
+                    ? "Create First Flow"
+                    : "Add Another Flow"}
+                </Button>
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
         );
    
       case 3:
