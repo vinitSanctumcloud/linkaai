@@ -847,13 +847,14 @@ export default function SettingsPage() {
 
   const handlePurchaseTokens = async (priceId: number) => {
     setIsLoading(true);
+    console.log(priceId)
     let payload: PaymentData = { price_id: priceId };
     if (paymentCardDetails) {
       payload = { ...payload, payment_method_id: paymentCardDetails?.payment_method_id };
     }
 
     try {
-      const response = await fetch('', {
+      const response = await fetch(API.PURCHASE_TOKEN, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

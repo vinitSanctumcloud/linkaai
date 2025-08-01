@@ -76,6 +76,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
 
   // Fetch random user profile
   useEffect(() => {
+    console.log("fetchAgentDetails ::", aiAgentData);
     fetch('https://randomuser.me/api/')
       .then((response) => response.json())
       .then((data) => {

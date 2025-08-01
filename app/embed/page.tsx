@@ -27,9 +27,9 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
-  TooltipContent,
   TooltipProvider,
   TooltipTrigger,
+  TooltipContent,
 } from "@/components/ui/tooltip";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store";
@@ -44,10 +44,9 @@ interface Settings {
 export default function EmbedPage() {
   const dispatch = useDispatch<AppDispatch>();
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [embedSize, setEmbedSize] = useState({ width: "25rem", height: "37.5rem" });
+  const [embedSize, setEmbedSize] = useState({ width: "100%", height: "750px" });
   const [isCopied, setIsCopied] = useState(false);
   const { agent: agentDetails, status, error } = useSelector((state: RootState) => state.agents);
-
   const [siteDomain, setSiteDomain] = useState('');
 
   useEffect(() => {
@@ -100,7 +99,7 @@ export default function EmbedPage() {
   width="${embedSize.width}" 
   height="${embedSize.height}"
   frameborder="0"
-  style="border-radius: 0.625rem; box-shadow: 0 0.25rem 1.25rem rgba(0,0,0,0.1);">
+  style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);">
 </iframe>`;
 
   const widgetCode = `<!-- EarnLinks.AI Chat Widget -->
@@ -112,8 +111,8 @@ export default function EmbedPage() {
     widget.style.width = '${embedSize.width}';
     widget.style.height = '${embedSize.height}';
     widget.style.border = 'none';
-    widget.style.borderRadius = '0.625rem';
-    widget.style.boxShadow = '0 0.25rem 1.25rem rgba(0,0,0,0.1)';
+    widget.style.borderRadius = '10px';
+    widget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
     widget.frameBorder = '0';
     document.getElementById('earnlinks-chat-widget').appendChild(widget);
   })();
@@ -125,17 +124,17 @@ export default function EmbedPage() {
     var button = document.createElement('button');
     button.innerHTML = '💬 Chat with AI';
     button.style.position = 'fixed';
-    button.style.bottom = '1.25rem';
-    button.style.right = '1.25rem';
+    button.style.bottom = '20px';
+    button.style.right = '20px';
     button.style.zIndex = '9999';
-    button.style.padding = '0.75rem 1.25rem';
+    button.style.padding = '12px 20px';
     button.style.backgroundColor = '${settings?.brandColor || "#FF6B35"}';
     button.style.color = 'white';
     button.style.border = 'none';
-    button.style.borderRadius = '1.5625rem';
+    button.style.borderRadius = '25px';
     button.style.cursor = 'pointer';
     button.style.fontWeight = 'bold';
-    button.style.fontSize = '0.875rem';
+    button.style.fontSize = '14px';
     
     button.onclick = function() {
       window.open('${chatUrl}', 'earnlinks-chat', 'width=400,height=600,scrollbars=no,resizable=yes');
@@ -147,7 +146,7 @@ export default function EmbedPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 md:space-y-8 sm:px-6 lg:px-8 py-6">
+      <div className="space-y-6 md:space-y-8 px-4 sm:px-1 lg:px-1 py-6 max-w-7xl mx-auto">
         <div className="text-center md:text-left">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             Share Your AI-Agent
@@ -157,12 +156,12 @@ export default function EmbedPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
-          <div className="space-y-4 md:space-y-6">
-            <Card className="border border-gray-200 shadow-sm rounded-xl w-full max-w-full mx-auto">
-              <CardHeader className="px-4 sm:px-6">
+        <div className="flex flex-col lg:flex-row gap-6 md:gap-8">
+          <div className="w-full lg:w-1/3 space-y-4 md:space-y-6">
+            <Card className="border border-gray-200 shadow-sm rounded-xl">
+              <CardHeader className="px-3 sm:px-3">
                 <CardTitle className="text-lg sm:text-xl font-semibold">
-                  Share your AI agent with your audience.
+                  Share your AI agent with your audience
                 </CardTitle>
                 <CardDescription className="text-sm sm:text-base mt-1">
                   Add it to your link-in-bio, embed it on your website, or share
@@ -171,26 +170,26 @@ export default function EmbedPage() {
               </CardHeader>
               <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
                 <Tabs defaultValue="share" className="w-full">
-                  <TabsList className="grid w-full grid-cols-3 h-auto p-1 gap-1">
+                  <TabsList className="grid w-full grid-cols-3 h-auto p-1 gap-1 bg-gray-100 rounded-lg">
                     <TabsTrigger
                       value="share"
-                      className="py-2 text-xs xs:text-sm flex items-center justify-center"
+                      className="py-2 text-xs sm:text-sm flex items-center justify-center data-[state=active]:bg-white data-[state=active]:shadow-sm"
                     >
-                      <Smartphone className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <Smartphone className="w-4 h-4 mr-2 flex-shrink-0" />
                       <span className="truncate">Share URL</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="iframe"
-                      className="py-2 text-xs xs:text-sm flex items-center justify-center"
+                      className="py-2 text-xs sm:text-sm flex items-center justify-center data-[state=active]:bg-white data-[state=active]:shadow-sm"
                     >
-                      <Globe className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <Globe className="w-4 h-4 mr-2 flex-shrink-0" />
                       <span className="truncate">Iframe</span>
                     </TabsTrigger>
                     <TabsTrigger
                       value="widget"
-                      className="py-2 text-xs xs:text-sm flex items-center justify-center"
+                      className="py-2 text-xs sm:text-sm flex items-center justify-center data-[state=active]:bg-white data-[state=active]:shadow-sm"
                     >
-                      <Code className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2 flex-shrink-0" />
+                      <Code className="w-4 h-4 mr-2 flex-shrink-0" />
                       <span className="truncate">Widget</span>
                     </TabsTrigger>
                   </TabsList>
@@ -198,7 +197,7 @@ export default function EmbedPage() {
                   <TabsContent value="iframe" className="mt-4">
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
                           Simple Iframe Embed
                         </h3>
                         <p className="text-gray-600 text-xs sm:text-sm">
@@ -211,16 +210,16 @@ export default function EmbedPage() {
                           value={iframeCode}
                           readOnly
                           rows={4}
-                          className="font-mono text-xs sm:text-sm p-3 pr-10"
+                          className="font-mono text-xs sm:text-sm p-3 pr-10 bg-gray-50 border-gray-200"
                         />
                         <Button
                           onClick={() => copyToClipboard(iframeCode)}
-                          className="absolute top-2 right-2 h-7 w-7 p-0"
+                          className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
                           variant="ghost"
                           size="sm"
                           aria-label="Copy code"
                         >
-                          <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <Copy className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -229,7 +228,7 @@ export default function EmbedPage() {
                   <TabsContent value="widget" className="mt-4">
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
                           JavaScript Widget
                         </h3>
                         <p className="text-gray-600 text-xs sm:text-sm">
@@ -242,16 +241,16 @@ export default function EmbedPage() {
                           value={widgetCode}
                           readOnly
                           rows={6}
-                          className="font-mono text-xs sm:text-sm p-3 pr-10"
+                          className="font-mono text-xs sm:text-sm p-3 pr-10 bg-gray-50 border-gray-200"
                         />
                         <Button
                           onClick={() => copyToClipboard(widgetCode)}
-                          className="absolute top-2 right-2 h-7 w-7 p-0"
+                          className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
                           variant="ghost"
                           size="sm"
                           aria-label="Copy code"
                         >
-                          <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+                          <Copy className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
@@ -260,7 +259,7 @@ export default function EmbedPage() {
                   <TabsContent value="share" className="mt-4">
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-1 sm:mb-2">
+                        <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
                           Share Chat Link
                         </h3>
                         <p className="text-gray-600 text-xs sm:text-sm">
@@ -270,7 +269,7 @@ export default function EmbedPage() {
                       <div className="relative">
                         <div
                           onClick={handleCopy}
-                          className="font-mono text-xs sm:text-sm p-3 pr-10 border rounded-md cursor-pointer hover:bg-gray-50 flex items-center overflow-hidden"
+                          className="font-mono text-xs sm:text-sm p-3 pr-10 border rounded-md cursor-pointer hover:bg-gray-50 flex items-center overflow-hidden bg-gray-50 border-gray-200"
                         >
                           <span className="truncate">{chatUrl}</span>
                         </div>
@@ -279,12 +278,12 @@ export default function EmbedPage() {
                             <TooltipTrigger asChild>
                               <Button
                                 onClick={() => copyToClipboard(chatUrl)}
-                                className="absolute top-2 right-2 h-7 w-7 p-0"
+                                className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
                                 variant="ghost"
                                 size="sm"
                                 aria-label="Copy URL"
                               >
-                                <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+                                <Copy className="h-4 w-4" />
                               </Button>
                             </TooltipTrigger>
                             <TooltipContent side="top">
@@ -313,7 +312,7 @@ export default function EmbedPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="width" className="text-sm sm:text-base">
-                      Width (rem)
+                      Width
                     </Label>
                     <Input
                       id="width"
@@ -321,13 +320,13 @@ export default function EmbedPage() {
                       onChange={(e) =>
                         setEmbedSize({ ...embedSize, width: e.target.value })
                       }
-                      placeholder="25rem"
+                      placeholder="100% or 600px"
                       className="text-sm sm:text-base"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="height" className="text-sm sm:text-base">
-                      Height (rem)
+                      Height (px)
                     </Label>
                     <Input
                       id="height"
@@ -335,7 +334,7 @@ export default function EmbedPage() {
                       onChange={(e) =>
                         setEmbedSize({ ...embedSize, height: e.target.value })
                       }
-                      placeholder="37.5rem"
+                      placeholder="750px"
                       className="text-sm sm:text-base"
                     />
                   </div>
@@ -351,10 +350,10 @@ export default function EmbedPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  "Place the iframe code where you want the chat to appear on your page.",
-                  "For mobile responsiveness, consider using percentage widths like '100%'.",
-                  "The share option works great for websites where space is limited.",
-                  "Test your implementation on different devices to ensure optimal experience.",
+                  "Use '100%' width for full responsiveness on small screens.",
+                  "Ensure height is at least 750px for optimal chat display.",
+                  "Test the share link in mobile browsers for best results.",
+                  "Preview on various devices to confirm layout compatibility.",
                 ].map((tip, index) => (
                   <div key={index} className="flex items-start">
                     <Badge
@@ -370,7 +369,7 @@ export default function EmbedPage() {
             </Card>
           </div>
 
-          <div className="space-y-4 md:space-y-6 flex justify-center items-start min-h-screen bg-gray-50">
+          <div className="w-full lg:w-2/3 space-y-4 md:space-y-6 flex justify-center items-start bg-gray-50">
             <Card className="border border-gray-200 shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl w-full max-w-4xl">
               <CardHeader className="px-6 pt-6 pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
                 <div className="space-y-1">
@@ -387,13 +386,14 @@ export default function EmbedPage() {
               <CardContent className="p-6">
                 <div className="relative w-full h-full flex justify-center items-center">
                   <div
-                    className="bg-white rounded-lg sm:rounded-xl overflow-hidden shadow-md border border-gray-100 relative"
+                    className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100 relative"
                     style={{
                       width: embedSize.width,
                       height: embedSize.height,
+                      minWidth: "300px",
+                      minHeight: "750px",
                       maxWidth: "100%",
-                      minHeight: "50rem",
-                      maxHeight: "50rem",
+                      maxHeight: "800px",
                       display: "flex",
                       justifyContent: "center",
                       alignItems: "center",
@@ -404,12 +404,13 @@ export default function EmbedPage() {
                     {chatUrl ? (
                       <iframe
                         src={chatUrl}
-                        className="w-full h-full border-0 rounded-lg"
+                        className="w-full h-full border-0 rounded-xl"
                         style={{
                           transform: "scale(1)",
                           transformOrigin: "top left",
-                          minHeight: "100%",
-                          minWidth: "100%",
+                          minHeight: "750px",
+                          maxHeight: "800px",
+                          width: "100%",
                         }}
                         title="Chat Preview"
                         allow="microphone; clipboard-write"
@@ -417,8 +418,8 @@ export default function EmbedPage() {
                       />
                     ) : (
                       <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
-                        <Bot className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mb-4" />
-                        <p className="text-gray-500 text-center text-sm sm:text-base font-medium px-4">
+                        <Bot className="w-16 h-16 text-gray-400 mb-4" />
+                        <p className="text-gray-500 text-center text-base font-medium px-4">
                           Configure your agent to see the preview
                         </p>
                       </div>
@@ -434,29 +435,29 @@ export default function EmbedPage() {
 
                 <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
                   <Button
-                    variant={embedSize.width === "25rem" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setEmbedSize({ width: "25rem", height: "37.5rem" })}
-                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
-                  >
-                    Mobile (400px)
-                  </Button>
-                  <Button
-                    variant={embedSize.width === "40.625rem" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setEmbedSize({ width: "40.625rem", height: "37.5rem" })}
-                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
-                  >
-                    Desktop (650px)
-                  </Button>
-                  {/* <Button
                     variant={embedSize.width === "100%" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setEmbedSize({ width: "100%", height: "37.5rem" })}
+                    onClick={() => setEmbedSize({ width: "100%", height: "750px" })}
                     className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
                   >
                     Full Width
-                  </Button> */}
+                  </Button>
+                  <Button
+                    variant={embedSize.width === "600px" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setEmbedSize({ width: "600px", height: "750px" })}
+                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
+                  >
+                    Mobile (600px)
+                  </Button>
+                  <Button
+                    variant={embedSize.width === "700px" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setEmbedSize({ width: "700px", height: "750px" })}
+                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
+                  >
+                    Desktop (700px)
+                  </Button>
                 </div>
               </CardContent>
             </Card>

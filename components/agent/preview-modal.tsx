@@ -58,7 +58,7 @@ export default function PreviewModal({ isOpen, onClose, link }: PreviewModalProp
             />
           )}
           <Button
-            onClick={handleRefresh}
+            onClick={handleRefresh} 
             variant="outline"
             className="absolute top-2 right-2 w-8 h-8 p-0 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-full"
           >

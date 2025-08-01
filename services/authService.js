@@ -2,6 +2,15 @@
 
 import { API } from '@/config/api'
 
+const getAuthHeaders = () => {
+  const accessToken = localStorage.getItem('accessToken');
+  if (!accessToken) throw new Error('No access token found');
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${accessToken}`,
+  };
+};
+
 // 🟢 Login
 export const login = async ({ email, password }) => {
   const response = await fetch(API.LOGIN, {

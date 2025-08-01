@@ -79,6 +79,7 @@
 
   body {
     @apply bg-background text-foreground;
+    @apply bg-transparent
   }
 }
 
@@ -174,4 +175,5 @@ select:focus-visible {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
 

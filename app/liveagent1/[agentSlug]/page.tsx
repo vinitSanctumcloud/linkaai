@@ -277,6 +277,7 @@ export default function AgentDetails() {
             flex flex-col
             overflow-hidden
             z-40
+            overflow-y-auto
             lg:h-[700px] xl:h-[800px]
           `,
     style: {
