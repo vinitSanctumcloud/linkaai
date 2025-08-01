@@ -2135,7 +2135,7 @@ export default function AgentBuilderPage() {
                 <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
                 <div className="flex items-center gap-2 mb-2 sm:mb-3">
                   <p className="text-xs text-linka-night/60 font-medium uppercase tracking-wider">
-                    Live Preview
+                    Preview
                   </p>
                   <TooltipProvider>
                     <Tooltip delayDuration={0}>
