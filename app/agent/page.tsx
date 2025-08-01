@@ -75,7 +75,7 @@ export interface ConditionalPrompt {
 }
 
 export interface PartnerLink {
-  id?: string;
+  id: number;
   category: string;
   affiliateLink: string;
   brandName?: string;
@@ -88,7 +88,7 @@ export interface PartnerLink {
 }
 
 export interface LinkaProMonetizationProduct {
-  id?: string;
+  id: number;
   proType?: string; // "products"
   category: string;
   affiliateLink?: string;
@@ -99,7 +99,7 @@ export interface LinkaProMonetizationProduct {
 }
 
 export interface LinkaProMonetizationBlog {
-  id?: string;
+  id: number;
   proType?: string; // "blogs"
   category: string;
   blogUrl?: string;
@@ -109,7 +109,7 @@ export interface LinkaProMonetizationBlog {
 }
 
 export interface LinkaProMonetizationWebsite {
-  id?: string;
+  id: number;
   proType?: string; // "websites"
   category: string;
   websiteUrl?: string;
@@ -723,7 +723,7 @@ export default function AgentBuilderPage() {
       if (activeTab === "partner") {
         setModalLinks([
           {
-            id: Date.now().toString(),
+            id: Date.now(),
             category: "",
             affiliateLink: "",
             brandName: "",
@@ -739,7 +739,7 @@ export default function AgentBuilderPage() {
         switch (selectedMonetizationOption) {
           case "products":
             newLink = {
-              id: Date.now().toString(),
+              id: Date.now(),
               proType: "products",
               category: "",
               affiliateLink: "",
@@ -750,7 +750,7 @@ export default function AgentBuilderPage() {
             break;
           case "blogs":
             newLink = {
-              id: Date.now().toString(),
+              id: Date.now(),
               proType: "blogs",
               category: "",
               blogUrl: "",
@@ -760,7 +760,7 @@ export default function AgentBuilderPage() {
             break;
           case "websites":
             newLink = {
-              id: Date.now().toString(),
+              id: Date.now(),
               proType: "websites",
               category: "",
               websiteUrl: "",
@@ -789,14 +789,14 @@ export default function AgentBuilderPage() {
     if (type === "partner") {
       const link = partnerLinksTableData[index];
       setModalLinks([link]);
-      setEditingPartnerLinkId(link.id || null);
+      // setEditingPartnerLinkId(link.id);
       setIsMonetizationModalOpen(true);
       console.log("Editing partner link:", link);
     } else {
       const link = aiproLinksTableData[index];
       setSelectedMonetizationOption(link.proType || "blogs");
       setModalLinks([link]);
-      setEditingLinkId(link.id || null); 
+      // setEditingLinkId(link.id || null); 
       setIsMonetizationModalOpen(true);
       console.log("Editing aipro link:", link);
     }
@@ -961,7 +961,7 @@ export default function AgentBuilderPage() {
     setIsConditionalModalOpen(true);
   };
 
-  const handleRemoveLink = (id: string) => {
+  const handleRemoveLink = (id: number) => {
     setModalLinks((prev: any[]) => {
       const newLinks = prev.filter((link) => link.id !== id);
       if (newLinks.length === 0) {
@@ -1067,7 +1067,7 @@ export default function AgentBuilderPage() {
     }));
   };
 
-  const removePartnerLink = (id: string) => {
+  const removePartnerLink = (id: number) => {
     setAgentConfig((prev) => ({
       ...prev,
       partnerLinks: prev.partnerLinks.filter((link) => link.id !== id),
@@ -1106,7 +1106,7 @@ export default function AgentBuilderPage() {
     switch (selectedMonetizationOption) {
       case "products":
         newLink = {
-          id: Date.now().toString(),
+          id: Date.now(),
           proType: "products",
           category: "",
           affiliateLink: "",
@@ -1117,7 +1117,7 @@ export default function AgentBuilderPage() {
         break;
       case "blogs":
         newLink = {
-          id: Date.now().toString(),
+          id: Date.now(),
           proType: "blogs",
           category: "",
           blogUrl: "",
@@ -1127,7 +1127,7 @@ export default function AgentBuilderPage() {
         break;
       case "websites":
         newLink = {
-          id: Date.now().toString(),
+          id: Date.now(),
           proType: "websites",
           category: "",
           websiteUrl: "",
@@ -1146,7 +1146,7 @@ export default function AgentBuilderPage() {
   };
 
   const updateLinkaProMonetization = (
-    id: string,
+    id: number,
     field: keyof LinkaProMonetizationProduct | keyof LinkaProMonetizationBlog | keyof LinkaProMonetizationWebsite,
     value: string
   ) => {
@@ -1158,7 +1158,7 @@ export default function AgentBuilderPage() {
   };
 
   const updatePartnerLink = (
-    id: string,
+    id: number,
     field: string,
     value: string
   ) => {
@@ -1445,7 +1445,7 @@ export default function AgentBuilderPage() {
             greeting_media_type: agentConfig.greetingMediaType || "image",
           };
           break;
-
+          
         case 2:
           if (!agentConfig.name.trim()) {
             toast.error("Please provide an agent name.", {
@@ -1870,7 +1870,7 @@ export default function AgentBuilderPage() {
                     AI Agent Greeting
                   </h3>
                   <TooltipProvider>
-                    <Tooltip>
+                    <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
@@ -1915,7 +1915,7 @@ export default function AgentBuilderPage() {
                           id="avatar-upload"
                         />
                         <TooltipProvider>
-                          <Tooltip>
+                          <Tooltip delayDuration={0}>
                             <TooltipTrigger asChild>
                               <label
                                 htmlFor="avatar-upload"
@@ -1989,7 +1989,7 @@ export default function AgentBuilderPage() {
                       className="hidden"
                       id="greeting-image-upload"
                     />
-                    <Tooltip>
+                    <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <label
                           htmlFor="greeting-image-upload"
@@ -2014,7 +2014,7 @@ export default function AgentBuilderPage() {
                           id="greeting-video-upload"
                         />
                         <TooltipProvider>
-                          <Tooltip>
+                          <Tooltip delayDuration={0}>
                             <TooltipTrigger asChild>
                               <label
                                 htmlFor="greeting-video-upload"
@@ -2049,7 +2049,7 @@ export default function AgentBuilderPage() {
                     <span className="text-xs text-linka-dark-orange">(Max 50 chars)</span>
                   </Label>
                   <TooltipProvider>
-                    <Tooltip>
+                    <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
@@ -2095,7 +2095,7 @@ export default function AgentBuilderPage() {
                     <span className="text-xs text-linka-dark-orange">(Max 120 chars)</span>
                   </Label>
                   <TooltipProvider>
-                    <Tooltip>
+                    <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
@@ -2138,7 +2138,7 @@ export default function AgentBuilderPage() {
                     Live Preview
                   </p>
                   <TooltipProvider>
-                    <Tooltip>
+                    <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <Info className="w-4 h-4 text-linka-night/70 cursor-help" />
                       </TooltipTrigger>
@@ -2162,703 +2162,7 @@ export default function AgentBuilderPage() {
           </Card>
           // </TooltipProvider>
         );
-
-      case 3:
-        return (
-          <Card className="w-full mx-auto border-none shadow-xl rounded-2xl bg-white/95 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-3xl font-bold text-indigo-900 tracking-tight">
-                AI Agent Setup
-              </CardTitle>
-              <p className="text-sm text-gray-500">
-                Personalize your AI agent with a name and specific instructions
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-6 p-6">
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Label
-                    htmlFor="agent-name"
-                    className="text-base font-medium text-gray-700"
-                  >
-                    Agent Name
-                    <span className="text-red-500 ml-1">*</span>
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                          aria-label="Agent name tooltip"
-                        >
-                          <Info className="w-5 h-5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                      >
-                        {AGENT_NAME_PLACEHOLDER}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Input
-                  id="agent-name"
-                  placeholder={AGENT_NAME_PLACEHOLDER}
-                  value={agentConfig.name}
-                  onChange={(e) => handleInputChange('name', e.target.value)}
-                  className="w-full text-base p-3 border border-gray-300 rounded-lg 
-            focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 
-            transition-all duration-200 placeholder:text-gray-400/60
-            hover:border-gray-400"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Pick a unique, friendly name for your AI agent
-                </p>
-              </div>
-
-              <div className="space-y-3">
-                <div className="flex items-center space-x-2">
-                  <Label
-                    htmlFor="training-instructions"
-                    className="text-base font-medium text-gray-700"
-                  >
-                    Training Instructions
-                    <span className="text-red-500 ml-1">*</span>
-                  </Label>
-                  <TooltipProvider>
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                          aria-label="Training instructions tooltip"
-                        >
-                          <Info className="w-5 h-5" />
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent
-                        className="whitespace-pre-line"
-                      >
-                        {TRAINING_INSTRUCTIONS_PLACEHOLDER}
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </div>
-                <Textarea
-                  id="training-instructions"
-                  placeholder={TRAINING_INSTRUCTIONS_PLACEHOLDER}
-                  value={agentConfig.trainingInstructions}
-                  onChange={(e) =>
-                    handleInputChange('trainingInstructions', e.target.value)
-                  }
-                  rows={8}
-                  className="w-full text-base p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-gray-400/60 hover:border-gray-400 resize-none"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Clear and detailed instructions will improve your agent's performance
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        );
-      case 4:
-        // Use the status_list from the API response
-        const statusList: { [key: number]: string } = {
-          2: "COMPLETED",
-          1: "PROCESSING",
-          [-1]: "CANCELLED",
-          [-2]: "ONHOLD",
-          0: "PENDING",
-        };
-
-        // Status color mapping for consistent UI
-        const statusStyles: { [key: string]: string } = {
-          COMPLETED: "bg-green-100 text-green-800",
-          PROCESSING: "bg-yellow-100 text-yellow-800",
-          PENDING: "bg-blue-100 text-blue-800",
-          CANCELLED: "bg-red-100 text-red-800",
-          ONHOLD: "bg-gray-100 text-gray-800",
-        };
-
-        return (
-          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
-            {/* Yellow banner for free users */}
-            <div className="bg-yellow-50 text-blue-700 rounded-xl p-3 text-sm font-medium text-left border-b border-yellow-200">
-              To add knowledge, links and monetization to your AI-Agent,{" "}
-              <Link
-                href="/pricing"
-                className="text-linka-dark-orange hover:underline font-semibold"
-              >
-                upgrade!
-              </Link>
-            </div>
-            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
-              <div className="space-y-1">
-                <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
-                  <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-linka-dark-orange" />
-                  Monetization Options
-                </CardTitle>
-                <p className="text-xs sm:text-sm text-linka-night/70 font-light">
-                  Choose how you want to customize & monetize your AI-agent
-                </p>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
-                <Button
-                  variant={activeTab === "partner" ? "default" : "outline"}
-                  onClick={() => setActiveTab("partner")}
-                  className={`text-xs sm:text-sm ${activeTab === "partner"
-                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                    } transition-all duration-300 hover:scale-105`}
-                >
-                  Primary Recs
-                </Button>
-                <Button
-                  variant={activeTab === "aipro" ? "default" : "outline"}
-                  onClick={() => setActiveTab("aipro")}
-                  className={`text-xs sm:text-sm ${activeTab === "aipro"
-                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                    } transition-all duration-300 hover:scale-105`}
-                >
-                  Smart Recs
-                </Button>
-                <Button
-                  variant={activeTab === "paywall" ? "default" : "outline"}
-                  disabled={true}
-                  onClick={() => setActiveTab("paywall")}
-                  className={`text-xs sm:text-sm ${activeTab === "paywall"
-                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
-                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                    } transition-all duration-300 hover:scale-105`}
-                >
-                  Linka Paywall (Coming Soon)
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-6 sm:space-y-8">
-              <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-                  <div className="flex-grow min-w-0">
-                    <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                      <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-linka-carolina-blue" />
-                      {activeTab === "aipro" ? "Smart Recs" : "Primary Recs"}
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <button
-                              type="button"
-                              className="text-gray-500 hover:text-gray-700 focus:outline-none"
-                              aria-label="Agent name tooltip"
-                            >
-                              <Info className="w-5 h-5" />
-                            </button>
-                          </TooltipTrigger>
-                          <TooltipContent className="whitespace-pre-line">
-                            <p>{activeTab === "aipro" ? SMART_RECS : PRIMARY_RECS}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </h3>
-                  </div>
-                  {activeTab === "partner" ? (
-                    <Button
-                      variant="outline"
-                      onClick={() => setIsMonetizationModalOpen(true)}
-                      className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02] whitespace-nowrap flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 text-xs sm:text-sm"
-                    >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      Add URL
-                    </Button>
-                  ) : activeTab === "aipro" ? (
-                    <div className="relative">
-                      <div className="flex flex-col items-end">
-                        <Button
-                          variant="outline"
-                          onClick={() => setIsAddContentOpen(!isAddContentOpen)}
-                          className="border-linka-dark-orange text-linka-dark-orange bg-white hover:bg-gray-50 rounded-lg shadow-sm px-4 py-6 text-sm font-medium transition-all duration-300 flex items-center gap-1 w-auto"
-                        >
-                                    {isAddContentOpen ? (
-            <Minus className="w-5 h-5 text-linka-dark-orange" />
-          ) : (
-            <Plus className="w-5 h-5 text-linka-dark-orange" />
-          )}
-                          <div className="flex flex-col items-start">
-                            Add Content
-                            <span className="text-xs text-gray-500">Enhance your AI-Agent</span>
-                          </div>
-                        </Button>
-                      </div>
-                      {isAddContentOpen && (
-                        <div className="absolute z-10 mt-2 w-48 rounded-lg bg-white shadow-md border border-gray-200 right-0">
-                          <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                            <button
-                              onClick={() => {
-                                setIsMonetizationModalOpen(true);
-                                setIsAddContentOpen(false);
-                              }}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
-                            >
-                              <FaLink className="w-4 h-4 text-linka-dark-orange mt-1" />
-                              <div className="flex flex-col items-start">
-                                Add URL
-                                <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
-                                  Link to blogs or web pages.
-                                </span>
-                              </div>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setIsAddContentOpen(false);
-                                // Handle Add PDF action
-                              }}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
-                            >
-                              <FaFilePdf className="w-4 h-4 text-linka-dark-orange mt-1" />
-                              <div className="flex flex-col items-start">
-                                Add PDF
-                                <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
-                                  Upload documents or detailed guides.
-                                </span>
-                              </div>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setIsAddContentOpen(false);
-                                // Handle Add Audio action
-                              }}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
-                            >
-                              <FaMicrophone className="w-4 h-4 text-linka-dark-orange mt-1" />
-                              <div className="flex flex-col items-start">
-                                Add Audio
-                                <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
-                                  Include sound clips or voice notes.
-                                </span>
-                              </div>
-                            </button>
-                            <button
-                              onClick={() => {
-                                setIsAddContentOpen(false);
-                                // Handle Add Video action
-                              }}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
-                            >
-                              <FaPlay className="w-4 h-4 text-linka-dark-orange mt-1" />
-                              <div className="flex flex-col items-start">
-                                Add Video
-                                <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
-                                  Add videos or short clips.
-                                </span>
-                              </div>
-                            </button>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  ) : null}
-                </div>
-                <p className="text-xs text-linka-night/60 mt-1">
-                  {activeTab === "aipro"
-                    ? "Smarter Recommendations. Scaled Earnings."
-                    : "Your AI-Agent will make Personalized Recommendations based on your primary recs."}
-                </p>
-                {activeTab === "aipro" && (
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-3 sm:mt-4">
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="blogs"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={selectedMonetizationOption === "blogs"}
-                        onChange={() => {
-                          setSelectedMonetizationOption("blogs");
-                          setPage(1);
-                        }}
-                      />
-                      Monetize Your Expertise
-                    </label>
-                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="products"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={selectedMonetizationOption === "products"}
-                        onChange={() => {
-                          setSelectedMonetizationOption("products");
-                          setPage(1);
-                        }}
-                      />
-                      Product Expansion
-                    </label>
-                    {/* <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
-                      <input
-                        type="radio"
-                        name="monetizationOption"
-                        value="websites"
-                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
-                        checked={selectedMonetizationOption === "websites"}
-                        disabled={true}
-                        onChange={() => {
-                          setSelectedMonetizationOption("websites");
-                          setPage(1);
-                        }}
-                      />
-                      Website Monetization (coming soon)
-                    </label> */}
-                  </div>
-                )}
-              </div>
-              {isLoading ? (
-                <p className="text-sm text-linka-night/60 text-center">Loading links...</p>
-              ) : activeTab === "partner" ? (
-                <div className="overflow-x-auto position-static">
-                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
-                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-                      <tr>                        
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Product
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Category
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          URL
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Status
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Processing
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Clicks(total)
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {partnerLinksTableData.map((link, index) => (
-                        <tr
-                          key={link.id || index}
-                          className="bg-white border-b hover:bg-linka-alice-blue/10"
-                        >
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">{link.brandName || ""}</td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || ""}</td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            {link.affiliateLink ? (
-                              <a
-                                href={link.affiliateLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-linka-carolina-blue underline"
-                              >
-                                Affiliate
-                              </a>
-                            ) : (
-                              <span>Affiliate</span>
-                            )}
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            <div className="flex flex-col gap-1">
-                              <span
-                                className={`inline-flex items-center justify-center rounded-full text-xs py-1 ${statusStyles[statusList[link.status !== undefined ? link.status : 0]] ||
-                                  "bg-gray-100 text-gray-800"
-                                  }`}
-                              > {statusList[link.status !== undefined ? link.status : 0] || "Unknown"}
-                              </span>
-                              {link.status === -2 && (
-                                <a
-                                  href="/settings"
-                                  className="text-gray-800 underline px-1 text-center"
-                                >
-                                  Insufficient Tokens
-                                </a>
-                              )}
-                              {link.status === -1 && (
-                                <span className="text-xs text-red-500 text-center">Link Blocked by Provider</span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4">
-                            {link.proceesing}
-                          </td>
-                          <td> 0 </td>
-                          <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                                >
-                                  <DotsVerticalIcon className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent
-                                side="right"
-                                align="end"
-                                className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
-                              >
-                                <DropdownMenuItem
-                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                  onClick={() => handlePreviewLink(index, "partner")}
-                                >
-                                  Preview
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                  onClick={() => handleRetryLink(index)}
-                                >
-                                  Retry
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
-                                  onClick={() => handleDeleteLink(index, "partner")}
-                                >
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
-                    <div className="flex items-start gap-2">
-                      <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
-                        <ul className="text-xs text-linka-night/60 space-y-1">
-                          <li className="flex items-start gap-1.5">
-                            <span>•</span>
-                            <span>Test all links before sharing</span>
-                          </li>
-                          <li className="flex items-start gap-1.5">
-                            <span>•</span>
-                            <span>Ensure affiliate links are valid and trackable</span>
-                          </li>
-                          <li className="flex items-start gap-1.5">
-                            <span>•</span>
-                            <span>Provide detailed product reviews to enhance user trust</span>
-                          </li>
-                          <li className="flex items-start gap-1.5">
-                            <span>•</span>
-                            <span>Upload high-quality images to enhance visual appeal</span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : activeTab === "aipro" ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
-                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-                      <tr>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Product
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Category
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          URL
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Status
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Processing
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Clicks(total)
-                        </th>
-                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {aiproLinksTableData.map((link, index) => {
-                        let url: string | undefined;
-                        if (link.proType === "products") {
-                          url = (link as LinkaProMonetizationProduct).categoryUrl;
-                        } else if (link.proType === "blogs") {
-                          url = (link as LinkaProMonetizationBlog).blogUrl;
-                        } else if (link.proType === "websites") {
-                          url = (link as LinkaProMonetizationWebsite).websiteUrl;
-                        }
-                        return (
-                          <tr
-                            key={link.id || index}
-                            className="bg-white border-b hover:bg-linka-alice-blue/10"
-                          >
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
-                              {link.brandName || "Unnamed Link"}
-                            </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || "Unnamed Link"}</td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
-                              {url ? (
-                                <a
-                                  href={url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-linka-carolina-blue underline"
-                                >
-                                  {link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}
-                                </a>
-                              ) : (
-                                <span>{link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}</span>
-                              )}
-                            </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
-                              <div className="flex flex-col gap-1">
-                                <span
-                                  className={`inline-flex items-center justify-center rounded-full text-xs py-1 ${statusStyles[statusList[link.status !== undefined ? link.status : 0]] ||
-                                    "bg-gray-100 text-gray-800"
-                                    }`}
-                                > {statusList[link.status !== undefined ? link.status : 0] || "Unknown"}
-                                </span>
-                                {link.status === -2 && (
-                                  <a
-                                    href="/settings"
-                                    className="text-gray-800 underline px-1 text-center"
-                                  >
-                                    Insufficient Tokens
-                                  </a>
-                                )}
-                                {link.status === -1 && (
-                                  <span className="text-xs text-red-500 text-center">Link Blocked by Provider</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4">
-                              {link.proceesing}
-                            </td>
-                            <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
-                                  >
-                                    <DotsVerticalIcon className="w-4 h-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent
-                                  side="right"
-                                  align="end"
-                                  className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
-                                >
-                                  <DropdownMenuItem
-                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                    onClick={() => handlePreviewLink(index, "aipro") }
-                                  >
-                                    Preview
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                    onClick={() => handleRetryLink(index)}
-                                  >
-                                    Retry
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
-                                    onClick={() => handleDeleteLink(index, "aipro")}
-                                  >
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                  <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
-                    <div className="flex items-start gap-2">
-                      <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
-                      <div>
-                        <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
-                        <ul className="text-xs text-linka-night/60 space-y-1">
-                          <li className="flex items-start gap-1.5">
-                            <span>•</span>
-                            <span>Your AI Agent will scan your pages and the links on the pages</span>
-                          </li>
-                          <li className="flex items-start gap-1.5">
-                            <span>•</span>
-                            <span>Ensure affiliate links on your webpage are not broken links</span>
-                          </li>
-                          <li className="flex items-start gap-1.5">
-                            <span>•</span>
-                            <span>Provide URLs, PDFs and even voice chat to enhance the knowledge of your agent</span>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : activeTab === "paywall" ? (
-                <div className="overflow-x-auto">{/* Paywall table or content */}</div>
-              ) : (
-                <p className="text-xs sm:text-sm text-linka-night/60 text-center">
-                  {activeTab === "partner" ? "No partner links added yet." : "No monetization links added yet."}
-                </p>
-              )}
-              {totalPages > 1 && (
-                <div className="flex justify-between items-center mt-4">
-                  <div className="flex items-center gap-2">
-                    <Label className="text-sm text-linka-night">Items per page:</Label>
-                    <select
-                      value={itemsPerPage}
-                      onChange={(e) => {
-                        setItemsPerPage(Number(e.target.value));
-                        setPage(1);
-                      }}
-                      className="border border-linka-alice-blue rounded-md p-1 text-sm"
-                    >
-                      <option value={5}>5</option>
-                      <option value={10}>10</option>
-                      <option value={20}>20</option>
-                      <option value={50}>50</option>
-                    </select>
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
-                    disabled={page === 1}
-                    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                  >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
-                    Previous
-                  </Button>
-                  <span className="text-sm text-linka-night">
-                    Page {page} of {totalPages}
-                  </span>
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
-                    disabled={page === totalPages}
-                    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
-                  >
-                    Next
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        );
-
+      
       case 2:
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
@@ -3084,6 +2388,709 @@ export default function AgentBuilderPage() {
             </CardContent>
           </Card>
         );
+   
+      case 3:
+        return (
+          <Card className="w-full mx-auto border-none shadow-xl rounded-2xl bg-white/95 backdrop-blur-sm">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-3xl font-bold text-indigo-900 tracking-tight">
+                AI Agent Setup
+              </CardTitle>
+              <p className="text-sm text-gray-500">
+                Personalize your AI agent with a name and specific instructions
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Label
+                    htmlFor="agent-name"
+                    className="text-base font-medium text-gray-700"
+                  >
+                    Agent Name
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                          aria-label="Agent name tooltip"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                      >
+                        {AGENT_NAME_PLACEHOLDER}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Input
+                  id="agent-name"
+                  placeholder={AGENT_NAME_PLACEHOLDER}
+                  value={agentConfig.name}
+                  onChange={(e) => handleInputChange('name', e.target.value)}
+                  className="w-full text-base p-3 border border-gray-300 rounded-lg 
+            focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 
+            transition-all duration-200 placeholder:text-gray-400/60
+            hover:border-gray-400"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Pick a unique, friendly name for your AI agent
+                </p>
+              </div>
+
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Label
+                    htmlFor="training-instructions"
+                    className="text-base font-medium text-gray-700"
+                  >
+                    Training Instructions
+                    <span className="text-red-500 ml-1">*</span>
+                  </Label>
+                  <TooltipProvider>
+                    <Tooltip delayDuration={0}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                          aria-label="Training instructions tooltip"
+                        >
+                          <Info className="w-5 h-5" />
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent
+                        className="whitespace-pre-line"
+                      >
+                        {TRAINING_INSTRUCTIONS_PLACEHOLDER}
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+                <Textarea
+                  id="training-instructions"
+                  placeholder={TRAINING_INSTRUCTIONS_PLACEHOLDER}
+                  value={agentConfig.trainingInstructions}
+                  onChange={(e) =>
+                    handleInputChange('trainingInstructions', e.target.value)
+                  }
+                  rows={8}
+                  className="w-full text-base p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 transition-all duration-200 placeholder:text-gray-400/60 hover:border-gray-400 resize-none"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  Clear and detailed instructions will improve your agent's performance
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      
+      case 4:
+        // Use the status_list from the API response
+        const statusList: { [key: number]: string } = {
+          2: "COMPLETED",
+          1: "PROCESSING",
+          [-1]: "CANCELLED",
+          [-2]: "ONHOLD",
+          0: "PENDING",
+        };
+
+        // Status color mapping for consistent UI
+        const statusStyles: { [key: string]: string } = {
+          COMPLETED: "bg-green-100 text-green-800",
+          PROCESSING: "bg-yellow-100 text-yellow-800",
+          PENDING: "bg-blue-100 text-blue-800",
+          CANCELLED: "bg-red-100 text-red-800",
+          ONHOLD: "bg-gray-100 text-gray-800",
+        };
+
+        return (
+          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl mx-2 sm:mx-0">
+            {/* Yellow banner for free users */}
+            <div className="bg-yellow-50 text-blue-700 rounded-xl p-3 text-sm font-medium text-left border-b border-yellow-200">
+              To add knowledge, links and monetization to your AI-Agent,{" "}
+              <Link
+                href="/pricing"
+                className="text-linka-dark-orange hover:underline font-semibold"
+              >
+                upgrade!
+              </Link>
+            </div>
+            <CardHeader className="px-4 sm:px-6 pt-4 sm:pt-6 pb-3 sm:pb-4">
+              <div className="space-y-1">
+                <CardTitle className="text-xl sm:text-2xl font-bold text-linka-russian-violet tracking-tight flex items-center gap-2">
+                  <LinkIcon className="w-4 h-4 sm:w-5 sm:h-5 text-linka-dark-orange" />
+                  Monetization Options
+                </CardTitle>
+                <p className="text-xs sm:text-sm text-linka-night/70 font-light">
+                  Choose how you want to customize & monetize your AI-agent
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
+                <Button
+                  variant={activeTab === "partner" ? "default" : "outline"}
+                  onClick={() => {setActiveTab("partner"); setIsAddContentOpen(false);}}
+                  className={`text-xs sm:text-sm ${activeTab === "partner"
+                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+                    } transition-all duration-300 hover:scale-105`}
+                >
+                  Primary Recs
+                </Button>
+                <Button
+                  variant={activeTab === "aipro" ? "default" : "outline"}
+                  onClick={() => {setActiveTab("aipro"); setIsAddContentOpen(false);}}
+                  className={`text-xs sm:text-sm ${activeTab === "aipro"
+                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+                    } transition-all duration-300 hover:scale-105`}
+                >
+                  Smart Recs
+                </Button>
+                <Button
+                  variant={activeTab === "paywall" ? "default" : "outline"}
+                  disabled={true}
+                  onClick={() => setActiveTab("paywall")}
+                  className={`text-xs sm:text-sm ${activeTab === "paywall"
+                    ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
+                    : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+                    } transition-all duration-300 hover:scale-105`}
+                >
+                  Linka Paywall (Coming Soon)
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6 space-y-6 sm:space-y-8">
+              <div className="space-y-2">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+                  <div className="flex-grow min-w-0">
+                    <h3 className="text-base sm:text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                      <Link2 className="w-4 h-4 sm:w-5 sm:h-5 text-linka-carolina-blue" />
+                      {activeTab === "aipro" ? "Smart Recs" : "Primary Recs"}
+                      <TooltipProvider>
+                        <Tooltip delayDuration={0}>
+                          <TooltipTrigger asChild>
+                            <button
+                              type="button"
+                              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+                              aria-label="Agent name tooltip"
+                            >
+                              <Info className="w-5 h-5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent className="whitespace-pre-line">
+                            <p>{activeTab === "aipro" ? SMART_RECS : PRIMARY_RECS}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </h3>
+                  </div>
+                  {activeTab === "partner" ? (
+                    <Button
+                      variant="outline"
+                      onClick={() => setIsMonetizationModalOpen(true)}
+                      className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 hover:text-linka-carolina-blue transition-all duration-300 hover:scale-[1.02] whitespace-nowrap flex-shrink-0 w-full sm:w-auto mt-2 sm:mt-0 text-xs sm:text-sm"
+                    >
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      Add URL
+                    </Button>
+                  ) : activeTab === "aipro" ? (
+<div className="relative">
+  <div className="flex flex-col items-end">
+    <Button
+      variant="outline"
+      onClick={() => setIsAddContentOpen(!isAddContentOpen)}
+      className="border-linka-dark-orange text-linka-dark-orange bg-white hover:bg-gray-50 rounded-lg shadow-sm px-4 py-6 text-sm font-medium transition-all duration-300 flex items-center gap-1 w-56 justify-between"
+    >
+            {isAddContentOpen ? (
+        <Minus className="w-5 h-5 text-linka-dark-orange" />
+      ) : (
+        <Plus className="w-5 h-5 text-linka-dark-orange" />
+      )}
+      <div className="flex flex-col items-start">
+        Add Content
+        <span className="text-xs text-gray-500">Enhance your AI-Agent</span>
+      </div>
+
+    </Button>
+  </div>
+  {isAddContentOpen && (
+    <div className="absolute z-10 mt-2 w-56 rounded-lg bg-white shadow-md border border-gray-200 right-0">
+      <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+        <button
+          onClick={() => {
+            setIsMonetizationModalOpen(true);
+            setIsAddContentOpen(false);
+          }}
+          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
+        >
+          <FaLink className="w-4 h-4 text-linka-dark-orange mt-1" />
+          <div className="flex flex-col items-start">
+            Add URL
+            <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
+              Link to blogs or web pages.
+            </span>
+          </div>
+        </button>
+        <button
+          onClick={() => {
+            setIsAddContentOpen(false);
+            // Handle Add PDF action
+          }}
+          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
+          disabled={true}
+        >
+          <FaFilePdf className="w-4 h-4 text-linka-dark-orange mt-1" />
+          <div className="flex flex-col items-start">
+            Add PDF(coming soon)
+            <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
+              Upload documents or detailed guides.
+            </span>
+          </div>
+        </button>
+        <button
+          onClick={() => {
+            setIsAddContentOpen(false);
+            // Handle Add Audio action
+          }}
+          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
+        >
+          <FaMicrophone className="w-4 h-4 text-linka-dark-orange mt-1" />
+          <div className="flex flex-col items-start">
+            Add Audio(coming soon)
+            <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
+              Include sound clips or voice notes.
+            </span>
+          </div>
+        </button>
+        <button
+          onClick={() => {
+            setIsAddContentOpen(false);
+            // Handle Add Video action
+          }}
+          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
+        >
+          <FaPlay className="w-4 h-4 text-linka-dark-orange mt-1" />
+          <div className="flex flex-col items-start">
+            Add Video(coming soon)
+            <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
+              Add videos or short clips.
+            </span>
+          </div>
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+                  ) : null}
+                </div>
+                <p className="text-xs text-linka-night/60 mt-1">
+                  {activeTab === "aipro"
+                    ? "Smarter Recommendations. Scaled Earnings."
+                    : "Your AI-Agent will make Personalized Recommendations based on your primary recs."}
+                </p>
+                {activeTab === "aipro" && (
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 mt-3 sm:mt-4">
+                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                      <input
+                        type="radio"
+                        name="monetizationOption"
+                        value="blogs"
+                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                        checked={selectedMonetizationOption === "blogs"}
+                        onChange={() => {
+                          setSelectedMonetizationOption("blogs");
+                          setPage(1);
+                          setIsAddContentOpen(false);
+                        }}
+                      />
+                      Monetize Your Expertise
+                    </label>
+                    <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                      <input
+                        type="radio"
+                        name="monetizationOption"
+                        value="products"
+                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                        checked={selectedMonetizationOption === "products"}
+                        onChange={() => {
+                          setSelectedMonetizationOption("products");
+                          setPage(1);
+                          setIsAddContentOpen(false);
+                        }}
+                      />
+                      Product Expansion
+                    </label>
+                    {/* <label className="flex items-center gap-1 text-xs sm:text-sm text-linka-night/80">
+                      <input
+                        type="radio"
+                        name="monetizationOption"
+                        value="websites"
+                        className="accent-linka-carolina-blue w-3 h-3 sm:w-4 sm:h-4"
+                        checked={selectedMonetizationOption === "websites"}
+                        disabled={true}
+                        onChange={() => {
+                          setSelectedMonetizationOption("websites");
+                          setPage(1);
+                        }}
+                      />
+                      Website Monetization (coming soon)
+                    </label> */}
+                  </div>
+                )}
+              </div>
+              {isLoading ? (
+                <p className="text-sm text-linka-night/60 text-center">Loading links...</p>
+              ) : activeTab === "partner" ? (
+                <div className="overflow-x-auto position-static">
+                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                      <tr>                        
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Product
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Category
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          URL
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Status
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Processing
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Clicks(total)
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {partnerLinksTableData.map((link, index) => (
+                        <tr
+                          key={link.id || index}
+                          className="bg-white border-b hover:bg-linka-alice-blue/10"
+                        >
+                          <td className="px-3 py-3 sm:px-6 sm:py-4"> {link.id || index} {link.brandName || ""}</td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || ""}</td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            {link.affiliateLink ? (
+                              <a
+                                href={link.affiliateLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-linka-carolina-blue underline"
+                              >
+                                Affiliate
+                              </a>
+                            ) : (
+                              <span>Affiliate</span>
+                            )}
+                          </td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            <div className="flex flex-col gap-1">
+                              <span
+                                className={`inline-flex items-center justify-center rounded-full text-xs py-1 ${statusStyles[statusList[link.status !== undefined ? link.status : 0]] ||
+                                  "bg-gray-100 text-gray-800"
+                                  }`}
+                              > {statusList[link.status !== undefined ? link.status : 0] || "Unknown"}
+                              </span>
+                              {link.status === -2 && (
+                                <a
+                                  href="/settings"
+                                  className="text-gray-800 underline px-1 text-center"
+                                >
+                                  Insufficient Tokens
+                                </a>
+                              )}
+                              {link.status === -1 && (
+                                <span className="text-xs text-red-500 text-center">Link Blocked by Provider</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">
+                            {link.proceesing}
+                          </td>
+                          <td> 0 </td>
+                          <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                                >
+                                  <DotsVerticalIcon className="w-4 h-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent
+                                side="right"
+                                align="end"
+                                className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
+                              >
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                  onClick={() => handlePreviewLink(index, "partner")}
+                                >
+                                  Preview
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                  onClick={() => handleRetryLink(index)}
+                                >
+                                  Retry
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                                  onClick={() => handleDeleteLink(index, "partner")}
+                                >
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
+                    <div className="flex items-start gap-2">
+                      <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
+                        <ul className="text-xs text-linka-night/60 space-y-1">
+                          <li className="flex items-start gap-1.5">
+                            <span>•</span>
+                            <span>Test all links before sharing</span>
+                          </li>
+                          <li className="flex items-start gap-1.5">
+                            <span>•</span>
+                            <span>Ensure affiliate links are valid and trackable</span>
+                          </li>
+                          <li className="flex items-start gap-1.5">
+                            <span>•</span>
+                            <span>Provide detailed product reviews to enhance user trust</span>
+                          </li>
+                          <li className="flex items-start gap-1.5">
+                            <span>•</span>
+                            <span>Upload high-quality images to enhance visual appeal</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : activeTab === "aipro" ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
+                    <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
+                      <tr>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Product
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Category
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          URL
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Status
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Processing
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Clicks(total)
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aiproLinksTableData.map((link, index) => {
+                        let url: string | undefined;
+                        if (link.proType === "products") {
+                          url = (link as LinkaProMonetizationProduct).categoryUrl;
+                        } else if (link.proType === "blogs") {
+                          url = (link as LinkaProMonetizationBlog).blogUrl;
+                        } else if (link.proType === "websites") {
+                          url = (link as LinkaProMonetizationWebsite).websiteUrl;
+                        }
+                        return (
+                          <tr
+                            key={link.id || index}
+                            className="bg-white border-b hover:bg-linka-alice-blue/10"
+                          >
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              {link.brandName || "Unnamed Link"}
+                            </td>
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || "Unnamed Link"}</td>
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              {url ? (
+                                <a
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-linka-carolina-blue underline"
+                                >
+                                  {link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}
+                                </a>
+                              ) : (
+                                <span>{link.proType?.charAt(0).toUpperCase() + link.proType!.slice(1)}</span>
+                              )}
+                            </td>
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              <div className="flex flex-col gap-1">
+                                <span
+                                  className={`inline-flex items-center justify-center rounded-full text-xs py-1 ${statusStyles[statusList[link.status !== undefined ? link.status : 0]] ||
+                                    "bg-gray-100 text-gray-800"
+                                    }`}
+                                > {statusList[link.status !== undefined ? link.status : 0] || "Unknown"}
+                                </span>
+                                {link.status === -2 && (
+                                  <a
+                                    href="/settings"
+                                    className="text-gray-800 underline px-1 text-center"
+                                  >
+                                    Insufficient Tokens
+                                  </a>
+                                )}
+                                {link.status === -1 && (
+                                  <span className="text-xs text-red-500 text-center">Link Blocked by Provider</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              {link.proceesing}
+                            </td>
+                            <td> 0 </td>
+                            <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-linka-carolina-blue hover:text-linka-dark-orange text-xs"
+                                  >
+                                    <DotsVerticalIcon className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                  side="right"
+                                  align="end"
+                                  className="bg-white border border-linka-alice-blue rounded-md shadow-lg p-1"
+                                >
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                    onClick={() => handlePreviewLink(index, "aipro") }
+                                  >
+                                    Preview
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
+                                    onClick={() => handleRetryLink(index)}
+                                  >
+                                    Retry
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
+                                    onClick={() => handleDeleteLink(index, "aipro")}
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                  <div className="bg-linka-alice-blue/30 rounded-lg p-3 border border-linka-alice-blue/50 mt-3 sm:mt-4">
+                    <div className="flex items-start gap-2">
+                      <InfoIcon className="w-3 h-3 sm:w-4 sm:h-4 text-linka-carolina-blue mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-linka-russian-violet mb-1">Pro Tips:</p>
+                        <ul className="text-xs text-linka-night/60 space-y-1">
+                          <li className="flex items-start gap-1.5">
+                            <span>•</span>
+                            <span>Your AI Agent will scan your pages and the links on the pages</span>
+                          </li>
+                          <li className="flex items-start gap-1.5">
+                            <span>•</span>
+                            <span>Ensure affiliate links on your webpage are not broken links</span>
+                          </li>
+                          <li className="flex items-start gap-1.5">
+                            <span>•</span>
+                            <span>Provide URLs, PDFs and even voice chat to enhance the knowledge of your agent</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : activeTab === "paywall" ? (
+                <div className="overflow-x-auto">{/* Paywall table or content */}</div>
+              ) : (
+                <p className="text-xs sm:text-sm text-linka-night/60 text-center">
+                  {activeTab === "partner" ? "No partner links added yet." : "No monetization links added yet."}
+                </p>
+              )}
+              {totalPages > 1 && (
+                <div className="flex justify-between items-center mt-4">
+                  <div className="flex items-center gap-2">
+                    <Label className="text-sm text-linka-night">Items per page:</Label>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setPage(1);
+                      }}
+                      className="border border-linka-alice-blue rounded-md p-1 text-sm"
+                    >
+                      <option value={5}>5</option>
+                      <option value={10}>10</option>
+                      <option value={20}>20</option>
+                      <option value={50}>50</option>
+                    </select>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                    disabled={page === 1}
+                    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+                  >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Previous
+                  </Button>
+                  <span className="text-sm text-linka-night">
+                    Page {page} of {totalPages}
+                  </span>
+                  <Button
+                    variant="outline"
+                    onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                    disabled={page === totalPages}
+                    className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
+                  >
+                    Next
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        );
+   
       case 5:
         return (
           <div className="bg-gray-100 h-[800px] md:h-[950px] flex items-center justify-center">
@@ -3537,7 +3544,7 @@ export default function AgentBuilderPage() {
                                 Category <span className="text-red-500">*</span>
                               </Label>
                               <TooltipProvider>
-                                <Tooltip>
+                                <Tooltip delayDuration={0}>
                                   <TooltipTrigger asChild>
                                     <button
                                       type="button"
@@ -3559,7 +3566,7 @@ export default function AgentBuilderPage() {
                                 list={`category-suggestions-${link.id}`}
                                 placeholder={CATEGORY_PLACEHOLDER}
                                 value={(link as PartnerLink).category}
-                                onChange={(e) => updatePartnerLink(link.id!, 'category', e.target.value)}
+                                onChange={(e) => updatePartnerLink(link.id, 'category', e.target.value)}
                                 className="text-xs sm:text-sm h-8 sm:h-9 border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/40"
                               />
                               <datalist id={`category-suggestions-${link.id}`}>
@@ -3578,7 +3585,7 @@ export default function AgentBuilderPage() {
                                 Affiliate Link <span className="text-red-500">*</span>
                               </Label>
                               <TooltipProvider>
-                                <Tooltip>
+                                <Tooltip delayDuration={0}>
                                   <TooltipTrigger asChild>
                                     <button
                                       type="button"
@@ -3612,7 +3619,7 @@ export default function AgentBuilderPage() {
                               Additional Information
                             </h3>
                             <TooltipProvider>
-                              <Tooltip>
+                              <Tooltip delayDuration={0}>
                                 <TooltipTrigger asChild>
                                   <button
                                     type="button"
@@ -3638,7 +3645,7 @@ export default function AgentBuilderPage() {
                                   Social Media Link
                                 </Label>
                                 <TooltipProvider>
-                                  <Tooltip>
+                                  <Tooltip delayDuration={0}>
                                     <TooltipTrigger asChild>
                                       <button
                                         type="button"
@@ -3671,7 +3678,7 @@ export default function AgentBuilderPage() {
                                   Product Review
                                 </Label>
                                 <TooltipProvider>
-                                  <Tooltip>
+                                  <Tooltip delayDuration={0}>
                                     <TooltipTrigger asChild>
                                       <button
                                         type="button"
@@ -3704,7 +3711,7 @@ export default function AgentBuilderPage() {
                                   Brand Name
                                 </Label>
                                 <TooltipProvider>
-                                  <Tooltip>
+                                  <Tooltip delayDuration={0}>
                                     <TooltipTrigger asChild>
                                       <button
                                         type="button"
@@ -3790,7 +3797,7 @@ export default function AgentBuilderPage() {
                                     <AlertDialogFooter>
                                       <AlertDialogCancel className="border-linka-alice-blue hover:bg-linka-alice-blue">Cancel</AlertDialogCancel>
                                       <AlertDialogAction
-                                        onClick={() => handleRemoveLink(link.id!)}
+                                        onClick={() => handleRemoveLink(link.id)}
                                         className="bg-red-600 hover:bg-red-700 transition-all duration-200"
                                       >
                                         <Trash2 className="w-4 h-4 mr-2" />
@@ -3811,7 +3818,7 @@ export default function AgentBuilderPage() {
                                         Category <span className="text-red-500">*</span>
                                       </Label>
                                       <TooltipProvider>
-                                        <Tooltip>
+                                        <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
                                             <button
                                               type="button"
@@ -3852,7 +3859,7 @@ export default function AgentBuilderPage() {
                                         Blog or Webpage URL <span className="text-red-500">*</span>
                                       </Label>
                                       <TooltipProvider>
-                                        <Tooltip>
+                                        <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
                                             <button
                                               type="button"
@@ -3892,7 +3899,7 @@ export default function AgentBuilderPage() {
                                         Category <span className="text-red-500">*</span>
                                       </Label>
                                       <TooltipProvider>
-                                        <Tooltip>
+                                        <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
                                             <button
                                               type="button"
@@ -3933,7 +3940,7 @@ export default function AgentBuilderPage() {
                                         Affiliate Link
                                       </Label>
                                       <TooltipProvider>
-                                        <Tooltip>
+                                        <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
                                             <button
                                               type="button"
@@ -3969,7 +3976,7 @@ export default function AgentBuilderPage() {
                                         Category URL <span className="text-red-500">*</span>
                                       </Label>
                                       <TooltipProvider>
-                                        <Tooltip>
+                                        <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
                                             <button
                                               type="button"
@@ -4009,7 +4016,7 @@ export default function AgentBuilderPage() {
                                         Category <span className="text-red-500">*</span>
                                       </Label>
                                       <TooltipProvider>
-                                        <Tooltip>
+                                        <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
                                             <button
                                               type="button"
@@ -4050,7 +4057,7 @@ export default function AgentBuilderPage() {
                                         Website URL <span className="text-red-500">*</span>
                                       </Label>
                                       <TooltipProvider>
-                                        <Tooltip>
+                                        <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
                                             <button
                                               type="button"
@@ -4133,7 +4140,7 @@ export default function AgentBuilderPage() {
       <PreviewModal
         isOpen={isPreviewModalOpen}
         onClose={handleClosePreviewModal}
-        link={selectedLink}
+        linkData={selectedLink}
       />
       </div>
     </DashboardLayout >
