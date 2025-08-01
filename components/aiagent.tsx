@@ -115,7 +115,7 @@ export function AiAgent({
                 {/* Header with Agent Info */}
                 {showWelcome && (
                     <div className="flex flex-col items-center justify-center flex-shrink-0 py-2 sm:py-4">
-                        <div className="w-48 h-48 sm:w-64 sm:h-64 rounded-full overflow-hidden border-4 border-white shadow-md mb-2">
+                        <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full overflow-hidden border-4 border-white shadow-md mb-2">
                             {agentDetails?.greeting_media_type === 'video' ? (
                                 <video
                                     src={agentDetails?.greeting_media_url}

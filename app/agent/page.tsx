@@ -47,6 +47,7 @@ import {
   Copy,
   Trash2Icon,
   X,
+  Minus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -94,6 +95,7 @@ export interface LinkaProMonetizationProduct {
   categoryUrl?: string;
   status: number;
   proceesing?: string;
+  brandName?: string;
 }
 
 export interface LinkaProMonetizationBlog {
@@ -101,6 +103,7 @@ export interface LinkaProMonetizationBlog {
   proType?: string; // "blogs"
   category: string;
   blogUrl?: string;
+  brandName?: string;
   status: number;
   proceesing?: string;
 }
@@ -110,6 +113,7 @@ export interface LinkaProMonetizationWebsite {
   proType?: string; // "websites"
   category: string;
   websiteUrl?: string;
+  brandName?: string;
   status: number;
   proceesing?: string;
 }
@@ -373,14 +377,8 @@ export default function AgentBuilderPage() {
   const BRAND_NAME_PLACEHOLDER = 'TripAdvisor';
   const AGENT_NAME_PLACEHOLDER = 'Sofia - Travel Consultant, Alex - Booking Specialist, Jamie - Customer Support';
   const TRAINING_INSTRUCTIONS_PLACEHOLDER = `# PERSONA
-  - **Role:** Digital Travel Concierge\n- **Tone & Personality:** Friendly, knowledgeable, and enthusiastic about travel  
-
-# INSTRUCTIONS  
-- **Specialization:** Hotel recommendations, itinerary planning, travel deals  
-- **Goal:** Help users find the best travel experiences, save money, and explore destinations confidently  
-
-# EXAMPLE  
-You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented, and passionate about helping travelers discover hidden gems, book the best hotels, and optimize their trips. Your tone is professional yet approachable, ensuring users feel guided—not overwhelmed—by choices.`;
+  Role or Expertise: Beauty Expert and Ayurvedic Health Coach specializing in skincare
+  About your Expertise: You are Angela — a trusted skincare expert and Ayurvedic health coach who helps people feel radiant, confident, and connected to their body through intentional beauty rituals and holistic wellness. You have 65K social media followers and talk about all things beauty but like to provide natural remedies when possible.`;
 
   // const TRAINING_INSTRUCTIONS_PLACEHOLDER = (
   //   <>
@@ -547,7 +545,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
   useEffect(() => {
     if (currentStep === 4) {
       setActiveTab("partner"); // Set default tab to "partner" when entering step 4
-      setSelectedMonetizationOption("products"); // Reset monetization option for "aipro" tab
+      setSelectedMonetizationOption("blogs"); // Reset monetization option for "aipro" tab
       setModalLinks([]); // Clear modal links to avoid stale data
       setEditingLinkId(null); // Clear editing state
       setEditingPartnerLinkId(null); // Clear editing state
@@ -608,6 +606,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   affiliateLink: link.affiliate_url || "",
                   categoryUrl: link.url || "",
                   status: link.status,
+                  brandName: link.brand_name || "",
                   proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               } else if (link.type === "blogs") {
@@ -617,6 +616,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   category: link.category_name || "",
                   blogUrl: link.url || "",
                   status: link.status,
+                  brandName: link.brand_name || "",
                   proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               } else if (link.type === "websites") {
@@ -626,6 +626,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   category: link.category_name || "",
                   websiteUrl: link.url || "",
                   status: link.status,
+                  brandName: link.brand_name || "",
                   proceesing: `${link.completed_process_link ?? 0}/${link.total_process_link} links`
                 };
               }
@@ -793,9 +794,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
       console.log("Editing partner link:", link);
     } else {
       const link = aiproLinksTableData[index];
-      setSelectedMonetizationOption(link.proType || "products");
+      setSelectedMonetizationOption(link.proType || "blogs");
       setModalLinks([link]);
-      setEditingLinkId(link.id || null);
+      setEditingLinkId(link.id || null); 
       setIsMonetizationModalOpen(true);
       console.log("Editing aipro link:", link);
     }
@@ -1785,6 +1786,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   proType: "products",
                   category: link.category_name || "",
                   affiliateLink: link.affiliate_url || "",
+                  brandName: link.brand_name || "",
                   categoryUrl: link.url || "",
                   status: link.status,
                 };
@@ -1794,6 +1796,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   proType: "blogs",
                   category: link.category_name || "",
                   blogUrl: link.url || "",
+                  brandName: link.brand_name || "",
                   status: link.status,
                 };
               } else if (link.type === "websites") {
@@ -1802,6 +1805,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   proType: "websites",
                   category: link.category_name || "",
                   websiteUrl: link.url || "",
+                  brandName: link.brand_name || "",
                   status: link.status,
                 };
               }
@@ -2159,7 +2163,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           // </TooltipProvider>
         );
 
-      case 2:
+      case 3:
         return (
           <Card className="w-full mx-auto border-none shadow-xl rounded-2xl bg-white/95 backdrop-blur-sm">
             <CardHeader className="pb-4">
@@ -2223,7 +2227,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                     <span className="text-red-500 ml-1">*</span>
                   </Label>
                   <TooltipProvider>
-                    <Tooltip>
+                    <Tooltip delayDuration={0}>
                       <TooltipTrigger asChild>
                         <button
                           type="button"
@@ -2375,7 +2379,11 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           onClick={() => setIsAddContentOpen(!isAddContentOpen)}
                           className="border-linka-dark-orange text-linka-dark-orange bg-white hover:bg-gray-50 rounded-lg shadow-sm px-4 py-6 text-sm font-medium transition-all duration-300 flex items-center gap-1 w-auto"
                         >
-                          <Plus className="w-5 h-5 text-linka-dark-orange" />
+                                    {isAddContentOpen ? (
+            <Minus className="w-5 h-5 text-linka-dark-orange" />
+          ) : (
+            <Plus className="w-5 h-5 text-linka-dark-orange" />
+          )}
                           <div className="flex flex-col items-start">
                             Add Content
                             <span className="text-xs text-gray-500">Enhance your AI-Agent</span>
@@ -2386,7 +2394,10 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                         <div className="absolute z-10 mt-2 w-48 rounded-lg bg-white shadow-md border border-gray-200 right-0">
                           <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
                             <button
-                              onClick={() => setIsMonetizationModalOpen(true)}
+                              onClick={() => {
+                                setIsMonetizationModalOpen(true);
+                                setIsAddContentOpen(false);
+                              }}
                               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
                             >
                               <FaLink className="w-4 h-4 text-linka-dark-orange mt-1" />
@@ -2507,7 +2518,10 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                 <div className="overflow-x-auto position-static">
                   <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
                     <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-                      <tr>
+                      <tr>                        
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Product
+                        </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Category
                         </th>
@@ -2521,6 +2535,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           Processing
                         </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Clicks(total)
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Actions
                         </th>
                       </tr>
@@ -2531,6 +2548,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           key={link.id || index}
                           className="bg-white border-b hover:bg-linka-alice-blue/10"
                         >
+                          <td className="px-3 py-3 sm:px-6 sm:py-4">{link.brandName || ""}</td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || ""}</td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
                             {link.affiliateLink ? (
@@ -2570,6 +2588,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                           <td className="px-3 py-3 sm:px-6 sm:py-4">
                             {link.proceesing}
                           </td>
+                          <td> 0 </td>
                           <td className="px-3 py-3 sm:px-6 sm:py-4 flex flex-col sm:flex-row gap-1 sm:gap-2">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -2644,6 +2663,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                     <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
                       <tr>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Product
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Category
                         </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
@@ -2654,6 +2676,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                         </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Processing
+                        </th>
+                        <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
+                          Clicks(total)
                         </th>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Actions
@@ -2675,6 +2700,9 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                             key={link.id || index}
                             className="bg-white border-b hover:bg-linka-alice-blue/10"
                           >
+                            <td className="px-3 py-3 sm:px-6 sm:py-4">
+                              {link.brandName || "Unnamed Link"}
+                            </td>
                             <td className="px-3 py-3 sm:px-6 sm:py-4">{link.category || "Unnamed Link"}</td>
                             <td className="px-3 py-3 sm:px-6 sm:py-4">
                               {url ? (
@@ -2831,7 +2859,7 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
           </Card>
         );
 
-      case 3:
+      case 2:
         return (
           <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
             <CardHeader className="px-6 pt-6 pb-4">
@@ -4076,6 +4104,13 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                   </div>
                   <div className="flex flex-col sm:flex-row justify-end gap-2 sm:gap-4 mt-3 sm:mt-4">
                     <Button
+                      onClick={addLinkaProMonetization}
+                      className="bg-linka-dark-orange hover:bg-linka-dark-orange/80 transition-transform hover:scale-105 text-xs sm:text-sm h-8 sm:h-9"
+                    >
+                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+                      Add New Link
+                    </Button>
+                    <Button
                       onClick={saveMonetization}
                       className="bg-linka-carolina-blue hover:bg-linka-carolina-blue/80 transition-transform hover:scale-105 text-white text-xs sm:text-sm h-8 sm:h-9"
                     >
@@ -4088,13 +4123,6 @@ You are **Alex, a TripAdvisor Travel Specialist**. You are warm, detail-oriented
                       className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue hover:text-white transition-transform hover:scale-105 text-xs sm:text-sm h-8 sm:h-9"
                     >
                       Cancel
-                    </Button>
-                    <Button
-                      onClick={addLinkaProMonetization}
-                      className="bg-linka-dark-orange hover:bg-linka-dark-orange/80 transition-transform hover:scale-105 text-xs sm:text-sm h-8 sm:h-9"
-                    >
-                      <Plus className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
-                      Add New Link
                     </Button>
                   </div>
                 </form>
