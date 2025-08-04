@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useRouter } from 'next/navigation';
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -64,6 +65,8 @@ import Link from "next/link";
 import { FaFilePdf, FaLink, FaMicrophone, FaPlay } from "react-icons/fa";
 import { API } from "@/config/api";
 import PreviewModal from "@/components/agent/preview-modal";
+import { useSelector } from "react-redux";
+import { AppDispatch, RootState } from "@/store/types";
 
 // import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 // Interfaces remain unchanged
@@ -153,6 +156,7 @@ interface Category {
 }
 
 export default function AgentBuilderPage() {
+  const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
   const [progressData, setProgressData] = useState<{
     completed_steps: number;
@@ -207,6 +211,7 @@ export default function AgentBuilderPage() {
   const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false); // New state for preview modal
   const [selectedLink, setSelectedLink] = useState<PartnerLink | LinkaProMonetizationProduct | LinkaProMonetizationBlog | LinkaProMonetizationWebsite | null>(null); // New state for selected link
 
+  const { agent: agentDetails } = useSelector((state: RootState) => state.agents)
   const mainContentRef = useRef<HTMLDivElement>(null);
 
   const handlePreviewLink = (index: number, type: "partner" | "aipro") => {
@@ -3079,13 +3084,22 @@ export default function AgentBuilderPage() {
             <Toaster />
             <div className="w-full max-w-9xl h-full">
               <Card className="border-none shadow-lg rounded-xl overflow-hidden bg-white border border-gray-200 h-full">
-                <CardHeader className="px-4 py-3 sm:px-6 sm:py-4">
+                <CardHeader className="px-4 py-3 sm:px-6 sm:py-4 flex flex-row justify-between">
                   <CardTitle className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800">
                     Live Preview
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1 font-normal">
+                      This is exactly what your users will see
+                    </p>
                   </CardTitle>
-                  <p className="text-xs sm:text-sm text-gray-600 mt-1">
-                    This is exactly what your users will see
-                  </p>
+
+                  <CardTitle>
+                    <button
+                      onClick={handleViewAgent}
+                      className="bg-orange-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-700 active:bg-orange-800 transition-all duration-200 shadow-md hover:shadow-lg"
+                    >
+                      View Agent
+                    </button>
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 sm:p-6 h-[calc(100%-80px)]">
                   {/* Preview Container */}
@@ -3226,6 +3240,14 @@ export default function AgentBuilderPage() {
     console.log('Open image upload modal here');
   };
 
+  const agentSlug = agentDetails?.ai_agent_slug;
+  const chatUrl = agentSlug ? `${siteDomain}/liveagent/${agentSlug}` : null;
+
+  const handleViewAgent = () => {
+    if (chatUrl) {
+      router.push(chatUrl);
+    }
+  };
   return (
     <DashboardLayout key={isPreviewModalOpen ? "modal-open" : "modal-closed"}>
       <div className="mx-auto py-6 sm:py-4 w-full">

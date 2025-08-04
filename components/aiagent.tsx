@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Head from 'next/head';
 import { FaMicrophone } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
@@ -16,11 +16,21 @@ interface Prompt {
     is_active: boolean;
 }
 
+interface MetaCard {
+    metaId?: string;
+    url?: string;
+    image?: string;
+    title?: string;
+    description?: string;
+    favicon?: string;
+    brand?: string;
+}
+
 interface Message {
     text: string;
     sender: 'user' | 'assistant' | 'meta';
     image?: string;
-    metaCards?: any[];
+    metaCards?: MetaCard[];
     url?: string;
 }
 
@@ -53,10 +63,10 @@ interface AiAgentProps {
     chatEndRef: React.RefObject<HTMLDivElement>;
     setInput: (value: string) => void;
     handleSendMessage: () => void;
-    handleKeyPress: (e: React.KeyboardEvent) => void;
+    handleKeyPress: (e: React.KeyboardEvent<HTMLInputElement>) => void;
     toggleChat: () => void;
-    boxStyles: { className: string; style: React.CSSProperties }; // Define boxStyles type
-    cross: boolean
+    boxStyles: { className: string; style: React.CSSProperties };
+    cross: boolean;
 }
 
 export function AiAgent({
@@ -75,12 +85,22 @@ export function AiAgent({
     handleKeyPress,
     toggleChat,
     boxStyles,
-    cross
+    cross,
 }: AiAgentProps) {
     const [isMuted, setIsMuted] = useState(true);
+    const cardContainerRefs = useRef<(HTMLDivElement | null)[]>([]); // Array to store refs for each card container
 
     const toggleMute = () => {
         setIsMuted((prev) => !prev);
+    };
+
+    // Scroll function that targets a specific card container by index
+    const scrollCards = (direction: 'prev' | 'next', index: number) => {
+        const container = cardContainerRefs.current[index];
+        if (container) {
+            const scrollAmount = direction === 'next' ? 200 : -200;
+            container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+        }
     };
 
     return (
@@ -96,7 +116,7 @@ export function AiAgent({
                 <meta property="og:type" content="website" />
                 <meta
                     property="og:url"
-                    content={`https://linkaai-9lgi.vercel.app/liveagent/${agentDetails?.ai_agent_slug}`}
+                    content={`https://linkaai-9lgi.vercel.app/liveagent/${agentDetails?.ai_agent_slug ?? ''}`}
                 />
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={pageTitle} />
@@ -107,16 +127,15 @@ export function AiAgent({
             {/* Chatbox */}
             <div className={boxStyles.className} style={boxStyles.style}>
                 {/* Close Button */}
-                {
-                    cross && (<button
+                {cross && (
+                    <button
                         onClick={toggleChat}
                         className="absolute top-2 right-2 p-1.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors duration-200 z-50"
                         aria-label="Close chat"
                     >
                         <IoClose className="h-5 w-5 text-gray-600" />
-                    </button>)
-                }
-
+                    </button>
+                )}
 
                 {/* Header with Agent Info */}
                 {showWelcome && (
@@ -124,7 +143,7 @@ export function AiAgent({
                         <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full overflow-hidden border-4 border-white shadow-md mb-2">
                             {agentDetails?.greeting_media_type === 'video' ? (
                                 <video
-                                    src={agentDetails?.greeting_media_url}
+                                    src={agentDetails?.greeting_media_url ?? ''}
                                     loop
                                     playsInline
                                     autoPlay
@@ -134,16 +153,18 @@ export function AiAgent({
                                 />
                             ) : (
                                 <img
-                                    src={agentDetails?.greeting_media_url || 'https://via.placeholder.com/150'}
-                                    alt={agentDetails?.agent_name || 'Agent Avatar'}
+                                    src={agentDetails?.greeting_media_url ?? 'https://via.placeholder.com/150'}
+                                    alt={agentDetails?.agent_name ?? 'Agent Avatar'}
                                     className="w-full h-full object-cover object-center"
                                 />
                             )}
                         </div>
                         <h2 className="mt-2 text-xl sm:text-2xl font-bold text-black text-center">
-                            {agentDetails?.greeting_title || 'Agent'}
+                            {agentDetails?.greeting_title ?? 'Agent'}
                         </h2>
-                        <p className="text-base sm:text-lg text-gray-500 text-center">{agentDetails?.welcome_greeting}</p>
+                        <p className="text-base sm:text-lg text-gray-500 text-center">
+                            {agentDetails?.welcome_greeting ?? ''}
+                        </p>
                     </div>
                 )}
 
@@ -176,7 +197,7 @@ export function AiAgent({
                                     {message.sender === 'assistant' && (
                                         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden mr-2">
                                             <img
-                                                src={agentDetails?.avatar_image_url || 'https://via.placeholder.com/150'}
+                                                src={agentDetails?.avatar_image_url ?? 'https://via.placeholder.com/150'}
                                                 alt="Assistant"
                                                 className="w-full h-full object-cover"
                                             />
@@ -186,14 +207,14 @@ export function AiAgent({
                                         className={`max-w-[70%] rounded-2xl p-3 shadow-md ${message.sender === 'user'
                                             ? 'bg-blue-600 text-white rounded-br-none'
                                             : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
-                                            }`}
+                                        }`}
                                     >
                                         <ReactMarkdown
                                             components={{
                                                 a: ({ node, ...props }) => (
                                                     <a
                                                         {...props}
-                                                        className="text-blue-600 underline"
+                                                        className="text-blue-600 underline break-words"
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                     />
@@ -214,7 +235,7 @@ export function AiAgent({
                                                     <h2 className="font-semibold text-base mb-1" {...props} />
                                                 ),
                                                 p: ({ node, ...props }) => (
-                                                    <p className="mb-2" {...props} />
+                                                    <p className="mb-2 break-words" {...props} />
                                                 ),
                                             }}
                                         >
@@ -224,42 +245,65 @@ export function AiAgent({
                                 </div>
                             )}
                             {message.sender === 'meta' && message.metaCards && (
-                                <div className="w-full py-2">
-                                    <div className="flex gap-2 overflow-x-auto px-1 meta-scrollbar-hide">
-                                        {message.metaCards.map((meta, idx) => (
-                                            <a
-                                                key={meta.metaId || idx}
-                                                href={meta.url || '#'}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="min-w-[140px] max-w-[160px] sm:min-w-[170px] sm:max-w-[190px] bg-white rounded-xl shadow border border-gray-200 flex flex-col items-center p-0 hover:shadow-lg transition-shadow duration-200"
-                                                style={{ flex: '0 0 auto', textDecoration: 'none' }}
-                                            >
-                                                <div className="w-full h-[110px] sm:h-[130px] rounded-t-xl overflow-hidden flex items-center justify-center bg-gray-100">
-                                                    <img
-                                                        src={meta.image || 'https://via.placeholder.com/160'}
-                                                        alt={meta.title || 'Image'}
-                                                        className="w-full h-full object-cover"
-                                                    />
-                                                </div>
-                                                <div className="px-2 py-2 w-full flex flex-col items-center">
-                                                    <div className="text-xs sm:text-sm font-bold text-gray-900 text-center line-clamp-2">
-                                                        {meta.title || 'No Title Available'}
+                                <div className="w-full py-2 relative">
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => scrollCards('prev', index)} // Pass index to scroll specific container
+                                            className="absolute left-0 z-10 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-200"
+                                            aria-label="Previous card"
+                                        >
+                                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                                            </svg>
+                                        </button>
+                                        <div
+                                            className="flex gap-2 overflow-x-auto px-10 py-2 meta-scrollbar-hide"
+                                            ref={(el) => { cardContainerRefs.current[index] = el; }} // Assign ref to specific index
+                                        >
+                                            {message.metaCards.map((meta, idx) => (
+                                                <a
+                                                    key={meta.metaId ?? idx}
+                                                    href={meta.url ?? '#'}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="min-w-[140px] max-w-[160px] sm:min-w-[170px] sm:max-w-[190px] bg-white rounded-xl shadow border border-gray-200 flex flex-col items-center p-0 hover:shadow-lg transition-shadow duration-200"
+                                                    style={{ flex: '0 0 auto', textDecoration: 'none' }}
+                                                >
+                                                    <div className="w-full h-[110px] sm:h-[130px] rounded-t-xl overflow-hidden flex items-center justify-center bg-gray-100">
+                                                        <img
+                                                            src={meta.image ?? 'https://via.placeholder.com/160'}
+                                                            alt={meta.title ?? 'Image'}
+                                                            className="w-full h-full object-cover"
+                                                        />
                                                     </div>
-                                                    <div className="text-xs text-gray-500 font-medium mt-1 text-center line-clamp-3">
-                                                        {meta.description || 'No description available.'}
+                                                    <div className="px-2 py-2 w-full flex flex-col items-center">
+                                                        <div className="text-xs sm:text-sm font-bold text-gray-900 text-center line-clamp-2">
+                                                            {meta.title ?? 'No Title Available'}
+                                                        </div>
+                                                        <div className="text-xs text-gray-500 font-medium mt-1 text-center line-clamp-3">
+                                                            {meta.description ?? 'No description available.'}
+                                                        </div>
+                                                        <div className="flex items-center gap-2 mt-2">
+                                                            {meta.favicon ? (
+                                                                <img src={meta.favicon} alt={meta.brand ?? 'Brand'} className="w-4 h-4" />
+                                                            ) : (
+                                                                <div className="w-4 h-4 bg-gray-200 rounded-full"></div>
+                                                            )}
+                                                            <span className="text-xs text-gray-600 font-medium">{meta.brand ?? 'Unknown Brand'}</span>
+                                                        </div>
                                                     </div>
-                                                    <div className="flex items-center gap-2 mt-2">
-                                                        {meta.favicon ? (
-                                                            <img src={meta.favicon} alt={meta.brand || 'Brand'} className="w-4 h-4" />
-                                                        ) : (
-                                                            <div className="w-4 h-4 bg-gray-200 rounded-full"></div>
-                                                        )}
-                                                        <span className="text-xs text-gray-600 font-medium">{meta.brand || 'Unknown Brand'}</span>
-                                                    </div>
-                                                </div>
-                                            </a>
-                                        ))}
+                                                </a>
+                                            ))}
+                                        </div>
+                                        <button
+                                            onClick={() => scrollCards('next', index)} // Pass index to scroll specific container
+                                            className="absolute right-0 z-10 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-200"
+                                            aria-label="Next card"
+                                        >
+                                            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                                            </svg>
+                                        </button>
                                     </div>
                                 </div>
                             )}
@@ -271,8 +315,6 @@ export function AiAgent({
                 {/* Input Area */}
                 <div className="p-4 bg-white">
                     <div className="flex flex-wrap items-center gap-2 border border-gray-200 rounded-md px-3 py-2 bg-white shadow-sm hover:shadow-md transition-all duration-200">
-
-                        {/* Input Field */}
                         <input
                             type="text"
                             value={input}
@@ -281,8 +323,6 @@ export function AiAgent({
                             placeholder="Ask me anything..."
                             className="flex-1 min-w-0 text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-transparent outline-none focus:outline-none focus:ring-0 focus:placeholder-gray-300 transition-colors duration-150"
                         />
-
-                        {/* Buttons */}
                         <div className="flex items-center gap-2 shrink-0">
                             <button
                                 className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
@@ -299,48 +339,50 @@ export function AiAgent({
                             </button>
                         </div>
                     </div>
-
                     <p className="text-xs sm:text-sm text-gray-500 mt-2 text-center font-medium">
                         Type your question or tap the microphone
                     </p>
                 </div>
-
             </div>
 
             <style jsx>{`
-        .no-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-        .no-scrollbar::-webkit-scrollbar {
-          width: 0;
-          height: 0;
-          display: none;
-        }
-        .line-clamp-2 {
-          display: -webkit-box;
-          -webkit-line-clamp: 2;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-        }
-        .line-clamp-3 {
-          display: -webkit-box;
-          -webkit-line-clamp: 3;
-          -webkit-box-orient: vertical;
-          overflow: hidden;
-          font-size: 11px;
-          text-align: left;
-        }
-        .meta-scrollbar-hide {
-          scrollbar-width: none;
-          -ms-overflow-style: none;
-        }
-        .meta-scrollbar-hide::-webkit-scrollbar {
-          display: none;
-          width: 0;
-          height: 0;
-        }
-      `}</style>
+                .no-scrollbar {
+                    -ms-overflow-style: none;
+                    scrollbar-width: none;
+                }
+                .no-scrollbar::-webkit-scrollbar {
+                    width: 0;
+                    height: 0;
+                    display: none;
+                }
+                .line-clamp-2 {
+                    display: -webkit-box;
+                    -webkit-line-clamp: 2;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                }
+                .line-clamp-3 {
+                    display: -webkit-box;
+                    -webkit-line-clamp: 3;
+                    -webkit-box-orient: vertical;
+                    overflow: hidden;
+                    font-size: 11px;
+                    text-align: left;
+                }
+                .meta-scrollbar-hide {
+                    scrollbar-width: none;
+                    -ms-overflow-style: none;
+                }
+                .meta-scrollbar-hide::-webkit-scrollbar {
+                    display: none;
+                    width: 0;
+                    height: 0;
+                }
+                .break-words {
+                    word-break: break-all;
+                    overflow-wrap: break-word;
+                }
+            `}</style>
         </div>
     );
 }

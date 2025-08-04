@@ -62,6 +62,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const { agent: agentDetails } = useSelector((state: RootState) => state.agents);
   const { aiAgentData } = useSelector((state: RootState) => state.auth);
+  const { agent } = useSelector((state: RootState) => state.agents)
 
   const firstInitial = aiAgentData?.user?.first_name?.charAt(0) || '';
   const lastInitial = aiAgentData?.user?.last_name?.charAt(0) || '';
@@ -439,60 +440,40 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
             {userProfile && (
               <div
                 className={cn(
-                  'flex items-center px-3 py-2.5 rounded-lg',
+                  'flex items-center px-1 py-2.5 rounded-lg',
                   'text-gray-700 dark:text-gray-300',
                   'hover:bg-gray-100 dark:hover:bg-gray-700',
                   'transition-colors duration-200'
                 )}
               >
-                <Image
-                  src={userProfile.picture}
-                  alt="User profile"
-                  width={36}
-                  height={36}
-                  className="rounded-full flex-shrink-0 mr-3"
-                />
+                <div className="relative w-10 h-10 mr-3 flex-shrink-0">
+                  <Image
+                    src={agent?.avatar_image_url ?? '/userlogo1.png'}
+                    alt="User profile"
+                    fill
+                    className="rounded-full object-cover"
+                    sizes="40px"
+                    priority
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/userlogo1.png';
+                    }}
+                  />
+                </div>
                 <div
                   className={cn(
                     'min-w-0',
                     isMobile ? 'opacity-100' : 'hidden lg:block lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200'
                   )}
                 >
-                  <span className="text-sm font-medium truncate block">{aiAgentData?.user?.first_name}</span>
+                  <span className="text-sm font-medium truncate block">
+                    {aiAgentData?.user?.first_name || 'User'}
+                  </span>
                   <span className="text-xs text-gray-500 dark:text-gray-400 truncate block">
                     Logged in
                   </span>
                 </div>
               </div>
             )}
-
-            {/* <div
-              className={cn(
-                'flex items-center px-1 py-2.5 rounded-lg',
-                'text-gray-700 dark:text-gray-300',
-                'hover:bg-gray-100 dark:hover:bg-gray-700',
-                // pathname === liveAgentItem.href
-                //   ? 'bg-orange-50 text-orange-700 dark:bg-orange-900/20 dark:text-orange-300'
-                //   : '',
-                'transition-colors duration-200'
-              )}
-            >
-              {renderNavItem({
-                ...liveAgentItem,
-                className: cn(
-                  'flex items-center w-full',
-                  'text-gray-700 dark:text-gray-300'
-                ),
-                onClick: (e) => {
-                  if (liveAgentItem.comingSoon) {
-                    e.preventDefault();
-                    toast.info('This feature is coming soon!');
-                  } else {
-                    handleShareLiveAgent();
-                  }
-                },
-              })}
-            </div> */}
 
             <button
               onClick={toggleDarkMode}

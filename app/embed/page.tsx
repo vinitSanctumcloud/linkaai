@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
 import {
   Copy,
@@ -43,6 +44,7 @@ interface Settings {
 
 export default function EmbedPage() {
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
   const [settings, setSettings] = useState<Settings | null>(null);
   const [embedSize, setEmbedSize] = useState({ width: "100%", height: "750px" });
   const [isCopied, setIsCopied] = useState(false);
@@ -60,8 +62,8 @@ export default function EmbedPage() {
     dispatch(fetchAgentDetails());
   }, [dispatch]);
 
-  const handleCopy = () => {
-    copyToClipboard(popupCode);
+  const handleCopy = (code: string) => {
+    copyToClipboard(code);
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 2000);
   };
@@ -90,19 +92,27 @@ export default function EmbedPage() {
     });
   };
 
+  const handleViewAgent = () => {
+    if (chatUrl) {
+      router.push(chatUrl);
+    }
+  };
   const agentSlug = agentDetails?.ai_agent_slug;
-  const chatUrl = `${siteDomain}/liveagent/${agentSlug}`;
-  const chatUrl1 = `${siteDomain}/liveagent1/${agentSlug}`;
+  const chatUrl = agentSlug ? `${siteDomain}/liveagent/${agentSlug}` : null;
+  const chatUrl1 = agentSlug ? `${siteDomain}/liveagent1/${agentSlug}` : null;
 
-  const iframeCode = `<iframe 
+  const iframeCode = agentSlug
+    ? `<iframe 
   src="${chatUrl1}" 
   width="${embedSize.width}" 
   height="${embedSize.height}"
   frameborder="0"
   style="border-radius: 10px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); position: fixed; bottom: 0; right: 0; background-color: transparent; z-index: 1000;">
-</iframe>`;
+</iframe>`
+    : "// Please create an AI Agent to generate the embed code.";
 
-  const widgetCode = `<!-- EarnLinks.AI Chat Widget -->
+  const widgetCode = agentSlug
+    ? `<!-- EarnLinks.AI Chat Widget -->
 <div id="earnlinks-chat-widget"></div>
 <script>
   (function() {
@@ -121,9 +131,11 @@ export default function EmbedPage() {
     widget.setAttribute('allowtransparency', 'true');
     document.getElementById('earnlinks-chat-widget').appendChild(widget);
   })();
-</script>`;
+</script>`
+    : "// Please create an AI Agent to generate the widget code.";
 
-  const popupCode = `<!-- EarnLinks.AI share Chat -->
+  const popupCode = agentSlug
+    ? `<!-- EarnLinks.AI share Chat -->
 <script>
   (function() {
     var button = document.createElement('button');
@@ -147,7 +159,8 @@ export default function EmbedPage() {
     
     document.body.appendChild(button);
   })();
-</script>`;
+</script>`
+    : "// Please create an AI Agent to generate the popup code.";
 
   return (
     <DashboardLayout>
@@ -217,15 +230,17 @@ export default function EmbedPage() {
                           rows={4}
                           className="font-mono text-xs sm:text-sm p-3 pr-10 bg-gray-50 border-gray-200"
                         />
-                        <Button
-                          onClick={() => copyToClipboard(iframeCode)}
-                          className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Copy code"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
+                        {agentSlug && (
+                          <Button
+                            onClick={() => copyToClipboard(iframeCode)}
+                            className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Copy code"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </TabsContent>
@@ -248,15 +263,17 @@ export default function EmbedPage() {
                           rows={6}
                           className="font-mono text-xs sm:text-sm p-3 pr-10 bg-gray-50 border-gray-200"
                         />
-                        <Button
-                          onClick={() => copyToClipboard(widgetCode)}
-                          className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Copy code"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
+                        {agentSlug && (
+                          <Button
+                            onClick={() => copyToClipboard(widgetCode)}
+                            className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
+                            variant="ghost"
+                            size="sm"
+                            aria-label="Copy code"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </TabsContent>
@@ -272,30 +289,38 @@ export default function EmbedPage() {
                         </p>
                       </div>
                       <div className="relative">
-                        <div
-                          onClick={handleCopy}
-                          className="font-mono text-xs sm:text-sm p-3 pr-10 border rounded-md cursor-pointer hover:bg-gray-50 flex items-center overflow-hidden bg-gray-50 border-gray-200"
-                        >
-                          <span className="truncate">{chatUrl}</span>
-                        </div>
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                onClick={() => copyToClipboard(chatUrl)}
-                                className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
-                                variant="ghost"
-                                size="sm"
-                                aria-label="Copy URL"
-                              >
-                                <Copy className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                              {isCopied ? 'Copied!' : 'Copy URL'}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                        {agentSlug ? (
+                          <>
+                            <div
+                              onClick={() => handleCopy(chatUrl!)}
+                              className="font-mono text-xs sm:text-sm p-3 pr-10 border rounded-md cursor-pointer hover:bg-gray-50 flex items-center overflow-hidden bg-gray-50 border-gray-200"
+                            >
+                              <span className="truncate">{chatUrl}</span>
+                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    onClick={() => copyToClipboard(chatUrl!)}
+                                    className="absolute top-2 right-2 h-7 w-7 p-0 bg-gray-100 hover:bg-gray-200"
+                                    variant="ghost"
+                                    size="sm"
+                                    aria-label="Copy URL"
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="top">
+                                  {isCopied ? 'Copied!' : 'Copy URL'}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </>
+                        ) : (
+                          <p className="text-gray-500 text-xs sm:text-sm">
+                            Please create an AI Agent to generate a shareable link.
+                          </p>
+                        )}
                       </div>
                     </div>
                   </TabsContent>
@@ -309,6 +334,7 @@ export default function EmbedPage() {
                   <Code className="mr-2 h-5 w-5 text-orange-600" />
                   Widget Configuration
                 </CardTitle>
+
                 <CardDescription className="text-sm sm:text-base">
                   Customize your chat widget appearance and behavior
                 </CardDescription>
@@ -376,20 +402,30 @@ export default function EmbedPage() {
 
           <div className="w-full lg:w-2/3 space-y-4 md:space-y-6 flex justify-center items-start bg-gray-50">
             <Card className="border border-gray-200 shadow-lg rounded-xl overflow-hidden transition-all duration-300 hover:shadow-xl w-full max-w-4xl">
-              <CardHeader className="px-6 pt-6 pb-4 bg-gradient-to-r from-blue-50 to-indigo-50">
-                <div className="space-y-1">
-                  <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <Eye className="w-5 h-5 text-blue-600" />
-                    Live Preview
+              <CardHeader className="px-6 pt-6 pb-4 bg-gradient-to-r">
+                <div className="space-y-1 flex flex-row justify-between">
+                  <div>
+                    <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+                      <Eye className="w-5 h-5 text-blue-600" />
+                      Live Preview
+                    </CardTitle>
+                    <CardDescription className="text-sm sm:text-base text-gray-600">
+                      See exactly how your AI Agent will appear to users
+                    </CardDescription>
+                  </div>
+                  <CardTitle>
+                    <button
+                      onClick={handleViewAgent}
+                      className="bg-orange-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-700 active:bg-orange-800 transition-all duration-200 shadow-md hover:shadow-lg"
+                    >
+                      View Agent
+                    </button>
                   </CardTitle>
-                  <CardDescription className="text-sm sm:text-base text-gray-600">
-                    See exactly how your AI Agent will appear to users
-                  </CardDescription>
                 </div>
               </CardHeader>
 
               <CardContent className="p-6">
-                <div className="relative w-full h-full flex justify-center items-center">
+                <div className="relative w-3xl h-full flex justify-center items-center">
                   <div
                     className="bg-white rounded-xl overflow-hidden shadow-md border border-gray-100 relative"
                     style={{
@@ -406,7 +442,7 @@ export default function EmbedPage() {
                       overflow: "hidden",
                     }}
                   >
-                    {chatUrl ? (
+                    {agentSlug && chatUrl ? (
                       <iframe
                         src={chatUrl}
                         className="w-full h-full border-0 rounded-xl"
@@ -425,7 +461,7 @@ export default function EmbedPage() {
                       <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-gray-100">
                         <Bot className="w-16 h-16 text-gray-400 mb-4" />
                         <p className="text-gray-500 text-center text-base font-medium px-4">
-                          Configure your agent to see the preview
+                          Build your Agent now
                         </p>
                       </div>
                     )}
@@ -439,7 +475,6 @@ export default function EmbedPage() {
                 </div>
 
                 <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-
                   <Button
                     variant={embedSize.width === "600px" ? "default" : "outline"}
                     size="sm"
