@@ -269,36 +269,42 @@ export function AiAgent({
                 </div>
 
                 {/* Input Area */}
-                <div className="pl-4 pb-4 pr-4 bg-white">
-                    <div className="flex items-center gap-2 border border-gray-200 rounded-md px-3 py-2 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="p-4 bg-white">
+                    <div className="flex flex-wrap items-center gap-2 border border-gray-200 rounded-md px-3 py-2 bg-white shadow-sm hover:shadow-md transition-all duration-200">
+
+                        {/* Input Field */}
                         <input
                             type="text"
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={handleKeyPress}
+                            onKeyDown={handleKeyPress}
                             placeholder="Ask me anything..."
-                            className="flex-grow text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-transparent outline-none focus:outline-none focus:ring-0 focus:placeholder-gray-300 transition-colors duration-150"
+                            className="flex-1 min-w-0 text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-transparent outline-none focus:outline-none focus:ring-0 focus:placeholder-gray-300 transition-colors duration-150"
                         />
-                        <div className="flex items-center gap-2">
+
+                        {/* Buttons */}
+                        <div className="flex items-center gap-2 shrink-0">
                             <button
-                                className="p-1.5 rounded-full hover:bg-gray-100 transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
+                                className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
                                 aria-label="Voice input"
                             >
                                 <FaMicrophone className="text-gray-600 h-5 w-5 hover:text-gray-800" />
                             </button>
                             <button
                                 onClick={handleSendMessage}
-                                className="p-1.5 rounded-full bg-black text-white transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
+                                className="p-2 rounded-full bg-black text-white transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
                                 aria-label="Send message"
                             >
                                 <FiSend className="h-5 w-5" />
                             </button>
                         </div>
                     </div>
+
                     <p className="text-xs sm:text-sm text-gray-500 mt-2 text-center font-medium">
                         Type your question or tap the microphone
                     </p>
                 </div>
+
             </div>
 
             <style jsx>{`

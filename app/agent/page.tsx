@@ -208,7 +208,7 @@ export default function AgentBuilderPage() {
   const [selectedLink, setSelectedLink] = useState<PartnerLink | LinkaProMonetizationProduct | LinkaProMonetizationBlog | LinkaProMonetizationWebsite | null>(null); // New state for selected link
 
   const mainContentRef = useRef<HTMLDivElement>(null);
-  
+
   const handlePreviewLink = (index: number, type: "partner" | "aipro") => {
     console.log(aiproLinksTableData[index])
     const link = type === "partner" ? partnerLinksTableData[index] : aiproLinksTableData[index];
@@ -1445,7 +1445,7 @@ export default function AgentBuilderPage() {
             greeting_media_type: agentConfig.greetingMediaType || "image",
           };
           break;
-          
+
         case 2:
           if (!agentConfig.name.trim()) {
             toast.error("Please provide an agent name.", {
@@ -1888,148 +1888,139 @@ export default function AgentBuilderPage() {
                   </TooltipProvider>
                 </div>
                 <div className="flex flex-col md:flex-row gap-4 w-full justify-center">
-                  {/* Avatar Preview */}
-                  <div className="relative group w-full md:w-1/2 max-w-[12rem] sm:max-w-[14rem]">
-                    <Label className="text-sm sm:text-base font-medium text-linka-russian-violet mb-2 block text-left">
-                      AI Chat Agent
-                    </Label>
-                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
-                      {agentConfig.avatar ? (
-                        <img
-                          src={agentConfig.avatar}
-                          alt="Agent Avatar"
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                          onError={() => toast.error("Error loading avatar image.")}
-                        />
-                      ) : (
-                        <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
-                      )}
-                    </div>
-                    <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
-                      <div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleAvatarUpload}
-                          className="hidden"
-                          id="avatar-upload"
-                        />
-                        <TooltipProvider>
-                          <Tooltip delayDuration={0}>
-                            <TooltipTrigger asChild>
-                              <label
-                                htmlFor="avatar-upload"
-                                className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                  <div className="flex flex-col md:flex-row gap-6 justify-center items-center">
+                    {/* Avatar Preview */}
+                    <div className="relative group w-full md:w-1/2 max-w-[12rem] sm:max-w-[14rem]">
+                      <Label className="text-sm sm:text-base font-medium text-linka-russian-violet mb-2 block mx-auto w-full text-center">
+                        AI Chat Agent
+                      </Label>
+                      <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+                        {agentConfig.avatar ? (
+                          <img
+                            src={agentConfig.avatar}
+                            alt="Agent Avatar"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            onError={() => toast.error('Error loading avatar image.')}
+                          />
+                        ) : (
+                          <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+                        )}
+                      </div>
+                      <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-[30%]">
+                        <div>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleAvatarUpload}
+                            className="hidden"
+                            id="avatar-upload"
+                          />
+                          <TooltipProvider>
+                            <Tooltip delayDuration={0}>
+                              <TooltipTrigger asChild>
+                                <label
+                                  htmlFor="avatar-upload"
+                                  className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                                >
+                                  <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                                  <span className="text-xs font-medium hidden sm:inline">Image</span>
+                                  <span className="sr-only">Upload avatar image</span>
+                                </label>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                className="bg-white text-gray-800 border border-gray-200 rounded-md p-2 text-sm shadow-lg max-w-xs"
+                                sideOffset={5}
                               >
-                                <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
-                                <span className="text-xs font-medium hidden sm:inline">Image</span>
-                                <span className="sr-only">Upload avatar image</span>
-                              </label>
-                            </TooltipTrigger>
-                            <TooltipContent className="whitespace-pre-line">
-                              <p>Upload an image (max 5MB) for your AI's avatar.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                                <p>Upload an image (max 5MB) for your AI's avatar.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  {/* Greeting Media Preview */}
-                  <div className="relative group w-full md:w-1/2 max-w-[12rem] sm:max-w-[14rem]">
-                    <Label className="text-sm sm:text-base font-medium text-linka-russian-violet mb-2 block text-right">
-                      AI Greeting Agent
-                    </Label>
-                    <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
-                      <video
-                        src={agentConfig.greetingMedia!}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover rounded-full"
-                        onError={() =>
-                          toast.error(
-                            "Error loading video. Please ensure the file is a valid MP4, WebM, or OGG."
-                          )
-                        }
-                      />
-                      {/* {agentConfig.greetingMedia && agentConfig.greetingMediaType ? (
-                    agentConfig.greetingMediaType === "video" ? (
-                      <video
-                        src={agentConfig.greetingMedia}
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-cover rounded-full"
-                        onError={() =>
-                          toast.error(
-                            "Error loading video. Please ensure the file is a valid MP4, WebM, or OGG."
-                          )
-                        }
-                      />
-                    ) : (
-                      <img
-                        src={agentConfig.greetingMedia}
-                        alt="Greeting Image"
-                        className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                        onError={() => toast.error("Error loading greeting image.")}
-                      />
-                    )
-                  ) : (
-                    <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
-                  )} */}
-                    </div>
-                    <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-6">
-                      {/* <div>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleGreetingMediaUpload(e, "image")}
-                      className="hidden"
-                      id="greeting-image-upload"
-                    />
-                    <Tooltip delayDuration={0}>
-                      <TooltipTrigger asChild>
-                        <label
-                          htmlFor="greeting-image-upload"
-                          className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
-                        >
-                          <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
-                          <span className="text-xs font-medium hidden sm:inline">Image</span>
-                          <span className="sr-only">Upload greeting image</span>
-                        </label>
-                      </TooltipTrigger>
-                      <TooltipContent className="whitespace-pre-line">
-                        <p>Upload an image (max 5MB) for your AI's greeting.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div> */}
-                      <div>
-                        <input
-                          type="file"
-                          accept="video/*"
-                          onChange={(e) => handleGreetingMediaUpload(e, "video")}
-                          className="hidden"
-                          id="greeting-video-upload"
-                        />
-                        <TooltipProvider>
-                          <Tooltip delayDuration={0}>
-                            <TooltipTrigger asChild>
-                              <label
-                                htmlFor="greeting-video-upload"
-                                className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+
+                    {/* Greeting Media Preview */}
+                    <div className="relative group w-full md:w-1/2 max-w-[12rem] sm:max-w-[14rem]">
+                      <Label className="text-sm sm:text-base font-medium text-linka-russian-violet mb-2 block text-center">
+                        AI Greeting Agent
+                      </Label>
+                      <div className="w-28 h-28 sm:w-36 sm:h-36 md:w-40 md:h-40 rounded-full overflow-hidden bg-gradient-to-br from-linka-dark-orange/90 to-linka-carolina-blue/90 flex items-center justify-center mx-auto mb-3 sm:mb-4 transition-all duration-500 hover:shadow-lg hover:scale-[1.02]">
+                        {agentConfig.greetingMedia ? (
+                          <video
+                            src={agentConfig.greetingMedia}
+                            autoPlay
+                            muted
+                            loop
+                            playsInline
+                            className="w-full h-full object-cover rounded-full"
+                            onError={() =>
+                              toast.error('Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.')
+                            }
+                          />
+                        ) : (
+                          <Bot className="w-10 h-10 sm:w-14 sm:h-14 text-white/90 animate-pulse" />
+                        )}
+                      </div>
+                      <div className="flex gap-2 sm:gap-3 absolute -bottom-1 right-4 sm:right-[30%]">
+                        {/* Commented-out Image Upload */}
+                        {/* <div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => handleGreetingMediaUpload(e, 'image')}
+              className="hidden"
+              id="greeting-image-upload"
+            />
+            <TooltipProvider>
+              <Tooltip delayDuration={0}>
+                <TooltipTrigger asChild>
+                  <label
+                    htmlFor="greeting-image-upload"
+                    className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                  >
+                    <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                    <span className="text-xs font-medium hidden sm:inline">Image</span>
+                    <span className="sr-only">Upload greeting image</span>
+                  </label>
+                </TooltipTrigger>
+                <TooltipContent
+                  className="bg-white text-gray-800 border border-gray-200 rounded-md p-2 text-sm shadow-lg max-w-xs"
+                  sideOffset={5}
+                >
+                  <p>Upload an image (max 5MB) for your AI's greeting.</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div> */}
+                        <div>
+                          <input
+                            type="file"
+                            accept="video/*"
+                            onChange={(e) => handleGreetingMediaUpload(e, 'video')}
+                            className="hidden"
+                            id="greeting-video-upload"
+                          />
+                          <TooltipProvider>
+                            <Tooltip delayDuration={0}>
+                              <TooltipTrigger asChild>
+                                <label
+                                  htmlFor="greeting-video-upload"
+                                  className="bg-white border-2 border-linka-carolina-blue text-linka-carolina-blue rounded-full p-2 cursor-pointer transition-all duration-300 hover:scale-110 hover:bg-linka-carolina-blue hover:text-white shadow-md flex items-center gap-1"
+                                >
+                                  <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
+                                  <span className="text-xs font-medium hidden sm:inline">Video</span>
+                                  <span className="sr-only">Upload greeting video</span>
+                                </label>
+                              </TooltipTrigger>
+                              <TooltipContent
+                                className="bg-white text-gray-800 border border-gray-200 rounded-md p-2 text-sm shadow-lg max-w-xs"
+                                sideOffset={5}
                               >
-                                <Upload className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2.5} />
-                                <span className="text-xs font-medium hidden sm:inline">Video</span>
-                                <span className="sr-only">Upload greeting video</span>
-                              </label>
-                            </TooltipTrigger>
-                            <TooltipContent className="whitespace-pre-line">
-                              <p>Upload a video (max 50MB, MP4/WebM/OGG) for your AI's greeting.</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
+                                <p>Upload a video (max 50MB, MP4/WebM/OGG) for your AI's greeting.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -2162,224 +2153,224 @@ export default function AgentBuilderPage() {
           </Card>
           // </TooltipProvider>
         );
-      
+
       case 2:
         return (
-         <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
-      <CardHeader className="px-6 pt-6 pb-4">
-        <div className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight">
-            Conversation Design
-          </CardTitle>
-          <p className="text-sm text-linka-night/70 font-light">
-            Craft engaging prompts and branching dialogue flows
-          </p>
-        </div>
-      </CardHeader>
-      <CardContent className="px-6 pb-8 space-y-6">
-        {!agentConfig.useConditionalPrompts ? (
-          <div className="space-y-6 animate-in fade-in">
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                <MessageSquare className="w-5 h-5 text-linka-carolina-blue" />
-                Conversation Starters
-              </h3>
-              <p className="text-xs text-linka-night/60">
-                These buttons will appear when users first interact with your AI (max 40 chars)
-              </p>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {agentConfig.prompts.map((prompt, index) => (
-                <div key={index} className="space-y-2">
-                  <Label
-                    htmlFor={`prompt-${index}`}
-                    className="text-linka-russian-violet/90"
-                  >
-                    Prompt {index + 1}
-                  </Label>
-                  <Input
-                    id={`prompt-${index}`}
-                    placeholder={[
-                      "Plan my itinerary (max 40 chars)",
-                      "Local recommendations (max 40 chars)",
-                      "Show best deals (max 40 chars)",
-                      "About activities (max 40 chars)",
-                    ][index]}
-                    value={prompt}
-                    onChange={(e) => updatePrompt(index, e.target.value)}
-                    maxLength={40}
-                    className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 transition-all duration-200"
-                  />
-                  <p className="text-xs text-linka-night/60">
-                    {prompt.length}/40 characters
-                  </p>
-                </div>
-              ))}
-            </div>
-            <div className="bg-linka-alice-blue/30 rounded-xl p-4 border border-linka-alice-blue/50 mt-4">
-              <p className="text-xs text-linka-night/70 mb-3 font-medium uppercase tracking-wider">
-                Button Preview
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                {agentConfig.prompts.map((prompt, index) => (
-                  <div
-                    key={index}
-                    className="bg-white border border-linka-columbia-blue/50 rounded-lg p-3 text-sm font-medium text-linka-night hover:shadow-sm transition-all duration-200 hover:border-linka-carolina-blue hover:translate-y-[-2px]"
-                  >
-                    {prompt || `Prompt ${index + 1}`}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="space-y-6 animate-in fade-in">
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
-                <GitBranch className="w-5 h-5 text-linka-dark-orange" />
-                Branching Flows
-              </h3>
-              <p className="text-xs text-linka-night/60">
-                Create decision trees that adapt to different user needs (max 40 chars)
-              </p>
-            </div>
-            {agentConfig.conditionalPrompts.length === 0 ? (
-              <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
-                <GitBranch className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4 animate-pulse" />
-                <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
-                  No Conversation Flows Yet
-                </h3>
-                <p className="text-linka-night/60 mb-4 max-w-md mx-auto">
-                  Create your first branching conversation to guide users through different paths
+          <Card className="border-none shadow-lg rounded-xl bg-white/95 backdrop-blur-sm transition-all duration-300 hover:shadow-xl">
+            <CardHeader className="px-6 pt-6 pb-4">
+              <div className="space-y-1">
+                <CardTitle className="text-2xl font-bold text-linka-russian-violet tracking-tight">
+                  Conversation Design
+                </CardTitle>
+                <p className="text-sm text-linka-night/70 font-light">
+                  Craft engaging prompts and branching dialogue flows
                 </p>
-                <Button
-                  onClick={() => openConditionalModal()}
-                  className="bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white shadow-md transition-all duration-300 hover:scale-105"
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Flow
-                </Button>
               </div>
-            ) : (
-              <div className="space-y-4">
-                {agentConfig.conditionalPrompts.map((prompt) => (
-                  <Card
-                    key={prompt.id}
-                    className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 overflow-hidden"
-                  >
-                    <CardHeader className="pb-3">
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium text-linka-russian-violet flex items-center gap-2">
-                          <MessageSquare className="w-4 h-4 text-linka-carolina-blue" />
-                          {prompt.mainPrompt.length > 40 ? prompt.mainPrompt.slice(0, 40) : prompt.mainPrompt || "Untitled Flow"}
-                        </h4>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => openConditionalModal(prompt)}
-                            className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 transition-all duration-200 hover:scale-105"
-                          >
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="border-red-200 text-red-600 hover:bg-red-50 transition-all duration-200 hover:scale-105"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="border-red-100">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-linka-russian-violet">
-                                  Delete this flow?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will permanently delete "
-                                  {prompt.mainPrompt.length > 40 ? prompt.mainPrompt.slice(0, 40) : prompt.mainPrompt || "this flow"}" and all its branches.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel className="border-linka-alice-blue hover:bg-linka-alice-blue">
-                                  Cancel
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => deleteConditionalPrompt(prompt.id)}
-                                  className="bg-red-600 hover:bg-red-700 transition-all duration-200"
+            </CardHeader>
+            <CardContent className="px-6 pb-8 space-y-6">
+              {!agentConfig.useConditionalPrompts ? (
+                <div className="space-y-6 animate-in fade-in">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                      <MessageSquare className="w-5 h-5 text-linka-carolina-blue" />
+                      Conversation Starters
+                    </h3>
+                    <p className="text-xs text-linka-night/60">
+                      These buttons will appear when users first interact with your AI (max 40 chars)
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    {agentConfig.prompts.map((prompt, index) => (
+                      <div key={index} className="space-y-2">
+                        <Label
+                          htmlFor={`prompt-${index}`}
+                          className="text-linka-russian-violet/90"
+                        >
+                          Prompt {index + 1}
+                        </Label>
+                        <Input
+                          id={`prompt-${index}`}
+                          placeholder={[
+                            "Plan my itinerary (max 40 chars)",
+                            "Local recommendations (max 40 chars)",
+                            "Show best deals (max 40 chars)",
+                            "About activities (max 40 chars)",
+                          ][index]}
+                          value={prompt}
+                          onChange={(e) => updatePrompt(index, e.target.value)}
+                          maxLength={40}
+                          className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 transition-all duration-200"
+                        />
+                        <p className="text-xs text-linka-night/60">
+                          {prompt.length}/40 characters
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="bg-linka-alice-blue/30 rounded-xl p-4 border border-linka-alice-blue/50 mt-4">
+                    <p className="text-xs text-linka-night/70 mb-3 font-medium uppercase tracking-wider">
+                      Button Preview
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {agentConfig.prompts.map((prompt, index) => (
+                        <div
+                          key={index}
+                          className="bg-white border border-linka-columbia-blue/50 rounded-lg p-3 text-sm font-medium text-linka-night hover:shadow-sm transition-all duration-200 hover:border-linka-carolina-blue hover:translate-y-[-2px]"
+                        >
+                          {prompt || `Prompt ${index + 1}`}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6 animate-in fade-in">
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium text-linka-russian-violet flex items-center gap-2">
+                      <GitBranch className="w-5 h-5 text-linka-dark-orange" />
+                      Branching Flows
+                    </h3>
+                    <p className="text-xs text-linka-night/60">
+                      Create decision trees that adapt to different user needs (max 40 chars)
+                    </p>
+                  </div>
+                  {agentConfig.conditionalPrompts.length === 0 ? (
+                    <div className="text-center py-8 rounded-xl border-2 border-dashed border-linka-alice-blue bg-white/50">
+                      <GitBranch className="w-12 h-12 text-linka-carolina-blue/70 mx-auto mb-4 animate-pulse" />
+                      <h3 className="text-lg font-medium text-linka-russian-violet mb-2">
+                        No Conversation Flows Yet
+                      </h3>
+                      <p className="text-linka-night/60 mb-4 max-w-md mx-auto">
+                        Create your first branching conversation to guide users through different paths
+                      </p>
+                      <Button
+                        onClick={() => openConditionalModal()}
+                        className="bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white shadow-md transition-all duration-300 hover:scale-105"
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        Create Flow
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {agentConfig.conditionalPrompts.map((prompt) => (
+                        <Card
+                          key={prompt.id}
+                          className="border-2 border-linka-columbia-blue/50 hover:border-linka-carolina-blue/70 transition-all duration-300 overflow-hidden"
+                        >
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium text-linka-russian-violet flex items-center gap-2">
+                                <MessageSquare className="w-4 h-4 text-linka-carolina-blue" />
+                                {prompt.mainPrompt.length > 40 ? prompt.mainPrompt.slice(0, 40) : prompt.mainPrompt || "Untitled Flow"}
+                              </h4>
+                              <div className="flex gap-2">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => openConditionalModal(prompt)}
+                                  className="border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 transition-all duration-200 hover:scale-105"
                                 >
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Delete Flow
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-linka-dark-orange" />
-                            <Label className="text-sm font-medium text-linka-russian-violet">
-                              {prompt.option1.label.length > 40 ? prompt.option1.label.slice(0, 40) : prompt.option1.label || "Option 1"}
-                            </Label>
-                          </div>
-                          <div className="space-y-2 ml-4">
-                            {prompt.option1.followUps.map((followUp, index) => (
-                              <div
-                                key={index}
-                                className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
-                              >
-                                {followUp.length > 40 ? followUp.slice(0, 40) : followUp || `Follow-up question ${index + 1}`}
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="border-red-200 text-red-600 hover:bg-red-50 transition-all duration-200 hover:scale-105"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent className="border-red-100">
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle className="text-linka-russian-violet">
+                                        Delete this flow?
+                                      </AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        This will permanently delete "
+                                        {prompt.mainPrompt.length > 40 ? prompt.mainPrompt.slice(0, 40) : prompt.mainPrompt || "this flow"}" and all its branches.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel className="border-linka-alice-blue hover:bg-linka-alice-blue">
+                                        Cancel
+                                      </AlertDialogCancel>
+                                      <AlertDialogAction
+                                        onClick={() => deleteConditionalPrompt(prompt.id)}
+                                        className="bg-red-600 hover:bg-red-700 transition-all duration-200"
+                                      >
+                                        <Trash2 className="w-4 h-4 mr-2" />
+                                        Delete Flow
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-linka-carolina-blue" />
-                            <Label className="text-sm font-medium text-linka-russian-violet">
-                              {prompt.option2.label.length > 40 ? prompt.option2.label.slice(0, 40) : prompt.option2.label || "Option 2"}
-                            </Label>
-                          </div>
-                          <div className="space-y-2 ml-4">
-                            {prompt.option2.followUps.map((followUp, index) => (
-                              <div
-                                key={index}
-                                className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
-                              >
-                                {followUp.length > 40 ? followUp.slice(0, 40) : followUp || `Follow-up question ${index + 1}`}
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-linka-dark-orange" />
+                                  <Label className="text-sm font-medium text-linka-russian-violet">
+                                    {prompt.option1.label.length > 40 ? prompt.option1.label.slice(0, 40) : prompt.option1.label || "Option 1"}
+                                  </Label>
+                                </div>
+                                <div className="space-y-2 ml-4">
+                                  {prompt.option1.followUps.map((followUp, index) => (
+                                    <div
+                                      key={index}
+                                      className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
+                                    >
+                                      {followUp.length > 40 ? followUp.slice(0, 40) : followUp || `Follow-up question ${index + 1}`}
+                                    </div>
+                                  ))}
+                                </div>
                               </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-                <Button
-                  onClick={() => openConditionalModal()}
-                  variant="outline"
-                  className={`w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 transition-all duration-300 ${agentConfig.conditionalPrompts.length >= 2 ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02]"}`}
-                  disabled={agentConfig.conditionalPrompts.length >= 2}
-                >
-                  <Plus className="w-4 h-4 mr-2" />
-                  {agentConfig.conditionalPrompts.length === 0
-                    ? "Create First Flow"
-                    : "Add Another Flow"}
-                </Button>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                              <div className="space-y-3">
+                                <div className="flex items-center gap-2">
+                                  <div className="w-2 h-2 rounded-full bg-linka-carolina-blue" />
+                                  <Label className="text-sm font-medium text-linka-russian-violet">
+                                    {prompt.option2.label.length > 40 ? prompt.option2.label.slice(0, 40) : prompt.option2.label || "Option 2"}
+                                  </Label>
+                                </div>
+                                <div className="space-y-2 ml-4">
+                                  {prompt.option2.followUps.map((followUp, index) => (
+                                    <div
+                                      key={index}
+                                      className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
+                                    >
+                                      {followUp.length > 40 ? followUp.slice(0, 40) : followUp || `Follow-up question ${index + 1}`}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                      <Button
+                        onClick={() => openConditionalModal()}
+                        variant="outline"
+                        className={`w-full border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10 transition-all duration-300 ${agentConfig.conditionalPrompts.length >= 2 ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.02]"}`}
+                        disabled={agentConfig.conditionalPrompts.length >= 2}
+                      >
+                        <Plus className="w-4 h-4 mr-2" />
+                        {agentConfig.conditionalPrompts.length === 0
+                          ? "Create First Flow"
+                          : "Add Another Flow"}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         );
-   
+
       case 3:
         return (
           <Card className="w-full mx-auto border-none shadow-xl rounded-2xl bg-white/95 backdrop-blur-sm">
@@ -2479,7 +2470,7 @@ export default function AgentBuilderPage() {
             </CardContent>
           </Card>
         );
-      
+
       case 4:
         // Use the status_list from the API response
         const statusList: { [key: number]: string } = {
@@ -2524,7 +2515,7 @@ export default function AgentBuilderPage() {
               <div className="flex flex-wrap gap-2 mt-3 sm:mt-4">
                 <Button
                   variant={activeTab === "partner" ? "default" : "outline"}
-                  onClick={() => {setActiveTab("partner"); setIsAddContentOpen(false);}}
+                  onClick={() => { setActiveTab("partner"); setIsAddContentOpen(false); }}
                   className={`text-xs sm:text-sm ${activeTab === "partner"
                     ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
                     : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
@@ -2534,7 +2525,7 @@ export default function AgentBuilderPage() {
                 </Button>
                 <Button
                   variant={activeTab === "aipro" ? "default" : "outline"}
-                  onClick={() => {setActiveTab("aipro"); setIsAddContentOpen(false);}}
+                  onClick={() => { setActiveTab("aipro"); setIsAddContentOpen(false); }}
                   className={`text-xs sm:text-sm ${activeTab === "aipro"
                     ? "bg-linka-dark-orange hover:bg-linka-dark-orange/90 text-white"
                     : "border-linka-carolina-blue text-linka-carolina-blue hover:bg-linka-carolina-blue/10"
@@ -2590,93 +2581,93 @@ export default function AgentBuilderPage() {
                       Add URL
                     </Button>
                   ) : activeTab === "aipro" ? (
-<div className="relative">
-  <div className="flex flex-col items-end">
-    <Button
-      variant="outline"
-      onClick={() => setIsAddContentOpen(!isAddContentOpen)}
-      className="border-linka-dark-orange text-linka-dark-orange bg-white hover:bg-gray-50 rounded-lg shadow-sm px-4 py-6 text-sm font-medium transition-all duration-300 flex items-center gap-1 w-56 justify-between"
-    >
-            {isAddContentOpen ? (
-        <Minus className="w-5 h-5 text-linka-dark-orange" />
-      ) : (
-        <Plus className="w-5 h-5 text-linka-dark-orange" />
-      )}
-      <div className="flex flex-col items-start">
-        Add Content
-        <span className="text-xs text-gray-500">Enhance your AI-Agent</span>
-      </div>
+                    <div className="relative">
+                      <div className="flex flex-col items-end">
+                        <Button
+                          variant="outline"
+                          onClick={() => setIsAddContentOpen(!isAddContentOpen)}
+                          className="border-linka-dark-orange text-linka-dark-orange bg-white hover:bg-gray-50 rounded-lg shadow-sm px-4 py-6 text-sm font-medium transition-all duration-300 flex items-center gap-1 w-56 justify-between"
+                        >
+                          {isAddContentOpen ? (
+                            <Minus className="w-5 h-5 text-linka-dark-orange" />
+                          ) : (
+                            <Plus className="w-5 h-5 text-linka-dark-orange" />
+                          )}
+                          <div className="flex flex-col items-start">
+                            Add Content
+                            <span className="text-xs text-gray-500">Enhance your AI-Agent</span>
+                          </div>
 
-    </Button>
-  </div>
-  {isAddContentOpen && (
-    <div className="absolute z-10 mt-2 w-56 rounded-lg bg-white shadow-md border border-gray-200 right-0">
-      <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-        <button
-          onClick={() => {
-            setIsMonetizationModalOpen(true);
-            setIsAddContentOpen(false);
-          }}
-          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
-        >
-          <FaLink className="w-4 h-4 text-linka-dark-orange mt-1" />
-          <div className="flex flex-col items-start">
-            Add URL
-            <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
-              Link to blogs or web pages.
-            </span>
-          </div>
-        </button>
-        <button
-          onClick={() => {
-            setIsAddContentOpen(false);
-            // Handle Add PDF action
-          }}
-          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
-          disabled={true}
-        >
-          <FaFilePdf className="w-4 h-4 text-linka-dark-orange mt-1" />
-          <div className="flex flex-col items-start">
-            Add PDF(coming soon)
-            <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
-              Upload documents or detailed guides.
-            </span>
-          </div>
-        </button>
-        <button
-          onClick={() => {
-            setIsAddContentOpen(false);
-            // Handle Add Audio action
-          }}
-          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
-        >
-          <FaMicrophone className="w-4 h-4 text-linka-dark-orange mt-1" />
-          <div className="flex flex-col items-start">
-            Add Audio(coming soon)
-            <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
-              Include sound clips or voice notes.
-            </span>
-          </div>
-        </button>
-        <button
-          onClick={() => {
-            setIsAddContentOpen(false);
-            // Handle Add Video action
-          }}
-          className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
-        >
-          <FaPlay className="w-4 h-4 text-linka-dark-orange mt-1" />
-          <div className="flex flex-col items-start">
-            Add Video(coming soon)
-            <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
-              Add videos or short clips.
-            </span>
-          </div>
-        </button>
-      </div>
-    </div>
-  )}
-</div>
+                        </Button>
+                      </div>
+                      {isAddContentOpen && (
+                        <div className="absolute z-10 mt-2 w-56 rounded-lg bg-white shadow-md border border-gray-200 right-0">
+                          <div className="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                            <button
+                              onClick={() => {
+                                setIsMonetizationModalOpen(true);
+                                setIsAddContentOpen(false);
+                              }}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
+                            >
+                              <FaLink className="w-4 h-4 text-linka-dark-orange mt-1" />
+                              <div className="flex flex-col items-start">
+                                Add URL
+                                <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
+                                  Link to blogs or web pages.
+                                </span>
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsAddContentOpen(false);
+                                // Handle Add PDF action
+                              }}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
+                              disabled={true}
+                            >
+                              <FaFilePdf className="w-4 h-4 text-linka-dark-orange mt-1" />
+                              <div className="flex flex-col items-start">
+                                Add PDF(coming soon)
+                                <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
+                                  Upload documents or detailed guides.
+                                </span>
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsAddContentOpen(false);
+                                // Handle Add Audio action
+                              }}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
+                            >
+                              <FaMicrophone className="w-4 h-4 text-linka-dark-orange mt-1" />
+                              <div className="flex flex-col items-start">
+                                Add Audio(coming soon)
+                                <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
+                                  Include sound clips or voice notes.
+                                </span>
+                              </div>
+                            </button>
+                            <button
+                              onClick={() => {
+                                setIsAddContentOpen(false);
+                                // Handle Add Video action
+                              }}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-start gap-2 rounded"
+                            >
+                              <FaPlay className="w-4 h-4 text-linka-dark-orange mt-1" />
+                              <div className="flex flex-col items-start">
+                                Add Video(coming soon)
+                                <span className="text-xs text-gray-500 text-wrap max-w-[160px]">
+                                  Add videos or short clips.
+                                </span>
+                              </div>
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   ) : null}
                 </div>
                 <p className="text-xs text-linka-night/60 mt-1">
@@ -2740,7 +2731,7 @@ export default function AgentBuilderPage() {
                 <div className="overflow-x-auto position-static">
                   <table className="w-full text-xs sm:text-sm text-left text-linka-night/80">
                     <thead className="text-xs text-linka-russian-violet uppercase bg-linka-alice-blue/30">
-                      <tr>                        
+                      <tr>
                         <th scope="col" className="px-3 py-2 sm:px-6 sm:py-3">
                           Product
                         </th>
@@ -2983,7 +2974,7 @@ export default function AgentBuilderPage() {
                                 >
                                   <DropdownMenuItem
                                     className="text-xs cursor-pointer hover:bg-linka-carolina-blue/10 p-2 rounded"
-                                    onClick={() => handlePreviewLink(index, "aipro") }
+                                    onClick={() => handlePreviewLink(index, "aipro")}
                                   >
                                     Preview
                                   </DropdownMenuItem>
@@ -3081,7 +3072,7 @@ export default function AgentBuilderPage() {
             </CardContent>
           </Card>
         );
-   
+
       case 5:
         return (
           <div className="bg-gray-100 h-[800px] md:h-[950px] flex items-center justify-center">
@@ -4128,11 +4119,11 @@ export default function AgentBuilderPage() {
             </div>
           </DialogContent>
         </Dialog>
-      <PreviewModal
-        isOpen={isPreviewModalOpen}
-        onClose={handleClosePreviewModal}
-        linkData={selectedLink}
-      />
+        <PreviewModal
+          isOpen={isPreviewModalOpen}
+          onClose={handleClosePreviewModal}
+          linkData={selectedLink}
+        />
       </div>
     </DashboardLayout >
   );
