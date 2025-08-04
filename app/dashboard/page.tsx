@@ -58,7 +58,7 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 md:space-y-8 sm:px-6 lg:px-8 py-6 max-w-[90%] mx-auto">
+      <div className="space-y-6 md:space-y-8 sm:px-6 lg:px-8 py-6 max-w-[95%] mx-auto">
         <div className="mb-6 animate-fade-in relative">
           <div className="relative z-10">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -71,7 +71,7 @@ export default function DashboardPage() {
                 </Button>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white select-text">
                   <span className="bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-100 dark:to-gray-300 bg-clip-text text-transparent">
-                    Good {getTimeOfDay()} ,
+                    Good {getTimeOfDay()},
                   </span>
                   <motion.span
                     className="bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 bg-clip-text text-transparent"
@@ -626,7 +626,7 @@ function TipCard({
 
 function getTimeOfDay() {
   const hour = new Date().getHours();
-  if (hour < 12) return "morning";
-  if (hour < 18) return "afternoon";
-  return "evening";
+  if (hour < 12) return "Morning";
+  if (hour < 18) return "Afternoon";
+  return "Evening";
 }

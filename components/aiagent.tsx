@@ -1,11 +1,32 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import { FaMicrophone } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
 import { IoClose } from 'react-icons/io5';
 import ReactMarkdown from 'react-markdown';
+
+// Define SpeechRecognition interface for TypeScript
+interface SpeechRecognition extends EventTarget {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start: () => void;
+    stop: () => void;
+    onresult: (event: SpeechRecognitionEvent) => void;
+    onerror: (event: SpeechRecognitionErrorEvent) => void;
+    onend: () => void;
+}
+
+interface SpeechRecognitionEvent {
+    resultIndex: number;
+    results: { [key: number]: { transcript: string }[] };
+}
+
+interface SpeechRecognitionErrorEvent {
+    error: string;
+}
 
 interface Prompt {
     id: number;
@@ -88,13 +109,14 @@ export function AiAgent({
     cross,
 }: AiAgentProps) {
     const [isMuted, setIsMuted] = useState(true);
-    const cardContainerRefs = useRef<(HTMLDivElement | null)[]>([]); // Array to store refs for each card container
+    const [isListening, setIsListening] = useState(false);
+    const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
+    const cardContainerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
     const toggleMute = () => {
         setIsMuted((prev) => !prev);
     };
 
-    // Scroll function that targets a specific card container by index
     const scrollCards = (direction: 'prev' | 'next', index: number) => {
         const container = cardContainerRefs.current[index];
         if (container) {
@@ -102,6 +124,57 @@ export function AiAgent({
             container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
         }
     };
+
+    useEffect(() => {
+        const SpeechRecognitionConstructor =
+            (window as any).SpeechRecognition ||
+            (window as any).webkitSpeechRecognition;
+        if (SpeechRecognitionConstructor) {
+            const rec: SpeechRecognition = new SpeechRecognitionConstructor();
+            rec.continuous = true;
+            rec.interimResults = true;
+            rec.lang = 'en-US';
+
+            rec.onresult = (event: SpeechRecognitionEvent) => {
+                const current = event.resultIndex;
+                const transcript = event.results[current][0].transcript;
+                setInput(transcript);
+            };
+
+            rec.onerror = (event: SpeechRecognitionErrorEvent) => {
+                console.error('Speech recognition error:', event.error);
+                setIsListening(false);
+            };
+
+            rec.onend = () => {
+                setIsListening(false);
+            };
+
+            setRecognition(rec);
+        } else {
+            console.error('SpeechRecognition API not supported in this browser.');
+        }
+
+        return () => {
+            if (recognition) {
+                recognition.stop();
+            }
+        };
+    }, [setInput]);
+
+    const handleVoiceInput = () => {
+        if (!recognition) return;
+
+        if (isListening) {
+            recognition.stop();
+            setIsListening(false);
+        } else {
+            setInput('');
+            recognition.start();
+            setIsListening(true);
+        }
+    };
+
 
     return (
         <div className="min-h-screen w-full py-4 relative bg-transparent">
@@ -207,7 +280,7 @@ export function AiAgent({
                                         className={`max-w-[70%] rounded-2xl p-3 shadow-md ${message.sender === 'user'
                                             ? 'bg-blue-600 text-white rounded-br-none'
                                             : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
-                                        }`}
+                                            }`}
                                     >
                                         <ReactMarkdown
                                             components={{
@@ -248,7 +321,7 @@ export function AiAgent({
                                 <div className="w-full py-2 relative">
                                     <div className="flex items-center gap-2">
                                         <button
-                                            onClick={() => scrollCards('prev', index)} // Pass index to scroll specific container
+                                            onClick={() => scrollCards('prev', index)}
                                             className="absolute left-0 z-10 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-200"
                                             aria-label="Previous card"
                                         >
@@ -258,7 +331,7 @@ export function AiAgent({
                                         </button>
                                         <div
                                             className="flex gap-2 overflow-x-auto px-10 py-2 meta-scrollbar-hide"
-                                            ref={(el) => { cardContainerRefs.current[index] = el; }} // Assign ref to specific index
+                                            ref={(el) => { cardContainerRefs.current[index] = el; }}
                                         >
                                             {message.metaCards.map((meta, idx) => (
                                                 <a
@@ -296,7 +369,7 @@ export function AiAgent({
                                             ))}
                                         </div>
                                         <button
-                                            onClick={() => scrollCards('next', index)} // Pass index to scroll specific container
+                                            onClick={() => scrollCards('next', index)}
                                             className="absolute right-0 z-10 p-2 bg-gray-100 rounded-full hover:bg-gray-200 transition-colors duration-200"
                                             aria-label="Next card"
                                         >
@@ -313,35 +386,31 @@ export function AiAgent({
                 </div>
 
                 {/* Input Area */}
-                <div className="p-4 bg-white">
-                    <div className="flex flex-wrap items-center gap-2 border border-gray-200 rounded-md px-3 py-2 bg-white shadow-sm hover:shadow-md transition-all duration-200">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyDown={handleKeyPress}
-                            placeholder="Ask me anything..."
-                            className="flex-1 min-w-0 text-sm sm:text-base text-gray-900 placeholder-gray-400 bg-transparent outline-none focus:outline-none focus:ring-0 focus:placeholder-gray-300 transition-colors duration-150"
+                <div className="flex items-center space-x-2 p-4">
+                    <input
+                        type="text"
+                        value={input}
+                        onChange={(e) => setInput(e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Speak or type here..."
+                    />
+                    <button
+                        className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
+                        aria-label="Voice input"
+                        onClick={handleVoiceInput}
+                    >
+                        <FaMicrophone
+                            className={`h-5 w-5 ${isListening ? 'text-red-500' : 'text-gray-600'} hover:text-gray-800`}
                         />
-                        <div className="flex items-center gap-2 shrink-0">
-                            <button
-                                className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
-                                aria-label="Voice input"
-                            >
-                                <FaMicrophone className="text-gray-600 h-5 w-5 hover:text-gray-800" />
-                            </button>
-                            <button
-                                onClick={handleSendMessage}
-                                className="p-2 rounded-full bg-black text-white transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
-                                aria-label="Send message"
-                            >
-                                <FiSend className="h-5 w-5" />
-                            </button>
-                        </div>
-                    </div>
-                    <p className="text-xs sm:text-sm text-gray-500 mt-2 text-center font-medium">
-                        Type your question or tap the microphone
-                    </p>
+                    </button>
+                    <button
+                        className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
+                        aria-label="Send message"
+                        onClick={handleSendMessage}
+                    >
+                        <FiSend className="h-5 w-5 text-gray-600 hover:text-gray-800" />
+                    </button>
                 </div>
             </div>
 
