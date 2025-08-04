@@ -218,19 +218,6 @@ export default function AgentBuilderPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [linkToDelete, setLinkToDelete] = useState<{ index: number; tab: string } | null>(null);
 
-  // const handleDeleteLink = (index: number, tab: string) => {
-  //   // Your existing delete logic here, e.g., remove the link from the state or API call
-  //   console.log(`Deleting link at index ${index} from tab ${tab}`);
-  //   // Example: Update state to remove the link
-  //   if (tab === "partner") {
-  //     setPartnerLinksTableData((prev) => prev.filter((_, i) => i !== index));
-  //   } else if (tab === "aipro") {
-  //     setAiproLinksTableData((prev) => prev.filter((_, i) => i !== index));
-  //   }
-  //   setIsDialogOpen(false); // Close the dialog
-  //   setLinkToDelete(null); // Clear the link to delete
-  // };
-
   const openDeleteDialog = (index: number, tab: string) => {
     setLinkToDelete({ index, tab });
     setIsDialogOpen(true);
@@ -240,15 +227,15 @@ export default function AgentBuilderPage() {
     setIsDialogOpen(false);
     setLinkToDelete(null); // Reset selected link
     mainContentRef.current?.focus(); // Refocus main content
-    // Alternatively, refocus the dropdown trigger (uncomment if preferred):
-    // const triggerIndex = linkToDelete?.index;
-    // if (triggerIndex !== undefined && dropdownRefs.current[triggerIndex]) {
-    //   dropdownRefs.current[triggerIndex]?.focus();
-    // }
   }, [linkToDelete]);
 
   const handlePreviewLink = (index: number, type: "partner" | "aipro" | "paywall") => {
     console.log(aiproLinksTableData[index])
+
+    if(!index) {
+      setSelectedLink(null);
+      return;
+    }
     const link = type === "partner" ? partnerLinksTableData[index] : aiproLinksTableData[index];
     setSelectedLink(link);
     console.log(selectedLink)
@@ -396,19 +383,6 @@ export default function AgentBuilderPage() {
       console.error("Error deleting link:", err);
     }
   };
-
-  // const handleDeleteLink = (index: number, tab: string) => {
-  //   // Your existing delete logic here, e.g., remove the link from the state or API call
-  //   console.log(`Deleting link at index ${index} from tab ${tab}`);
-  //   // Example: Update state to remove the link
-  //   if (tab === "partner") {
-  //     setPartnerLinksTableData((prev) => prev.filter((_, i) => i !== index));
-  //   } else if (tab === "aipro") {
-  //     setAiproLinksTableData((prev) => prev.filter((_, i) => i !== index));
-  //   }
-  //   setIsDialogOpen(false); // Close the dialog
-  //   setLinkToDelete(null); // Clear the link to delete
-  // };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const accessToken = localStorage.getItem("accessToken");
@@ -587,12 +561,12 @@ export default function AgentBuilderPage() {
       description: "Upload image or video and create opening message",
     },
     {
-      id: 3,
+      id: 2,
       title: "Prompts",
       description: "Design conversation starters and branching logic",
     },
     {
-      id: 2,
+      id: 3,
       title: "AI Training",
       description: "Name your agent and provide training instructions",
     },
@@ -1500,30 +1474,6 @@ export default function AgentBuilderPage() {
           break;
 
         case 2:
-          if (!agentConfig.name.trim()) {
-            toast.error("Please provide an agent name.", {
-              position: "top-right",
-              duration: 2000,
-            });
-            return;
-          }
-          if (!agentConfig.trainingInstructions.trim()) {
-            toast.error("Please provide training instructions.", {
-              position: "top-right",
-              duration: 2000,
-            });
-            return;
-          }
-
-          apiUrl = API.ADD_AGENT_DETAILS_2;
-          payload = {
-            agent_name: agentConfig.name,
-            training_instructions: agentConfig.trainingInstructions,
-            // ai_agenet_slug : agentConfig.ai_agent_slug
-          };
-          break;
-
-        case 3:
           if (
             !agentConfig.useConditionalPrompts &&
             agentConfig.prompts.every((prompt) => !prompt.trim())
@@ -1554,6 +1504,30 @@ export default function AgentBuilderPage() {
                 .map((cp) => cp.mainPrompt)
                 .filter((p) => p.trim())
               : agentConfig.prompts.filter((p) => p.trim()),
+          };
+          break;
+
+        case 3:
+          if (!agentConfig.name.trim()) {
+            toast.error("Please provide an agent name.", {
+              position: "top-right",
+              duration: 2000,
+            });
+            return;
+          }
+          if (!agentConfig.trainingInstructions.trim()) {
+            toast.error("Please provide training instructions.", {
+              position: "top-right",
+              duration: 2000,
+            });
+            return;
+          }
+
+          apiUrl = API.ADD_AGENT_DETAILS_2;
+          payload = {
+            agent_name: agentConfig.name,
+            training_instructions: agentConfig.trainingInstructions,
+            // ai_agenet_slug : agentConfig.ai_agent_slug
           };
           break;
 
