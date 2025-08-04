@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react"; // Assuming you're using lucide-react for icons
+import { Loader2 } from "lucide-react";
 
 interface PreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
-linkData: LinkData | null;
+  linkData: LinkData | null;
 }
 
 interface LinkData {
@@ -23,7 +23,7 @@ interface LinkData {
   affiliateLink?: string;
   socialMediaLink?: string;
   status?: number;
-  proceesing?: string;
+  processing?: string;
 }
 
 export default function PreviewModal({ isOpen, onClose, linkData }: PreviewModalProps) {
@@ -35,65 +35,20 @@ export default function PreviewModal({ isOpen, onClose, linkData }: PreviewModal
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch link details from API
-  useEffect(() => {
-    if (!isOpen || !linkData) return;
-
-    const fetchLinkDetails = async () => {
-      setIsLoading(true);
-      setError(null);
-
-      const accessToken = localStorage.getItem("accessToken");
-        if (!accessToken) {
-          setError("No access token found. Please log in.");
-          setIsLoading(false);
-          return;
-        }
-
-      try {
-        const response = await fetch(`https://api.tagwell.co/api/v4/ai-agent/get-agent-link/details?id=${linkData.id}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`API request failed with status ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log(data.data.title);
-        setLink(data.data);
-        setTitle(data.data.title || "");
-        setDescription(data.data.description || "");
-        setAffiliateLink(data.data.affiliateLink || "");
-        setSocialMediaPost(data.data.socialMediaLink || "");
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch link details");
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchLinkDetails();
-  }, [isOpen, linkData?.id]);
-
-  const handleRefresh = async () => {
-    if (!linkData?.id) return;
+  const fetchLinkDetails = async (id: number) => {
     setIsLoading(true);
     setError(null);
 
     const accessToken = localStorage.getItem("accessToken");
-      if (!accessToken) {
-        setError("No access token found. Please log in.");
-        setIsLoading(false);
-        return;
-      }
+    if (!accessToken) {
+      console.error("No access token found");
+      setError("No access token found. Please log in.");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      const response = await fetch(`https://api.tagwell.co/api/v4/ai-agent/get-agent-link/details?id=${linkData.id}`, {
+      const response = await fetch(`https://api.tagwell.co/api/v4/ai-agent/get-agent-link/details?id=${id}&t=${Date.now()}`, {
         method: "GET",
         headers: {
           Authorization: `Bearer ${accessToken}`,
@@ -105,18 +60,46 @@ export default function PreviewModal({ isOpen, onClose, linkData }: PreviewModal
         throw new Error(`API request failed with status ${response.status}`);
       }
 
-      const data: LinkData = await response.json();
-      console.log(data);
-      setLink(data);
-      setTitle(data.title || "");
-      setDescription(data.description || "");
-      setAffiliateLink(data.affiliateLink || "");
-      setSocialMediaPost(data.socialMediaLink || "");
+      const data = await response.json();
+      console.log("API Response:", data);
+
+      if (!data.data) {
+        throw new Error("Invalid response structure: 'data' field missing");
+      }
+
+      const fetchedData = data.data;
+      console.log("Fetched Data:", fetchedData);
+
+      setLink(fetchedData);
+      setTitle(fetchedData.title || "");
+      setDescription(fetchedData.description || "");
+      setAffiliateLink(fetchedData.affiliateLink || "");
+      setSocialMediaPost(fetchedData.socialMediaLink || "");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to refresh link details");
+      console.error("Fetch Error:", err);
+      setError(err instanceof Error ? err.message : "Failed to fetch link details");
     } finally {
       setIsLoading(false);
     }
+  };
+
+  useEffect(() => {
+    if (isOpen && linkData?.id) {
+      fetchLinkDetails(linkData.id);
+    }
+  }, [isOpen, linkData?.id]);
+
+  useEffect(() => {
+    console.log("State Updated:", { link, title, description, affiliateLink, socialMediaPost });
+  }, [link, title, description, affiliateLink, socialMediaPost]);
+
+  const handleRefresh = async () => {
+    if (!linkData?.id) {
+      console.error("No linkData ID provided");
+      setError("No link ID available for refresh");
+      return;
+    }
+    fetchLinkDetails(linkData.id);
   };
 
   const handleUpdate = async () => {
@@ -125,24 +108,25 @@ export default function PreviewModal({ isOpen, onClose, linkData }: PreviewModal
     setError(null);
 
     const updatedData = {
+      link_id: linkData.id,
       title,
       description,
-      affiliateLink,
+      // affiliateLink,
       socialMediaLink: socialMediaPost,
     };
 
-        const accessToken = localStorage.getItem("accessToken");
-      if (!accessToken) {
-        setError("No access token found. Please log in.");
-        setIsLoading(false);
-        return;
-      }
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      console.error("No access token found");
+      setError("No access token found. Please log in.");
+      setIsLoading(false);
+      return;
+    }
 
     try {
-      // Placeholder: Replace with actual update API endpoint (e.g., PUT or PATCH)
-      const updateUrl = `https://api.tagwell.co/api/v4/ai-agent/update-agent-link?id=${linkData.id}`;
+      const updateUrl = `https://api.tagwell.co/api/v4/ai-agent/update-agent-link/details`;
       const response = await fetch(updateUrl, {
-        method: "PUT", // or "PATCH" depending on API
+        method: "PUT",
         headers: {
           Authorization: `Bearer ${accessToken}`,
           "Content-Type": "application/json",
@@ -155,8 +139,9 @@ export default function PreviewModal({ isOpen, onClose, linkData }: PreviewModal
       }
 
       console.log("Update successful:", updatedData);
-      onClose(); // Close modal after successful update
+      onClose();
     } catch (err) {
+      console.error("Update Error:", err);
       setError(err instanceof Error ? err.message : "Failed to update link");
     } finally {
       setIsLoading(false);
@@ -186,11 +171,18 @@ export default function PreviewModal({ isOpen, onClose, linkData }: PreviewModal
         {error && (
           <div className="text-red-500 text-center mb-4">
             {error}
+            <Button onClick={handleRefresh} className="ml-2 text-sm">
+              Retry
+            </Button>
           </div>
         )}
         {!isLoading && !error && link && (
           <>
             <div className="relative w-full h-64 rounded-md mb-1">
+              <div
+                className="absolute inset-0 bg-cover bg-center rounded-md"
+                style={{ backgroundImage: link.image ? `url(${link.image})` : "url(https://via.placeholder.com/300x400?text=Scenic+Document+Icon)" }}
+              />
               {link.image ? (
                 <img src={link.image} alt={link.title || "Product Preview"} className="w-full h-64 object-cover rounded-md" />
               ) : (
@@ -206,16 +198,25 @@ export default function PreviewModal({ isOpen, onClose, linkData }: PreviewModal
                 className="absolute top-2 right-2 w-8 h-8 p-0 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-full"
                 disabled={isLoading}
               >
-                ↻
+                {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "↻"}
               </Button>
             </div>
-            <div className="flex items-center space-x-4 mb-1">
-              {link.brand && <h2 className="text-xl font-semibold text-gray-900">{link.brand}</h2>}
-              {link.favicon ? (
-                <img src={link.favicon} alt={`${link.brand} Logo`} className="w-12 h-12 object-contain" />
-              ) : (
-                <img src="https://via.placeholder.com/10x10?text=Scenic+Document+Icon" className="w-full h-12 object-contain" />
-              )}
+            <div className="relative w-full border">
+              <div className="flex items-center space-x-4">
+                {link.favicon ? (
+                  <img
+                    src={link.favicon}
+                    alt={`${link.brand} Logo`}
+                    className="w-12 h-12 rounded-full object-cover ml-5"
+                  />
+                ) : (
+                  <img
+                    src="https://via.placeholder.com/10x10?text=Scenic+Document+Icon"
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                )}
+                {link.brand && <h2 className="text-xl font-semibold text-gray-900">{link.brand}</h2>}
+              </div>
             </div>
             <div className="mb-1">
               <label htmlFor="title" className="text-sm text-gray-600 font-semibold">
@@ -245,13 +246,20 @@ export default function PreviewModal({ isOpen, onClose, linkData }: PreviewModal
               <label htmlFor="affiliateLink" className="text-sm text-gray-600 font-semibold">
                 Affiliate Link
               </label>
-              <Input
-                id="affiliateLink"
-                value={affiliateLink}
-                onChange={(e) => setAffiliateLink(e.target.value)}
-                className="border-none rounded-none"
-                disabled={isLoading}
-              />
+              <a
+                href={affiliateLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline"
+              >
+                <Input
+                  id="affiliateLink"
+                  value={affiliateLink || "No affiliate link available"}
+                  className="border-none rounded-none disabled:opacity-50 disabled:cursor-not-allowed text-blue-600 cursor-pointer"
+                  readOnly
+                  // disabled
+                />
+              </a>
             </div>
             <div className="mb-1">
               <label htmlFor="socialMediaPost" className="text-sm text-gray-600 font-semibold">

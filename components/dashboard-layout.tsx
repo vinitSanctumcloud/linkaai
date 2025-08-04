@@ -103,7 +103,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
     { name: 'Analytics', href: '/analytics', icon: BarChart3 },
     { name: 'Settings', href: '/settings', icon: Settings },
     {
-      name: 'The Creators Marketplace',
+      name: 'Linka Marketpalce',
       href: '/affiliatemarketplace',
       icon: Store,
       comingSoon: true,
@@ -288,7 +288,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
                 isMobile ? 'opacity-100' : 'lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200'
               )}
             >
-              Soon
+              Coming Soon
             </span>
           )}
         </a>
@@ -310,7 +310,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               isMobile ? 'opacity-100' : 'lg:opacity-0 lg:group-hover:opacity-100 transition-opacity duration-200'
             )}
           >
-            Soon
+            Coming Soon
           </span>
         )}
       </Link>

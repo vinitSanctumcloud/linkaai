@@ -67,6 +67,7 @@ import { API } from "@/config/api";
 import PreviewModal from "@/components/agent/preview-modal";
 import { useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/types";
+import ConfirmDialog from "@/components/agent/confirmDialog";
 
 // import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 // Interfaces remain unchanged
@@ -214,7 +215,39 @@ export default function AgentBuilderPage() {
   const { agent: agentDetails } = useSelector((state: RootState) => state.agents)
   const mainContentRef = useRef<HTMLDivElement>(null);
 
-  const handlePreviewLink = (index: number, type: "partner" | "aipro") => {
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState<{ index: number; tab: string } | null>(null);
+
+  // const handleDeleteLink = (index: number, tab: string) => {
+  //   // Your existing delete logic here, e.g., remove the link from the state or API call
+  //   console.log(`Deleting link at index ${index} from tab ${tab}`);
+  //   // Example: Update state to remove the link
+  //   if (tab === "partner") {
+  //     setPartnerLinksTableData((prev) => prev.filter((_, i) => i !== index));
+  //   } else if (tab === "aipro") {
+  //     setAiproLinksTableData((prev) => prev.filter((_, i) => i !== index));
+  //   }
+  //   setIsDialogOpen(false); // Close the dialog
+  //   setLinkToDelete(null); // Clear the link to delete
+  // };
+
+  const openDeleteDialog = (index: number, tab: string) => {
+    setLinkToDelete({ index, tab });
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDeleteModal = useCallback(() => {
+    setIsDialogOpen(false);
+    setLinkToDelete(null); // Reset selected link
+    mainContentRef.current?.focus(); // Refocus main content
+    // Alternatively, refocus the dropdown trigger (uncomment if preferred):
+    // const triggerIndex = linkToDelete?.index;
+    // if (triggerIndex !== undefined && dropdownRefs.current[triggerIndex]) {
+    //   dropdownRefs.current[triggerIndex]?.focus();
+    // }
+  }, [linkToDelete]);
+
+  const handlePreviewLink = (index: number, type: "partner" | "aipro" | "paywall") => {
     console.log(aiproLinksTableData[index])
     const link = type === "partner" ? partnerLinksTableData[index] : aiproLinksTableData[index];
     setSelectedLink(link);
@@ -228,6 +261,154 @@ export default function AgentBuilderPage() {
     mainContentRef.current?.focus();
   };
 
+  const handleDeleteLink = async (index: number, type: "partner" | "aipro" | "paywall") => {
+    const linkId = type === "partner"
+      ? partnerLinksTableData[index]?.id
+      : aiproLinksTableData[index]?.id;
+
+    if (!linkId) {
+      toast.error("No ID found for this link.", {
+        position: "top-right",
+        duration: 2000,
+      });
+      return;
+    }
+
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      toast.error("No access token found. Please log in.", {
+        position: "top-right",
+        duration: 2000,
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        API.DELETE_LINK(linkId),
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+        }
+      );
+
+      let link_type = activeTab === "partner" ? "affiliate" : selectedMonetizationOption;
+      if (response.ok) {
+        // Refetch links to update table data
+        const fetchLinksResponse = await fetch(
+          API.LINK_LIST(link_type, page),
+          {
+            method: "GET",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+
+        if (fetchLinksResponse.ok) {
+          const data = await fetchLinksResponse.json();
+          const links = data.data.link_list;
+
+          if (type === "partner") {
+            const mappedLinks: PartnerLink[] = links.map((link: any) => ({
+              id: link.id,
+              category: link.category_name || "",
+              affiliateLink: link.url || "",
+              brandName: link.brand_name || "",
+              socialMediaLink: link.social_media_link || "",
+              productReview: link.product_review || "",
+              status: link.status,
+            }));
+
+            setPartnerLinksTableData(mappedLinks);
+            if (mappedLinks.length === 0 && page > 1) {
+              setPage((prev) => prev - 1);
+            }
+            toast.success("Partner link deleted successfully!", {
+              position: "top-right",
+              duration: 2000,
+            });
+          } else {
+            const mappedLinks: LinkaProMonetization[] = links.map((link: any) => {
+              if (link.type === "products") {
+                return {
+                  id: link.id,
+                  proType: "products",
+                  category: link.category_name || "",
+                  affiliateLink: link.affiliate_url || "",
+                  categoryUrl: link.url || "",
+                  status: link.status,
+                };
+              } else if (link.type === "blogs") {
+                return {
+                  id: link.id,
+                  proType: "blogs",
+                  category: link.category_name || "",
+                  blogUrl: link.url || "",
+                  status: link.status,
+                };
+              } else if (link.type === "websites") {
+                return {
+                  id: link.id,
+                  proType: "websites",
+                  category: link.category_name || "",
+                  websiteUrl: link.url || "",
+                  status: link.status,
+                };
+              }
+              return null;
+            }).filter((link: any) => link !== null);
+            setAiproLinksTableData(mappedLinks);
+            if (mappedLinks.length === 0 && page > 1) {
+              setPage((prev) => prev - 1);
+            }
+            toast.success("AI Pro monetization link deleted successfully!", {
+              position: "top-right",
+              duration: 2000,
+            });
+            setIsDialogOpen(false); // Close the dialog
+            setLinkToDelete(null); // Clear the link to delete
+            mainContentRef.current?.focus();
+          }
+        } else {
+          const errorData = await fetchLinksResponse.json();
+          toast.error(`Failed to refresh links: ${errorData.message || "Unknown error"}`, {
+            position: "top-right",
+            duration: 2000,
+          });
+        }
+      } else {
+        const errorData = await response.json();
+        toast.error(`Failed to delete link: ${errorData.message || "Unknown error"}`, {
+          position: "top-right",
+          duration: 2000,
+        });
+      }
+    } catch (err) {
+      toast.error("An error occurred while deleting the link.", {
+        position: "top-right",
+        duration: 2000,
+      });
+      console.error("Error deleting link:", err);
+    }
+  };
+
+  // const handleDeleteLink = (index: number, tab: string) => {
+  //   // Your existing delete logic here, e.g., remove the link from the state or API call
+  //   console.log(`Deleting link at index ${index} from tab ${tab}`);
+  //   // Example: Update state to remove the link
+  //   if (tab === "partner") {
+  //     setPartnerLinksTableData((prev) => prev.filter((_, i) => i !== index));
+  //   } else if (tab === "aipro") {
+  //     setAiproLinksTableData((prev) => prev.filter((_, i) => i !== index));
+  //   }
+  //   setIsDialogOpen(false); // Close the dialog
+  //   setLinkToDelete(null); // Clear the link to delete
+  // };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const accessToken = localStorage.getItem("accessToken");
@@ -804,139 +985,6 @@ export default function AgentBuilderPage() {
       // setEditingLinkId(link.id || null); 
       setIsMonetizationModalOpen(true);
       console.log("Editing aipro link:", link);
-    }
-  };
-
-  const handleDeleteLink = async (index: number, type: "partner" | "aipro") => {
-    const linkId = type === "partner"
-      ? partnerLinksTableData[index]?.id
-      : aiproLinksTableData[index]?.id;
-
-    if (!linkId) {
-      toast.error("No ID found for this link.", {
-        position: "top-right",
-        duration: 2000,
-      });
-      return;
-    }
-
-    const accessToken = localStorage.getItem("accessToken");
-    if (!accessToken) {
-      toast.error("No access token found. Please log in.", {
-        position: "top-right",
-        duration: 2000,
-      });
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        API.DELETE_LINK(linkId),
-        {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
-
-      let link_type = activeTab === "partner" ? "affiliate" : selectedMonetizationOption;
-      if (response.ok) {
-        // Refetch links to update table data
-        const fetchLinksResponse = await fetch(
-          API.LINK_LIST(link_type, page),
-          {
-            method: "GET",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${accessToken}`,
-            },
-          }
-        );
-
-        if (fetchLinksResponse.ok) {
-          const data = await fetchLinksResponse.json();
-          const links = data.data.link_list;
-
-          if (type === "partner") {
-            const mappedLinks: PartnerLink[] = links.map((link: any) => ({
-              id: link.id,
-              category: link.category_name || "",
-              affiliateLink: link.url || "",
-              brandName: link.brand_name || "",
-              socialMediaLink: link.social_media_link || "",
-              productReview: link.product_review || "",
-              status: link.status,
-            }));
-
-            setPartnerLinksTableData(mappedLinks);
-            if (mappedLinks.length === 0 && page > 1) {
-              setPage((prev) => prev - 1);
-            }
-            toast.success("Partner link deleted successfully!", {
-              position: "top-right",
-              duration: 2000,
-            });
-          } else {
-            const mappedLinks: LinkaProMonetization[] = links.map((link: any) => {
-              if (link.type === "products") {
-                return {
-                  id: link.id,
-                  proType: "products",
-                  category: link.category_name || "",
-                  affiliateLink: link.affiliate_url || "",
-                  categoryUrl: link.url || "",
-                  status: link.status,
-                };
-              } else if (link.type === "blogs") {
-                return {
-                  id: link.id,
-                  proType: "blogs",
-                  category: link.category_name || "",
-                  blogUrl: link.url || "",
-                  status: link.status,
-                };
-              } else if (link.type === "websites") {
-                return {
-                  id: link.id,
-                  proType: "websites",
-                  category: link.category_name || "",
-                  websiteUrl: link.url || "",
-                  status: link.status,
-                };
-              }
-              return null;
-            }).filter((link: any) => link !== null);
-            setAiproLinksTableData(mappedLinks);
-            if (mappedLinks.length === 0 && page > 1) {
-              setPage((prev) => prev - 1);
-            }
-            toast.success("AI Pro monetization link deleted successfully!", {
-              position: "top-right",
-              duration: 2000,
-            });
-          }
-        } else {
-          const errorData = await fetchLinksResponse.json();
-          toast.error(`Failed to refresh links: ${errorData.message || "Unknown error"}`, {
-            position: "top-right",
-            duration: 2000,
-          });
-        }
-      } else {
-        const errorData = await response.json();
-        toast.error(`Failed to delete link: ${errorData.message || "Unknown error"}`, {
-          position: "top-right",
-          duration: 2000,
-        });
-      }
-    } catch (err) {
-      toast.error("An error occurred while deleting the link.", {
-        position: "top-right",
-        duration: 2000,
-      });
-      console.error("Error deleting link:", err);
     }
   };
 
@@ -2837,7 +2885,8 @@ export default function AgentBuilderPage() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
-                                  onClick={() => handleDeleteLink(index, "partner")}
+                                  // onClick={() => handleDeleteLink(index, "partner")}
+onClick={() => openDeleteDialog(index, "partner")}
                                 >
                                   Delete
                                 </DropdownMenuItem>
@@ -2991,7 +3040,8 @@ export default function AgentBuilderPage() {
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
-                                    onClick={() => handleDeleteLink(index, "aipro")}
+                                    // onClick={() => handleDeleteLink(index, "aipro")}
+                                    onClick={() => openDeleteDialog(index, "aipro")}
                                   >
                                     Delete
                                   </DropdownMenuItem>
@@ -3033,6 +3083,13 @@ export default function AgentBuilderPage() {
                   {activeTab === "partner" ? "No partner links added yet." : "No monetization links added yet."}
                 </p>
               )}
+              {linkToDelete && (
+        <ConfirmDialog
+          open={isDialogOpen}
+          onOpenChange={setIsDialogOpen}
+          onConfirm={() => handleDeleteLink(linkToDelete.index, activeTab)}
+        />
+      )}
               {totalPages > 1 && (
                 <div className="flex justify-between items-center mt-4">
                   <div className="flex items-center gap-2">
@@ -3226,12 +3283,6 @@ export default function AgentBuilderPage() {
   const handleRetryLink = (index: any) => {
     console.log(`Retry link at index ${index}`, agentConfig.partnerLinks[index]);
     console.log('Make API call to retry processing here');
-  };
-
-  // For Delete action
-  const handleDeleteLink1 = (index: any) => {
-    console.log(`Delete link at index ${index}`, agentConfig.partnerLinks[index]);
-    console.log('Make API call to delete here');
   };
 
   // For Update Image action
@@ -3550,13 +3601,12 @@ export default function AgentBuilderPage() {
                               <TooltipProvider>
                                 <Tooltip delayDuration={0}>
                                   <TooltipTrigger asChild>
-                                    <button
-                                      type="button"
-                                      className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                    <div
+                                      className="text-linka-russian-violet hover:text-linka-carolina-blue cursor-pointer"
                                       aria-label="Category tooltip"
                                     >
                                       <Info className="w-3 h-3 sm:w-4 sm:h-4" />
-                                    </button>
+                                    </div>
                                   </TooltipTrigger>
                                   <TooltipContent className="whitespace-pre-line">
                                     {CATEGORY_PLACEHOLDER}
@@ -3824,13 +3874,12 @@ export default function AgentBuilderPage() {
                                       <TooltipProvider>
                                         <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
-                                            <button
-                                              type="button"
-                                              className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            <div
+                                              className="text-linka-russian-violet hover:text-linka-carolina-blue cursor-pointer"
                                               aria-label="Category tooltip"
                                             >
                                               <Info className="w-3 h-3 sm:w-4 sm:h-4" />
-                                            </button>
+                                            </div>
                                           </TooltipTrigger>
                                           <TooltipContent className="whitespace-pre-line">
                                             {CATEGORY_BLOGS_PLACEHOLDER}
@@ -3905,13 +3954,12 @@ export default function AgentBuilderPage() {
                                       <TooltipProvider>
                                         <Tooltip delayDuration={0}>
                                           <TooltipTrigger asChild>
-                                            <button
-                                              type="button"
-                                              className="text-linka-russian-violet hover:text-linka-carolina-blue focus:outline-none"
+                                            <div
+                                              className="text-linka-russian-violet hover:text-linka-carolina-blue cursor-pointer"
                                               aria-label="Category tooltip"
                                             >
                                               <Info className="w-3 h-3 sm:w-4 sm:h-4" />
-                                            </button>
+                                            </div>
                                           </TooltipTrigger>
                                           <TooltipContent className="whitespace-pre-line">
                                             {CATEGORY_PRODUCTS_PLACEHOLDER}
