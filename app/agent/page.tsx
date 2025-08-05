@@ -49,6 +49,8 @@ import {
   Trash2Icon,
   X,
   Minus,
+  VolumeX,
+  Volume2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -218,6 +220,18 @@ export default function AgentBuilderPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [linkToDelete, setLinkToDelete] = useState<{ index: number; tab: string } | null>(null);
 
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [isMuted, setIsMuted] = useState(true);
+  // const [imageError, setImageError] = useState(false);
+
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
+
   const openDeleteDialog = (index: number, tab: string) => {
     setLinkToDelete({ index, tab });
     setIsDialogOpen(true);
@@ -232,7 +246,7 @@ export default function AgentBuilderPage() {
   const handlePreviewLink = (index: number, type: "partner" | "aipro" | "paywall") => {
     console.log(aiproLinksTableData[index])
 
-    if(!index) {
+    if (!index) {
       setSelectedLink(null);
       return;
     }
@@ -1976,7 +1990,6 @@ export default function AgentBuilderPage() {
                           <video
                             src={agentConfig.greetingMedia}
                             autoPlay
-                            muted
                             loop
                             playsInline
                             className="w-full h-full object-cover rounded-full"
@@ -2860,7 +2873,7 @@ export default function AgentBuilderPage() {
                                 <DropdownMenuItem
                                   className="text-xs cursor-pointer text-red-500 hover:bg-red-50 p-2 rounded"
                                   // onClick={() => handleDeleteLink(index, "partner")}
-onClick={() => openDeleteDialog(index, "partner")}
+                                  onClick={() => openDeleteDialog(index, "partner")}
                                 >
                                   Delete
                                 </DropdownMenuItem>
@@ -3058,12 +3071,12 @@ onClick={() => openDeleteDialog(index, "partner")}
                 </p>
               )}
               {linkToDelete && (
-        <ConfirmDialog
-          open={isDialogOpen}
-          onOpenChange={setIsDialogOpen}
-          onConfirm={() => handleDeleteLink(linkToDelete.index, activeTab)}
-        />
-      )}
+                <ConfirmDialog
+                  open={isDialogOpen}
+                  onOpenChange={setIsDialogOpen}
+                  onConfirm={() => handleDeleteLink(linkToDelete.index, activeTab)}
+                />
+              )}
               {totalPages > 1 && (
                 <div className="flex justify-between items-center mt-4">
                   <div className="flex items-center gap-2">
@@ -3137,21 +3150,49 @@ onClick={() => openDeleteDialog(index, "partner")}
                   <div className="bg-gray-50 rounded-xl p-4 sm:p-6 h-[500px] md:h-[600px] flex flex-col w-full max-w-md mx-auto">
                     {/* Avatar Container */}
                     <div className="flex justify-center mb-4 sm:mb-6">
-                      <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full overflow-hidden bg-gradient-to-br from-orange-500 to-blue-400 flex items-center justify-center shadow-md">
+                      <div className="w-24 h-24 sm:w-32 sm:h-32 md:w-40 md:h-40 lg:w-48 lg:h-48 rounded-full  bg-gradient-to-br from-orange-500 to-orange-400 flex items-center justify-center shadow-md">
                         {agentConfig.greetingMedia && agentConfig.greetingMediaType && !imageError ? (
                           agentConfig.greetingMediaType.toLowerCase() === "video" ? (
-                            <video
-                              src={agentConfig.greetingMedia}
-                              autoPlay
-                              muted
-                              loop
-                              playsInline
-                              className="w-full h-full object-cover rounded-full"
-                              onError={() => toast.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.", {
-                                position: "top-right",
-                                duration: 2000,
-                              })}
-                            />
+                            <div className="relative w-full h-full">
+                              <video
+                                ref={videoRef}
+                                src={agentConfig.greetingMedia}
+                                autoPlay
+                                muted
+                                loop
+                                playsInline
+                                className="w-full h-full object-cover rounded-full"
+                                onError={() =>
+                                  toast.error("Error loading video. Please ensure the file is a valid MP4, WebM, or OGG.", {
+                                    position: "top-right",
+                                    duration: 2000,
+                                  })
+                                }
+                              />
+                              <TooltipProvider>
+                                <Tooltip delayDuration={0}>
+                                  <TooltipTrigger asChild>
+                                    <button
+                                      onClick={toggleMute}
+                                      className="absolute top-2 right-2 bg-white/80 border border-orange-400 text-orange-600 rounded-full p-1.5 cursor-pointer transition-all duration-300 hover:bg-orange-400 hover:text-white shadow-sm flex items-center justify-center"
+                                    >
+                                      {isMuted ? (
+                                        <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
+                                      ) : (
+                                        <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
+                                      )}
+                                      <span className="sr-only">{isMuted ? 'Unmute video' : 'Mute video'}</span>
+                                    </button>
+                                  </TooltipTrigger>
+                                  <TooltipContent
+                                    className="bg-white text-gray-800 border border-gray-200 rounded-md p-1 text-xs shadow-sm max-w-[150px]"
+                                    sideOffset={5}
+                                  >
+                                    <p>{isMuted ? 'Unmute the video' : 'Mute the video'}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                           ) : (
                             <img
                               src={agentConfig.greetingMedia}
@@ -3191,7 +3232,7 @@ onClick={() => openDeleteDialog(index, "partner")}
                     <div className="flex-1 overflow-y-auto px-1 sm:px-2">
                       <div className="space-y-3">
                         <div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 mb-3 sm:mb-4 items-center">
                             {(agentConfig.useConditionalPrompts && agentConfig.conditionalPrompts.length > 0
                               ? agentConfig.conditionalPrompts.slice(0, 2).map((cp) => cp.mainPrompt)
                               : agentConfig.prompts.filter((prompt) => prompt.trim() !== "")
@@ -3200,7 +3241,7 @@ onClick={() => openDeleteDialog(index, "partner")}
                                 key={index}
                                 className="border border-gray-300 rounded-md py-2 px-3 text-xs sm:text-sm hover:bg-gray-100 cursor-pointer text-left transition-colors duration-200"
                               >
-                                <span className="font-medium text-gray-800 line-clamp-2">
+                                <span className="font-medium text-gray-800 line-clamp-2 flex text-center">
                                   {prompt || `Prompt ${index + 1}`}
                                 </span>
                               </button>

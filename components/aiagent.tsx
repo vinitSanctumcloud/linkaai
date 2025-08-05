@@ -6,6 +6,9 @@ import { FaMicrophone } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
 import { IoClose } from 'react-icons/io5';
 import ReactMarkdown from 'react-markdown';
+import { TooltipContent, Tooltip, TooltipProvider, TooltipTrigger } from '@radix-ui/react-tooltip';
+// import { Tooltip } from 'recharts';
+import { Volume2, VolumeX } from 'lucide-react';
 
 // Define SpeechRecognition interface for TypeScript
 interface SpeechRecognition extends EventTarget {
@@ -113,9 +116,17 @@ export function AiAgent({
     const [recognition, setRecognition] = useState<SpeechRecognition | null>(null);
     const cardContainerRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+    const videoRef = useRef<HTMLVideoElement>(null);
+
+
     const toggleMute = () => {
-        setIsMuted((prev) => !prev);
+        if (videoRef.current) {
+            videoRef.current.muted = !isMuted;
+            setIsMuted(!isMuted);
+        }
     };
+
+
 
     const scrollCards = (direction: 'prev' | 'next', index: number) => {
         const container = cardContainerRefs.current[index];
@@ -213,17 +224,43 @@ export function AiAgent({
                 {/* Header with Agent Info */}
                 {showWelcome && (
                     <div className="flex flex-col items-center justify-center flex-shrink-0 py-2 sm:py-4">
-                        <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full overflow-hidden border-4 border-white shadow-md mb-2">
+                        <div className="w-48 h-48 sm:w-56 sm:h-56 rounded-full  border-4 border-white shadow-md mb-2">
                             {agentDetails?.greeting_media_type === 'video' ? (
-                                <video
-                                    src={agentDetails?.greeting_media_url ?? ''}
-                                    loop
-                                    playsInline
-                                    autoPlay
-                                    muted={isMuted}
-                                    onClick={toggleMute}
-                                    className="w-full h-full object-cover object-center cursor-pointer"
-                                />
+                                <div className="relative w-full h-full">
+                                    <video
+                                        ref={videoRef}
+                                        src={agentDetails?.greeting_media_url ?? ''}
+                                        loop
+                                        playsInline
+                                        autoPlay
+                                        muted={isMuted}
+                                        onClick={toggleMute}
+                                        className="w-full h-full object-cover object-center cursor-pointer rounded-full"
+                                    />
+                                    <TooltipProvider>
+                                        <Tooltip delayDuration={0}>
+                                            <TooltipTrigger asChild>
+                                                <button
+                                      onClick={toggleMute}
+                                      className="absolute top-2 right-2 bg-white/80 border border-orange-400 text-orange-600 rounded-full p-1.5 cursor-pointer transition-all duration-300 hover:bg-orange-400 hover:text-white shadow-sm flex items-center justify-center"
+                                    >
+                                      {isMuted ? (
+                                        <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
+                                      ) : (
+                                        <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" strokeWidth={2} />
+                                      )}
+                                      <span className="sr-only">{isMuted ? 'Unmute video' : 'Mute video'}</span>
+                                    </button>
+                                            </TooltipTrigger>
+                                            <TooltipContent
+                                                className="bg-white text-gray-800 border border-gray-200 rounded-md p-1 text-xs shadow-sm max-w-[150px]"
+                                                sideOffset={5}
+                                            >
+                                                <p>{isMuted ? 'Unmute the video' : 'Mute the video'}</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                    </TooltipProvider>
+                                </div>
                             ) : (
                                 <img
                                     src={agentDetails?.greeting_media_url ?? 'https://via.placeholder.com/150'}
@@ -249,7 +286,7 @@ export function AiAgent({
                             .map((prompt) => (
                                 <button
                                     key={prompt.id}
-                                    className="w-full text-base font-semibold bg-white text-gray-800 py-2 px-4 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm border border-gray-200 hover:border-gray-300"
+                                    className="w-full text-base font-extralight text-[9.5px] bg-white text-gray-800 py-1 px-1 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm border border-gray-200 hover:border-gray-300"
                                     onClick={() => {
                                         setInput(prompt.prompt_text);
                                         setTimeout(handleSendMessage, 100);
@@ -386,32 +423,42 @@ export function AiAgent({
                 </div>
 
                 {/* Input Area */}
-                <div className="flex items-center space-x-2 p-4">
-                    <input
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        className="flex-1 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="Speak or type here..."
-                    />
-                    <button
-                        className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
-                        aria-label="Voice input"
-                        onClick={handleVoiceInput}
-                    >
-                        <FaMicrophone
-                            className={`h-5 w-5 ${isListening ? 'text-red-500' : 'text-gray-600'} hover:text-gray-800`}
+                <div className="flex items-center gap-2 p-4 bg-white rounded-lg shadow-sm">
+                    <div className="relative flex-1">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            className="w-full p-3 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2  placeholder-gray-400 text-[10px]"
+                            placeholder="Speak or type here..."
                         />
-                    </button>
-                    <button
-                        className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200 outline-none focus:outline-none focus:ring-0"
-                        aria-label="Send message"
-                        onClick={handleSendMessage}
-                    >
-                        <FiSend className="h-5 w-5 text-gray-600 hover:text-gray-800" />
-                    </button>
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center ">
+                            {/* Always show microphone button */}
+                            <button
+                                onClick={handleVoiceInput}
+                                className={`p-2 transition-colors rounded-full ${isListening ? 'bg-red-50' : 'hover:bg-gray-100'} `}
+                                aria-label="Voice input"
+                            >
+                                <FaMicrophone className={`w-4 h-4 ${isListening ? 'text-red-500 animate-pulse' : 'text-gray-600 hover:text-gray-800'}`} />
+                            </button>
+
+                            {/* Show send button only when there's input (but always takes space) */}
+                            <button
+                                onClick={handleSendMessage}
+                                disabled={input.length === 0}
+                                className={`p-2 transition-colors rounded-full'text-white rounded-full hover:bg-blue-50' `}
+                                aria-label="Send message"
+                            >
+                                <FiSend className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
+                <p className="text-[9px] sm:text-sm text-gray-500  text-center font-medium px-2 py-1">
+                    Type your question or tap the microphone
+                </p>
             </div>
 
             <style jsx>{`
