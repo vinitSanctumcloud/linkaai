@@ -188,7 +188,7 @@ export function AiAgent({
 
 
     return (
-        <div className="min-h-screen w-full py-4 relative bg-transparent">
+        <div className="">
             <Head>
                 <title>{pageTitle}</title>
                 <meta name="description" content={pageDescription} />
