@@ -286,7 +286,7 @@ export function AiAgent({
                             .map((prompt) => (
                                 <button
                                     key={prompt.id}
-                                    className="w-full text-base font-extralight text-[9.5px] bg-white text-gray-800 py-1 px-1 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm border border-gray-200 hover:border-gray-300"
+                                    className="w-full text-base font-extralight text-[9px] bg-white text-gray-800 py-1 px-1 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm border border-gray-200 hover:border-gray-300"
                                     onClick={() => {
                                         setInput(prompt.prompt_text);
                                         setTimeout(handleSendMessage, 100);
