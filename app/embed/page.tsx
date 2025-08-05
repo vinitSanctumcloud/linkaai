@@ -122,7 +122,7 @@ export default function EmbedPage() {
     widget.style.height = '${embedSize.height}';
     widget.style.border = 'none';
     widget.style.borderRadius = '10px';
-    widget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
+    widget.style.boxShadow = '';
     widget.style.position = 'fixed';
     widget.style.bottom = '.5rem';
     widget.style.right = '1rem';
