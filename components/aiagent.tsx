@@ -430,7 +430,7 @@ export function AiAgent({
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            className="w-full p-3 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2  placeholder-gray-400 text-[10px]"
+                            className="w-full p-3 pr-20 border border-gray-300 rounded-lg focus:outline-none focus:ring-2  placeholder-gray-400 text-[13px]"
                             placeholder="Speak or type here..."
                         />
                         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center ">
