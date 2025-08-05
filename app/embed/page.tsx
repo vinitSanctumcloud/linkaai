@@ -113,23 +113,34 @@ export default function EmbedPage() {
 
   const widgetCode = agentSlug
     ? `<!-- EarnLinks.AI Chat Widget -->
-<div id="earnlinks-chat-widget" style="display: inline-block;"></div>
+<div id="earnlinks-chat-widget"></div>
 <script>
   (function() {
     var widget = document.createElement('iframe');
-    widget.src = '${chatUrl1}';
-    widget.style.width = '${embedSize.width}';
-    widget.style.height = '${embedSize.height}';
+    widget.src = 'https://linkaai.vercel.app/liveagent1/jafar-agent-32663';
+    widget.style.width = '100%';
+    widget.style.height = '750px';
     widget.style.border = 'none';
     widget.style.borderRadius = '10px';
-    widget.style.boxShadow = '';
+    widget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
     widget.style.position = 'fixed';
     widget.style.bottom = '.5rem';
     widget.style.right = '1rem';
     widget.style.zIndex = '1000';
     widget.frameBorder = '0';
     widget.setAttribute('allowtransparency', 'true');
+    widget.id = 'chat-widget-iframe';
     document.getElementById('earnlinks-chat-widget').appendChild(widget);
+
+    // Listen for messages from the iframe (if supported by the widget)
+    window.addEventListener('message', function(event) {
+      // Replace 'chatClosed' with the actual event name or data sent by the widget
+      if (event.data === 'chatClosed') {
+        widget.style.display = 'none'; // Hide the iframe
+      } else if (event.data === 'chatOpened') {
+        widget.style.display = 'block'; // Show the iframe
+      }
+    });
   })();
 </script>`
     : "// Please create an AI Agent to generate the widget code.";
