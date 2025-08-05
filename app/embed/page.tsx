@@ -113,7 +113,7 @@ export default function EmbedPage() {
 
   const widgetCode = agentSlug
     ? `<!-- EarnLinks.AI Chat Widget -->
-<div id="earnlinks-chat-widget"></div>
+<div id="earnlinks-chat-widget" style="display: inline-block;"></div>
 <script>
   (function() {
     var widget = document.createElement('iframe');
