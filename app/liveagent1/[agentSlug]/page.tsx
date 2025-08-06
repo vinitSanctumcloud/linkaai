@@ -258,13 +258,13 @@ export default function AgentDetails() {
 
   const boxStyles = {
     className: `
-            fixed bottom-12 right-4
+            fixed bottom-0 right-0
             w-[90vw] max-w-[400px]
             sm:max-w-[450px]
             lg:max-w-[500px]
             bg-white
             rounded-2xl
-            shadow-2xl
+           
             border border-gray-200
             flex flex-col
             overflow-hidden
@@ -273,8 +273,8 @@ export default function AgentDetails() {
             lg:h-[700px] xl:h-[800px]
           `,
     style: {
-      minHeight: '80vh',
-      maxHeight: '80vh',
+      minHeight: '100vh',
+      maxHeight: '100vh',
       height: 'auto',
     }
   }
