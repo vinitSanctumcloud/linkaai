@@ -46,7 +46,7 @@ export default function EmbedPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [embedSize, setEmbedSize] = useState({ width: "100%", height: "700px" });
+  const [embedSize, setEmbedSize] = useState({ width: "300px", height: "700px" });
   const [isCopied, setIsCopied] = useState(false);
   const { agent: agentDetails, status, error } = useSelector((state: RootState) => state.agents);
   const [siteDomain, setSiteDomain] = useState('');
@@ -112,193 +112,16 @@ export default function EmbedPage() {
     : "// Please create an AI Agent to generate the embed code.";
 
   const widgetCode = agentSlug
-    ? `<!-- EarnLinks.AI Chat Widget -->
+    ? `<!-- Linka.AI Chat Widget -->
 <div id="earnlinks-chat-widget"></div>
 <script>
-  (function() {
-    // Dynamic widget dimensions
-    const embedSize = {
-      width: '${embedSize.width}',
-     height: '${typeof embedSize.height === "string" ? (parseInt(embedSize.height) - 50) : (embedSize.height - 50)}px'
-    };
-
-    // Create container
-    const container = document.createElement('div');
-    container.className = 'chat-container';
-    container.style.position = 'fixed';
-    container.style.bottom = '20px';
-    container.style.right = '20px';
-    container.style.zIndex = '1000';
-
-    // Loading indicator
-    const loading = document.createElement('div');
-    loading.className = 'chat-loading';
-    loading.textContent = 'Loading...';
-    loading.style.display = 'none';
-
-    // CSS styles
-    const styles = \`
-      .chat-container {
-        font-family: Arial, sans-serif;
-      }
-      .chat-video {
-        width: 150px;
-        height: 150px;
-        cursor: pointer;
-        border-radius: 50%;
-        object-fit: cover;
-        display: block;
-        transition: transform 0.2s ease;
-      }
-      .chat-video:hover {
-        transform: scale(1.05);
-      }
-      .chat-iframe {
-        display: none;
-        width: \${embedSize.width};
-        height: \${embedSize.height};
-        border: none;
-        border-radius: 10px;
-        position: fixed;
-        bottom: 10px;
-        right: 10px;
-        
-        z-index: 1000;
-      }
-      .chat-iframe.active {
-        display: block;
-      }
-      .close-button {
-        display: none;
-        position: fixed;
-        bottom: calc(-6px + \${embedSize.height});
-        right: 8px;
-        background-color: #000;
-        color: #fff;
-        border: none;
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        font-size: 18px;
-        font-weight: bold;
-        line-height: 32px;
-        text-align: center;
-        cursor: pointer;
-        z-index: 1001;
-        transition: transform 0.2s ease;
-      }
-      .close-button:hover {
-        transform: scale(1.1);
-      }
-      .close-button.active {
-        display: block;
-      }
-      .chat-video.hidden {
-        display: none;
-      }
-      .chat-loading {
-        position: fixed;
-        bottom: 180px;
-        right: 20px;
-        color: #333;
-        font-size: 14px;
-        z-index: 1000;
-      }
-      .error-message {
-        position: fixed;
-        bottom: 180px;
-        right: 20px;
-        color: #ff4d4f;
-        font-size: 14px;
-        z-index: 1000;
-        display: none;
-      }
-    \`;
-
-    // Append styles
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = styles;
-    document.head.appendChild(styleSheet);
-
-    // Create video element
-    const video = document.createElement('video');
-    video.className = 'chat-video';
-    video.autoplay = true;
-    video.muted = true;
-    video.loop = true;
-    const videoSource = document.createElement('source');
-    videoSource.id = 'video-source';
-    videoSource.type = 'video/mp4';
-    video.appendChild(videoSource);
-
-    // Create iframe
-    const iframe = document.createElement('iframe');
-    iframe.className = 'chat-iframe';
-    iframe.src = '${chatUrl1}';
-    iframe.setAttribute('allowtransparency', 'true');
-
-    // Create close button
-    const closeButton = document.createElement('button');
-    closeButton.className = 'close-button';
-    closeButton.textContent = 'X';
-
-    // Create error message
-    const errorMessage = document.createElement('div');
-    errorMessage.className = 'error-message';
-    errorMessage.textContent = 'Failed to load video. Please try again later.';
-
-    // Append elements to container
-    container.appendChild(loading);
-    container.appendChild(video);
-    container.appendChild(iframe);
-    container.appendChild(closeButton);
-    container.appendChild(errorMessage);
-    document.getElementById('earnlinks-chat-widget').appendChild(container);
-
-    // Fetch video URL with error handling
-    loading.style.display = 'block';
-    fetch('https://api.tagwell.co/api/v4/ai-agent/get-agent/details/${agentSlug}')
-      .then(response => {
-        if (!response.ok) throw new Error('Network response was not ok');
-        return response.json();
-      })
-      .then(data => {
-        if (data.data?.ai_agent?.greeting_media_url) {
-          videoSource.src = data.data.ai_agent.greeting_media_url;
-          video.load();
-          loading.style.display = 'none';
-        } else {
-          throw new Error('No video URL found');
-        }
-      })
-      .catch(error => {
-        console.error('Error fetching video URL:', error);
-        loading.style.display = 'none';
-        errorMessage.style.display = 'block';
-        setTimeout(() => errorMessage.style.display = 'none', 5000);
-      });
-
-    // Event listeners
-    video.addEventListener('click', () => {
-      iframe.classList.add('active');
-      closeButton.classList.add('active');
-      video.classList.add('hidden');
-    });
-
-    closeButton.addEventListener('click', () => {
-      iframe.classList.remove('active');
-      closeButton.classList.remove('active');
-      video.classList.remove('hidden');
-    });
-
-    // Handle window resize for responsiveness
-    window.addEventListener('resize', () => {
-      iframe.style.width = window.innerWidth < 300 ? '100%' : '${embedSize.width}';
-      iframe.style.height = window.innerWidth < 300 ? '80vh' : '${embedSize.height}';
-      closeButton.style.bottom = window.innerWidth < 300 ? 'calc(-6px + 80vh)' : 'calc(-6px + ${embedSize.height})';
-    });
-  })();
-</script>`
+  window.EarnLinksConfig = {
+    agentSlug: '${agentSlug}',
+    chatUrl: '${chatUrl1}',
+    embedSize: { width: '${embedSize.width}', height: '${embedSize.height}' }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/gh/vinitSanctumcloud/cdn@latest/cdn.js"></script>`
     : "// Please create an AI Agent to generate the widget code.";
 
   const popupCode = agentSlug

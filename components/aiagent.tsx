@@ -131,7 +131,7 @@ export function AiAgent({
         }
     };
 
-    // Clear localStorage items starting with "chat_history" and "public_id" every 30 seconds
+    // Clear localStorage items starting with "chat_history" and "public_id" every 3 hours
     useEffect(() => {
         const clearLocalStorage = () => {
             Object.keys(localStorage).forEach((key) => {
@@ -141,12 +141,11 @@ export function AiAgent({
             });
         };
 
-        // Set up interval to run every 3 hours
         const intervalId = setInterval(clearLocalStorage, 3 * 60 * 60 * 1000);
 
-        // Clean up interval on component unmount
         return () => clearInterval(intervalId);
     }, []);
+
     useEffect(() => {
         const SpeechRecognitionConstructor =
             (window as any).SpeechRecognition ||
@@ -202,20 +201,26 @@ export function AiAgent({
             <Head>
                 <title>{pageTitle}</title>
                 <meta name="description" content={pageDescription} />
+                {/* Open Graph Meta Tags */}
                 <meta property="og:title" content={pageTitle} />
                 <meta property="og:description" content={pageDescription} />
                 <meta property="og:image" content={thumbnailUrl} />
+                <meta property="og:image:secure_url" content={thumbnailUrl} />
+                <meta property="og:image:type" content="image/jpeg" />
                 <meta property="og:image:width" content="1200" />
                 <meta property="og:image:height" content="630" />
+                <meta property="og:image:alt" content={`${pageTitle} thumbnail`} />
                 <meta property="og:type" content="website" />
                 <meta
                     property="og:url"
                     content={`https://linkaai-9lgi.vercel.app/liveagent/${agentDetails?.ai_agent_slug ?? ''}`}
                 />
+                {/* Twitter Card Meta Tags */}
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={pageTitle} />
                 <meta name="twitter:description" content={pageDescription} />
                 <meta name="twitter:image" content={thumbnailUrl} />
+                <meta name="twitter:image:alt" content={`${pageTitle} thumbnail`} />
             </Head>
 
             {/* Chatbox */}
@@ -285,7 +290,7 @@ export function AiAgent({
                             .map((prompt) => (
                                 <button
                                     key={prompt.id}
-                                    className="w-full text-[11px] font-extralight  bg-white text-gray-800 py-1 px-1 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm border border-gray-200 hover:border-gray-300"
+                                    className="w-full md:text-[11px] text-sm font-extralight bg-white text-gray-800 py-1 px-1 rounded-lg hover:bg-gray-100 transition-all duration-200 shadow-sm border border-gray-200 hover:border-gray-300"
                                     onClick={() => {
                                         setInput(prompt.prompt_text);
                                         setTimeout(handleSendMessage, 100);
@@ -433,7 +438,6 @@ export function AiAgent({
                             placeholder="Speak or type here..."
                         />
                         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center">
-                            {/* Always show microphone button */}
                             <button
                                 onClick={handleVoiceInput}
                                 className={`p-2 transition-colors rounded-full ${isListening ? 'bg-red-50' : 'hover:bg-gray-100'} `}
@@ -441,8 +445,6 @@ export function AiAgent({
                             >
                                 <FaMicrophone className={`w-4 h-4 ${isListening ? 'text-red-500 animate-pulse' : 'text-gray-600 hover:text-gray-800'}`} />
                             </button>
-
-                            {/* Show send button only when there's input (but always takes space) */}
                             <button
                                 onClick={handleSendMessage}
                                 disabled={input.length === 0}

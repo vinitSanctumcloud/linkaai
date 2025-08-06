@@ -1,6 +1,7 @@
 'use client';
 
 import { AiAgent } from '@/components/aiagent';
+import { API } from '@/config/api';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -81,6 +82,7 @@ export default function AgentDetails() {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
+  
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
