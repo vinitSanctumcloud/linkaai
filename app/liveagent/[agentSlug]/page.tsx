@@ -1,10 +1,10 @@
+// pages/liveagent/[slug].tsx
 'use client';
 
 import { AiAgent } from '@/components/aiagent';
 import { API } from '@/config/api';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
-// Adjust the import path based on your file structure
 
 interface Prompt {
   id: number;
@@ -101,7 +101,6 @@ export default function AgentDetails() {
             method: 'GET',
             headers: {
               'Content-Type': 'application/json',
-              // 'Authorization': `Bearer ${token}', // Uncomment and define token if needed
             },
           }
         );
@@ -140,7 +139,7 @@ export default function AgentDetails() {
           setShowWelcome(false);
           setShowPrompts(false);
         }
-      } catch { }
+      } catch {}
     }
   }, [agentDetails]);
 
@@ -226,7 +225,7 @@ export default function AgentDetails() {
             headers: { 'Content-Type': 'application/json' },
           });
           if (metaRes.ok) metaResults.push((await metaRes.json()).data);
-        } catch (err) { }
+        } catch (err) {}
       }
       if (metaResults.length > 0) {
         setMessages((prev) => [
@@ -260,33 +259,33 @@ export default function AgentDetails() {
     );
   }
 
-  const thumbnailUrl = agentDetails?.avatar_image_url || '/thumbnail.jpg';
+  // Use absolute URL for the default image
+  const thumbnailUrl = agentDetails?.avatar_image_url || 'https://linkaai.vercel.app/thumbnail.jpg';
   const pageTitle = agentDetails?.greeting_title || 'AI Agent';
   const pageDescription = agentDetails?.welcome_greeting || 'Interact with our AI agent on LinkaAI';
 
-  // Define the styles in a variable
-const boxStyles = {
-  className: `
-    fixed top-1/2 left-1/2
-    -translate-x-1/2 -translate-y-1/2
-    w-[90vw] max-w-[400px]
-    sm:max-w-[500px]
-    lg:max-w-[500px]
-    bg-white
-    rounded-2xl
-    shadow-2xl
-    border border-gray-200
-    flex flex-col
-    overflow-hidden
-    z-40
-    lg:h-[700px] xl:h-[800px]
-  `,
-  style: {
-    minHeight: '80vh',
-    maxHeight: '100vh',
-    height: 'auto',
-  },
-};
+  const boxStyles = {
+    className: `
+      fixed top-1/2 left-1/2
+      -translate-x-1/2 -translate-y-1/2
+      w-[90vw] max-w-[400px]
+      sm:max-w-[500px]
+      lg:max-w-[500px]
+      bg-white
+      rounded-2xl
+      shadow-2xl
+      border border-gray-200
+      flex flex-col
+      overflow-hidden
+      z-40
+      lg:h-[700px] xl:h-[800px]
+    `,
+    style: {
+      minHeight: '80vh',
+      maxHeight: '100vh',
+      height: 'auto',
+    },
+  };
 
   return (
     <AiAgent
