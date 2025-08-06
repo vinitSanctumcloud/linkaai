@@ -283,7 +283,7 @@ const boxStyles = {
   `,
   style: {
     minHeight: '80vh',
-    maxHeight: '80vh',
+    maxHeight: '100vh',
     height: 'auto',
   },
 };

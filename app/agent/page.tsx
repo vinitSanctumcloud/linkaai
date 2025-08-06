@@ -2216,7 +2216,7 @@ export default function AgentBuilderPage() {
                       Conversation Starters
                     </h3>
                     <p className="text-xs text-linka-night/60">
-                      These buttons will appear when users first interact with your AI (max 40 chars)
+                      These buttons will appear when users first interact with your AI (max 55 chars)
                     </p>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
@@ -2231,18 +2231,18 @@ export default function AgentBuilderPage() {
                         <Input
                           id={`prompt-${index}`}
                           placeholder={[
-                            "Plan my itinerary (max 40 chars)",
-                            "Local recommendations (max 40 chars)",
-                            "Show best deals (max 40 chars)",
-                            "About activities (max 40 chars)",
+                            "Plan my itinerary (max 55 chars)",
+                            "Local recommendations (max 55 chars)",
+                            "Show best deals (max 55 chars)",
+                            "About activities (max 55 chars)",
                           ][index]}
                           value={prompt}
                           onChange={(e) => updatePrompt(index, e.target.value)}
-                          maxLength={40}
+                          maxLength={55}
                           className="border-linka-alice-blue focus:border-linka-carolina-blue focus:ring-2 focus:ring-linka-carolina-blue/30 placeholder:text-linka-night/30 hover:border-linka-carolina-blue/50 transition-all duration-200"
                         />
                         <p className="text-xs text-linka-night/60">
-                          {prompt.length}/40 characters
+                          {prompt.length}/55 characters
                         </p>
                       </div>
                     ))}
@@ -2271,7 +2271,7 @@ export default function AgentBuilderPage() {
                       Branching Flows
                     </h3>
                     <p className="text-xs text-linka-night/60">
-                      Create decision trees that adapt to different user needs (max 40 chars)
+                      Create decision trees that adapt to different user needs (max 55 chars)
                     </p>
                   </div>
                   {agentConfig.conditionalPrompts.length === 0 ? (
@@ -2302,7 +2302,7 @@ export default function AgentBuilderPage() {
                             <div className="flex items-center justify-between">
                               <h4 className="font-medium text-linka-russian-violet flex items-center gap-2">
                                 <MessageSquare className="w-4 h-4 text-linka-carolina-blue" />
-                                {prompt.mainPrompt.length > 40 ? prompt.mainPrompt.slice(0, 40) : prompt.mainPrompt || "Untitled Flow"}
+                                {prompt.mainPrompt.length > 55 ? prompt.mainPrompt.slice(0, 55) : prompt.mainPrompt || "Untitled Flow"}
                               </h4>
                               <div className="flex gap-2">
                                 <Button
@@ -2330,7 +2330,7 @@ export default function AgentBuilderPage() {
                                       </AlertDialogTitle>
                                       <AlertDialogDescription>
                                         This will permanently delete "
-                                        {prompt.mainPrompt.length > 40 ? prompt.mainPrompt.slice(0, 40) : prompt.mainPrompt || "this flow"}" and all its branches.
+                                        {prompt.mainPrompt.length > 55 ? prompt.mainPrompt.slice(0, 55) : prompt.mainPrompt || "this flow"}" and all its branches.
                                       </AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
@@ -2356,7 +2356,7 @@ export default function AgentBuilderPage() {
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-linka-dark-orange" />
                                   <Label className="text-sm font-medium text-linka-russian-violet">
-                                    {prompt.option1.label.length > 40 ? prompt.option1.label.slice(0, 40) : prompt.option1.label || "Option 1"}
+                                    {prompt.option1.label.length > 55 ? prompt.option1.label.slice(0, 55) : prompt.option1.label || "Option 1"}
                                   </Label>
                                 </div>
                                 <div className="space-y-2 ml-4">
@@ -2365,7 +2365,7 @@ export default function AgentBuilderPage() {
                                       key={index}
                                       className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
                                     >
-                                      {followUp.length > 40 ? followUp.slice(0, 40) : followUp || `Follow-up question ${index + 1}`}
+                                      {followUp.length > 55 ? followUp.slice(0, 55) : followUp || `Follow-up question ${index + 1}`}
                                     </div>
                                   ))}
                                 </div>
@@ -2374,7 +2374,7 @@ export default function AgentBuilderPage() {
                                 <div className="flex items-center gap-2">
                                   <div className="w-2 h-2 rounded-full bg-linka-carolina-blue" />
                                   <Label className="text-sm font-medium text-linka-russian-violet">
-                                    {prompt.option2.label.length > 40 ? prompt.option2.label.slice(0, 40) : prompt.option2.label || "Option 2"}
+                                    {prompt.option2.label.length > 55 ? prompt.option2.label.slice(0, 55) : prompt.option2.label || "Option 2"}
                                   </Label>
                                 </div>
                                 <div className="space-y-2 ml-4">
@@ -2383,7 +2383,7 @@ export default function AgentBuilderPage() {
                                       key={index}
                                       className="bg-linka-alice-blue/50 rounded-lg p-3 text-sm text-linka-night border border-linka-alice-blue hover:bg-white transition-all duration-200"
                                     >
-                                      {followUp.length > 40 ? followUp.slice(0, 40) : followUp || `Follow-up question ${index + 1}`}
+                                      {followUp.length > 55 ? followUp.slice(0, 55) : followUp || `Follow-up question ${index + 1}`}
                                     </div>
                                   ))}
                                 </div>

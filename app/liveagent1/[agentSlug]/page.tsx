@@ -3,7 +3,6 @@
 import { AiAgent } from '@/components/aiagent';
 import { useRouter } from 'next/navigation';
 import React, { useEffect, useRef, useState } from 'react';
-// Adjust the import path based on your file structure
 
 interface Prompt {
   id: number;
@@ -79,7 +78,6 @@ export default function AgentDetails() {
   const [input, setInput] = useState('');
   const [showWelcome, setShowWelcome] = useState(true);
   const [showPrompts, setShowPrompts] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
@@ -203,7 +201,7 @@ export default function AgentDetails() {
         const updated = [...prev];
         let cleanedText = assistantText
           .replace(/[\s\-•]*\[METAID:[^\]]+\]/g, '')
-            .trim();
+          .trim();
         updated[updated.length - 1] = { text: cleanedText, sender: 'assistant' };
         return updated;
       });
@@ -238,10 +236,6 @@ export default function AgentDetails() {
     if (e.key === 'Enter') handleSendMessage();
   };
 
-  const toggleChat = () => {
-    setIsChatOpen((prev) => !prev);
-  };
-
   if (error) {
     return (
       <div className="fixed inset-0 flex items-center justify-center z-50 bg-gray-900 bg-opacity-50">
@@ -258,80 +252,45 @@ export default function AgentDetails() {
 
   const boxStyles = {
     className: `
-            fixed bottom-0 right-0
-            w-[90vw] max-w-[400px]
-            sm:max-w-[450px]
-            lg:max-w-[500px]
-            bg-white
-            rounded-2xl
-           
-            border border-gray-200
-            flex flex-col
-            overflow-hidden
-            z-40
-            overflow-y-auto
-            lg:h-[700px] xl:h-[800px]
-          `,
+      fixed bottom-0 right-0
+      w-[100vw] max-w-[400px]
+      sm:max-w-[450px]
+      lg:max-w-[500px]
+      bg-white
+      rounded-2xl
+      border border-gray-200
+      flex flex-col
+      overflow-hidden
+      z-40
+      overflow-y-auto
+      lg:h-[700px] xl:h-[800px]
+    `,
     style: {
       minHeight: '100vh',
       maxHeight: '100vh',
       height: 'auto',
+      
     }
-  }
-  return (
-    <>
-      {!isChatOpen && (
-        <button
-          onClick={toggleChat}
-          className="fixed bottom-6 right-6 w-44 h-44 rounded-full shadow-lg overflow-hidden z-50 hover:shadow-xl transition-all duration-300 focus:outline-none"
-          aria-label="Toggle chat"
-        >
-          {agentDetails?.greeting_media_type === 'video' ? (
-            <video
-              src={agentDetails?.greeting_media_url}
-              loop
-              playsInline
-              autoPlay
-              muted
-              className="w-full h-full object-cover object-center"
-            />
-          ) : (
-            <div
-              className="w-full h-full"
-              style={{
-                backgroundImage: `url(${thumbnailUrl})`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-              }}
-            />
-          )}
-          <div className="absolute inset-0 bg-black bg-opacity-10 flex items-center justify-center">
-            <span className="text-white text-sm font-semibold">Chat</span>
-          </div>
-        </button>
-      )}
-      {
-        isChatOpen && (
-          <AiAgent
-            agentDetails={agentDetails}
-            messages={messages}
-            input={input}
-            showWelcome={showWelcome}
-            showPrompts={showPrompts}
-            isChatOpen={isChatOpen}
-            thumbnailUrl={thumbnailUrl}
-            pageTitle={pageTitle}
-            pageDescription={pageDescription}
-            chatEndRef={chatEndRef}
-            setInput={setInput}
-            handleSendMessage={handleSendMessage}
-            handleKeyPress={handleKeyPress}
-            toggleChat={toggleChat}
-            boxStyles={boxStyles}
-            cross={true}
-          />)
-      }
+  };
 
-    </>
+  return (
+    <AiAgent
+      agentDetails={agentDetails}
+      messages={messages}
+      input={input}
+      showWelcome={showWelcome}
+      showPrompts={showPrompts}
+      isChatOpen={true} // Always show the chat
+      thumbnailUrl={thumbnailUrl}
+      pageTitle={pageTitle}
+      pageDescription={pageDescription}
+      chatEndRef={chatEndRef}
+      setInput={setInput}
+      handleSendMessage={handleSendMessage}
+      handleKeyPress={handleKeyPress}
+      boxStyles={boxStyles}
+      cross={true} toggleChat={function (): void {
+        throw new Error('Function not implemented.');
+      } }    />
   );
 }

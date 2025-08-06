@@ -46,7 +46,7 @@ export default function EmbedPage() {
   const dispatch = useDispatch<AppDispatch>();
   const router = useRouter();
   const [settings, setSettings] = useState<Settings | null>(null);
-  const [embedSize, setEmbedSize] = useState({ width: "100%", height: "750px" });
+  const [embedSize, setEmbedSize] = useState({ width: "100%", height: "700px" });
   const [isCopied, setIsCopied] = useState(false);
   const { agent: agentDetails, status, error } = useSelector((state: RootState) => state.agents);
   const [siteDomain, setSiteDomain] = useState('');
@@ -116,20 +116,187 @@ export default function EmbedPage() {
 <div id="earnlinks-chat-widget"></div>
 <script>
   (function() {
-    var widget = document.createElement('iframe');
-    widget.src = '${chatUrl1}';
-    widget.style.width = '${embedSize.width}';
-    widget.style.height = '${embedSize.height}';
-    widget.style.border = 'none';
-    widget.style.borderRadius = '10px';
-    widget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.1)';
-    widget.style.position = 'fixed';
-    widget.style.bottom = '.5rem';
-    widget.style.right = '1rem';
-    widget.style.zIndex = '1000';
-    widget.frameBorder = '0';
-    widget.setAttribute('allowtransparency', 'true');
-    document.getElementById('earnlinks-chat-widget').appendChild(widget);
+    // Dynamic widget dimensions
+    const embedSize = {
+      width: '${embedSize.width}',
+     height: '${typeof embedSize.height === "string" ? (parseInt(embedSize.height) - 50) : (embedSize.height - 50)}px'
+    };
+
+    // Create container
+    const container = document.createElement('div');
+    container.className = 'chat-container';
+    container.style.position = 'fixed';
+    container.style.bottom = '20px';
+    container.style.right = '20px';
+    container.style.zIndex = '1000';
+
+    // Loading indicator
+    const loading = document.createElement('div');
+    loading.className = 'chat-loading';
+    loading.textContent = 'Loading...';
+    loading.style.display = 'none';
+
+    // CSS styles
+    const styles = \`
+      .chat-container {
+        font-family: Arial, sans-serif;
+      }
+      .chat-video {
+        width: 150px;
+        height: 150px;
+        cursor: pointer;
+        border-radius: 50%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.2s ease;
+      }
+      .chat-video:hover {
+        transform: scale(1.05);
+      }
+      .chat-iframe {
+        display: none;
+        width: \${embedSize.width};
+        height: \${embedSize.height};
+        border: none;
+        border-radius: 10px;
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+        
+        z-index: 1000;
+      }
+      .chat-iframe.active {
+        display: block;
+      }
+      .close-button {
+        display: none;
+        position: fixed;
+        bottom: calc(-6px + \${embedSize.height});
+        right: 8px;
+        background-color: #000;
+        color: #fff;
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+        font-weight: bold;
+        line-height: 32px;
+        text-align: center;
+        cursor: pointer;
+        z-index: 1001;
+        transition: transform 0.2s ease;
+      }
+      .close-button:hover {
+        transform: scale(1.1);
+      }
+      .close-button.active {
+        display: block;
+      }
+      .chat-video.hidden {
+        display: none;
+      }
+      .chat-loading {
+        position: fixed;
+        bottom: 180px;
+        right: 20px;
+        color: #333;
+        font-size: 14px;
+        z-index: 1000;
+      }
+      .error-message {
+        position: fixed;
+        bottom: 180px;
+        right: 20px;
+        color: #ff4d4f;
+        font-size: 14px;
+        z-index: 1000;
+        display: none;
+      }
+    \`;
+
+    // Append styles
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = styles;
+    document.head.appendChild(styleSheet);
+
+    // Create video element
+    const video = document.createElement('video');
+    video.className = 'chat-video';
+    video.autoplay = true;
+    video.muted = true;
+    video.loop = true;
+    const videoSource = document.createElement('source');
+    videoSource.id = 'video-source';
+    videoSource.type = 'video/mp4';
+    video.appendChild(videoSource);
+
+    // Create iframe
+    const iframe = document.createElement('iframe');
+    iframe.className = 'chat-iframe';
+    iframe.src = '${chatUrl1}';
+    iframe.setAttribute('allowtransparency', 'true');
+
+    // Create close button
+    const closeButton = document.createElement('button');
+    closeButton.className = 'close-button';
+    closeButton.textContent = 'X';
+
+    // Create error message
+    const errorMessage = document.createElement('div');
+    errorMessage.className = 'error-message';
+    errorMessage.textContent = 'Failed to load video. Please try again later.';
+
+    // Append elements to container
+    container.appendChild(loading);
+    container.appendChild(video);
+    container.appendChild(iframe);
+    container.appendChild(closeButton);
+    container.appendChild(errorMessage);
+    document.getElementById('earnlinks-chat-widget').appendChild(container);
+
+    // Fetch video URL with error handling
+    loading.style.display = 'block';
+    fetch('https://api.tagwell.co/api/v4/ai-agent/get-agent/details/${agentSlug}')
+      .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+      })
+      .then(data => {
+        if (data.data?.ai_agent?.greeting_media_url) {
+          videoSource.src = data.data.ai_agent.greeting_media_url;
+          video.load();
+          loading.style.display = 'none';
+        } else {
+          throw new Error('No video URL found');
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching video URL:', error);
+        loading.style.display = 'none';
+        errorMessage.style.display = 'block';
+        setTimeout(() => errorMessage.style.display = 'none', 5000);
+      });
+
+    // Event listeners
+    video.addEventListener('click', () => {
+      iframe.classList.add('active');
+      closeButton.classList.add('active');
+      video.classList.add('hidden');
+    });
+
+    closeButton.addEventListener('click', () => {
+      iframe.classList.remove('active');
+      closeButton.classList.remove('active');
+      video.classList.remove('hidden');
+    });
+
+    // Handle window resize for responsiveness
+    window.addEventListener('resize', () => {
+      iframe.style.width = window.innerWidth < 300 ? '100%' : '${embedSize.width}';
+      iframe.style.height = window.innerWidth < 300 ? '80vh' : '${embedSize.height}';
+      closeButton.style.bottom = window.innerWidth < 300 ? 'calc(-6px + 80vh)' : 'calc(-6px + ${embedSize.height})';
+    });
   })();
 </script>`
     : "// Please create an AI Agent to generate the widget code.";
@@ -154,7 +321,7 @@ export default function EmbedPage() {
     button.style.fontSize = '14px';
     
     button.onclick = function() {
-      window.open('${chatUrl}', 'earnlinks-chat', 'width=400,height=600,scrollbars=no,resizable=yes');
+      window.open('${chatUrl}', 'earnlinks-chat', 'width=400,height=300,scrollbars=no,resizable=yes');
     };
     
     document.body.appendChild(button);
@@ -169,7 +336,7 @@ export default function EmbedPage() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
             Share Your AI-Agent
           </h1>
-          <p className="text-gray-600 mt-2 text-sm sm:text-base">
+          <p className="text-gray-300 mt-2 text-sm sm:text-base">
             Share everywhere and grow your revenue
           </p>
         </div>
@@ -218,7 +385,7 @@ export default function EmbedPage() {
                         <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
                           Simple Iframe Embed
                         </h3>
-                        <p className="text-gray-600 text-xs sm:text-sm">
+                        <p className="text-gray-300 text-xs sm:text-sm">
                           Basic iframe code that you can paste directly into
                           your HTML.
                         </p>
@@ -251,7 +418,7 @@ export default function EmbedPage() {
                         <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
                           JavaScript Widget
                         </h3>
-                        <p className="text-gray-600 text-xs sm:text-sm">
+                        <p className="text-gray-300 text-xs sm:text-sm">
                           Dynamic widget that loads asynchronously and is more
                           flexible.
                         </p>
@@ -284,7 +451,7 @@ export default function EmbedPage() {
                         <h3 className="font-medium text-gray-900 text-sm sm:text-base mb-2">
                           Share Chat Link
                         </h3>
-                        <p className="text-gray-600 text-xs sm:text-sm">
+                        <p className="text-gray-300 text-xs sm:text-sm">
                           Copy and share this URL to let others chat with your AI agent.
                         </p>
                       </div>
@@ -331,7 +498,7 @@ export default function EmbedPage() {
             <Card className="rounded-xl">
               <CardHeader>
                 <CardTitle className="flex items-center text-lg sm:text-xl">
-                  <Code className="mr-2 h-5 w-5 text-orange-600" />
+                  <Code className="mr-2 h-5 w-5 text-orange-300" />
                   Widget Configuration
                 </CardTitle>
 
@@ -351,7 +518,7 @@ export default function EmbedPage() {
                       onChange={(e) =>
                         setEmbedSize({ ...embedSize, width: e.target.value })
                       }
-                      placeholder="100% or 600px"
+                      placeholder="100% or 300px"
                       className="text-sm sm:text-base"
                     />
                   </div>
@@ -365,7 +532,7 @@ export default function EmbedPage() {
                       onChange={(e) =>
                         setEmbedSize({ ...embedSize, height: e.target.value })
                       }
-                      placeholder="750px"
+                      placeholder="700px"
                       className="text-sm sm:text-base"
                     />
                   </div>
@@ -382,7 +549,7 @@ export default function EmbedPage() {
               <CardContent className="space-y-3">
                 {[
                   "Use '100%' width for full responsiveness on small screens.",
-                  "Ensure height is at least 750px for optimal chat display.",
+                  "Ensure height is at least 700px for optimal chat display.",
                   "Test the share link in mobile browsers for best results.",
                   "Preview on various devices to confirm layout compatibility.",
                 ].map((tip, index) => (
@@ -406,17 +573,17 @@ export default function EmbedPage() {
                 <div className="space-y-1 flex flex-row justify-between">
                   <div>
                     <CardTitle className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
-                      <Eye className="w-5 h-5 text-blue-600" />
+                      <Eye className="w-5 h-5 text-blue-300" />
                       Live Preview
                     </CardTitle>
-                    <CardDescription className="text-sm sm:text-base text-gray-600">
+                    <CardDescription className="text-sm sm:text-base text-gray-300">
                       See exactly how your AI Agent will appear to users
                     </CardDescription>
                   </div>
                   <CardTitle>
                     <button
                       onClick={handleViewAgent}
-                      className="bg-orange-600 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-700 active:bg-orange-800 transition-all duration-200 shadow-md hover:shadow-lg"
+                      className="bg-orange-300 text-white px-5 py-2.5 rounded-lg text-sm font-semibold hover:bg-orange-700 active:bg-orange-800 transition-all duration-200 shadow-md hover:shadow-lg"
                     >
                       View Agent
                     </button>
@@ -432,7 +599,7 @@ export default function EmbedPage() {
                       width: embedSize.width,
                       height: embedSize.height,
                       minWidth: "300px",
-                      minHeight: "750px",
+                      minHeight: "700px",
                       maxWidth: "100%",
                       maxHeight: "800px",
                       display: "flex",
@@ -449,7 +616,7 @@ export default function EmbedPage() {
                         style={{
                           transform: "scale(1)",
                           transformOrigin: "top left",
-                          minHeight: "750px",
+                          minHeight: "700px",
                           maxHeight: "800px",
                           width: "100%",
                         }}
@@ -468,7 +635,7 @@ export default function EmbedPage() {
                   </div>
 
                   {embedSize.width !== "100%" && (
-                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-full text-xs font-medium text-gray-600 shadow-sm border border-gray-200 sm:block hidden">
+                    <div className="absolute -bottom-4 left-1/2 -translate-x-1/2 bg-white px-3 py-1 rounded-full text-xs font-medium text-gray-300 shadow-sm border border-gray-200 sm:block hidden">
                       {embedSize.width} × {embedSize.height}
                     </div>
                   )}
@@ -476,18 +643,18 @@ export default function EmbedPage() {
 
                 <div className="mt-6 flex flex-col sm:flex-row justify-center gap-3">
                   <Button
-                    variant={embedSize.width === "600px" ? "default" : "outline"}
+                    variant={embedSize.width === "300px" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setEmbedSize({ width: "600px", height: "750px" })}
-                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
+                    onClick={() => setEmbedSize({ width: "300px", height: "700px" })}
+                    className="text-sm py-2 px-4 bg-blue-300 text-white hover:bg-blue-700 border-blue-300 transition-colors duration-200"
                   >
-                    Mobile (600px)
+                    Mobile (300px)
                   </Button>
                   <Button
                     variant={embedSize.width === "700px" ? "default" : "outline"}
                     size="sm"
-                    onClick={() => setEmbedSize({ width: "700px", height: "750px" })}
-                    className="text-sm py-2 px-4 bg-blue-600 text-white hover:bg-blue-700 border-blue-600 transition-colors duration-200"
+                    onClick={() => setEmbedSize({ width: "700px", height: "700px" })}
+                    className="text-sm py-2 px-4 bg-blue-300 text-white hover:bg-blue-700 border-blue-300 transition-colors duration-200"
                   >
                     Desktop (700px)
                   </Button>
