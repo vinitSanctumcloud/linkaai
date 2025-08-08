@@ -2163,7 +2163,7 @@ export default function AgentBuilderPage() {
               </div>
 
               <div className="bg-gradient-to-br from-linka-alice-blue/30 to-white/50 rounded-xl p-4 sm:p-5 border border-linka-alice-blue/80 overflow-hidden relative">
-                <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />
+                {/* <div className="absolute inset-0 bg-[url('/pattern.svg')] bg-[5px] opacity-5" />  */}
                 <div className="flex items-center gap-2 mb-2 sm:mb-3">
                   <p className="text-xs text-linka-night/60 font-medium uppercase tracking-wider">
                     Preview
