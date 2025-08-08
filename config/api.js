@@ -60,4 +60,9 @@ export const API = {
   PLAN_LIST: `${BASE_URL}/v4/ai-agent/billing/products`,
   BILLING_HISTORY: `${BASE_URL}/v4/ai-agent/billing/history`,
 
+  //Agent
+  AGENT_DETAILS1 :(slug)=>{
+    return `${BASE_URL}/v4/ai-agent/get-agent/details/${slug}`
+  } 
+
 };

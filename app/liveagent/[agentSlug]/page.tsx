@@ -24,7 +24,8 @@ interface AiAgentType {
 export async function generateMetadata({ params }: { params: { agentSlug: string } }): Promise<Metadata> {
   try {
     // Fetch agent details to get metadata
-    const response = await fetch(API.AI_AGENT_DATA_FROM_SLUG(params.agentSlug), {
+    console.log(params.agentSlug,"slug")
+    const response = await fetch(API.AGENT_DETAILS1(params.agentSlug), {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
     });
@@ -35,8 +36,10 @@ export async function generateMetadata({ params }: { params: { agentSlug: string
 
     const data = await response.json();
     const agentDetails: AiAgentType = data.data.ai_agent;
+    console.log(agentDetails,"datad")
 
     const thumbnailUrl = agentDetails?.avatar_image_url || 'https://via.placeholder.com/1200x630';
+    console.log(thumbnailUrl,'data')
     const pageTitle = agentDetails?.greeting_title || 'AI Agent';
     const pageDescription = agentDetails?.welcome_greeting || 'Interact with our AI agent on LinkaAI';
     const pageUrl = `https://linkaai-9lgi.vercel.app/liveagent/${agentDetails?.ai_agent_slug ?? ''}`;
