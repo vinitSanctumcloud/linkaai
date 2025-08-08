@@ -407,7 +407,6 @@ export function AiAgent({ boxStyles, agentSlug }: AiAgentProps) {
                     className="p-1 rounded-full hover:bg-gray-100 transition-colors duration-200"
                     aria-label="Back to welcome"
                 >
-                    p
                     <IoArrowBack className="w-5 h-5 text-gray-600" />
                 </button>
             </div>
